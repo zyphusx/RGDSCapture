@@ -339,8 +339,11 @@ namespace RGDSCapture
         }
 
         private void CheckFreezeAndAutoRecover()
-        {
-            if (!_isConnected || _ssh == null) return;
+{
+    if (!_isConnected ||
+        _ssh == null ||
+        !_ssh.IsConnected)
+        return;
 
             if (_topReceiver?.IsFrozen == true &&
                 !_topRecovering && _topRetries < MaxAutoRetries)
@@ -538,33 +541,51 @@ namespace RGDSCapture
         // ─────────────────────────────────────────────────────────────
         // CONSOLE POWER
         // ─────────────────────────────────────────────────────────────
-        private void BtnShutdown_Click(object sender, RoutedEventArgs e)
-        {
-            if (!_isConnected || _ssh == null) return;
-            var r = MessageBox.Show(
-                "Send 'sudo shutdown -h now' to the console?\n\nThe app will disconnect automatically.",
-                "Shutdown Console", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (r == MessageBoxResult.Yes)
-            {
-                AppendLog("[POWER] Shutdown command sent.", isError: true);
-                _ssh.ShutdownConsole();
-                Task.Delay(1200).ContinueWith(_ => Dispatcher.Invoke(DisconnectCleanup));
-            }
-        }
+private async void BtnShutdown_Click(object sender, RoutedEventArgs e)
+{
+    if (!_isConnected || _ssh == null)
+        return;
 
-        private void BtnReboot_Click(object sender, RoutedEventArgs e)
-        {
-            if (!_isConnected || _ssh == null) return;
-            var r = MessageBox.Show(
-                "Send 'sudo reboot' to the console?\n\nThe app will disconnect automatically.",
-                "Reboot Console", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (r == MessageBoxResult.Yes)
-            {
-                AppendLog("[POWER] Reboot command sent.", isError: true);
-                _ssh.RebootConsole();
-                Task.Delay(1200).ContinueWith(_ => Dispatcher.Invoke(DisconnectCleanup));
-            }
-        }
+    var r = MessageBox.Show(
+        "Shut down the console?",
+        "Shutdown Console",
+        MessageBoxButton.YesNo,
+        MessageBoxImage.Warning);
+
+    if (r != MessageBoxResult.Yes)
+        return;
+
+    AppendLog("[POWER] Shutdown command sent.");
+
+    _ssh.ShutdownConsole();
+
+    await Task.Delay(1000);
+
+    DisconnectCleanup();
+}
+
+private async void BtnReboot_Click(object sender, RoutedEventArgs e)
+{
+    if (!_isConnected || _ssh == null)
+        return;
+
+    var r = MessageBox.Show(
+        "Reboot the console?",
+        "Reboot Console",
+        MessageBoxButton.YesNo,
+        MessageBoxImage.Warning);
+
+    if (r != MessageBoxResult.Yes)
+        return;
+
+    AppendLog("[POWER] Reboot command sent.");
+
+    _ssh.RebootConsole();
+
+    await Task.Delay(1000);
+
+    DisconnectCleanup();
+}
 
         // ─────────────────────────────────────────────────────────────
         // SCREENSHOT
@@ -849,8 +870,24 @@ namespace RGDSCapture
             });
         }
 
-        private void OnSshDisconnected()
-            => Dispatcher.Invoke(() => { if (_isConnected) DisconnectCleanup(); });
+       private void OnSshDisconnected()
+{
+    Dispatcher.Invoke(() =>
+    {
+        AppendLog("[SSH] Connection lost.");
+
+        _isConnected = false;
+
+        StatusDot.Fill =
+            new SolidColorBrush(Color.FromRgb(233, 69, 96));
+
+        BtnConnect.Content = "Reconnect";
+        BtnConnect.IsEnabled = true;
+
+        SetStreamBadge(true, StreamBadgeState.Frozen);
+        SetStreamBadge(false, StreamBadgeState.Frozen);
+    });
+}
 
         // ─────────────────────────────────────────────────────────────
         // LAYOUT SELECTOR

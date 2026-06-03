@@ -142,18 +142,44 @@ namespace RGDSCapture
 
         // ── Console power commands ────────────────────────────────────
         public void ShutdownConsole()
-        {
-            if (!IsConnected) return;
-            RaiseStatus("Sending shutdown command...", false);
-            RunCommand("sudo shutdown -h now");
-        }
+{
+    if (!IsConnected)
+        return;
 
-        public void RebootConsole()
-        {
-            if (!IsConnected) return;
-            RaiseStatus("Sending reboot command...", false);
-            RunCommand("sudo reboot");
-        }
+    try
+    {
+        RaiseStatus("Stopping streams...", false);
+        RunCommand("pkill -f gst-launch-1.0");
+
+        Thread.Sleep(500);
+
+        RaiseStatus("Sending shutdown command...", false);
+        RunCommand("poweroff");
+    }
+    catch
+    {
+    }
+}
+
+     public void RebootConsole()
+{
+    if (!IsConnected)
+        return;
+
+    RaiseStatus("Stopping streams...", false);
+
+    try
+    {
+        RunCommand("pkill -f gst-launch-1.0");
+        Thread.Sleep(500);
+
+        RaiseStatus("Sending reboot command...", false);
+        RunCommand("reboot");
+    }
+    catch
+    {
+    }
+}
 
         public void Disconnect()
         {
