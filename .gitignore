@@ -18,3 +18,7 @@ publish/
 
 #setup creator file
 RGDSCaptureSetup.iss
+
+#block any generated, unpolished exes from getting pushed. 
+
+Output/
