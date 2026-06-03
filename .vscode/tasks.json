@@ -1,0 +1,41 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "../Users/josha/AppData/Roaming/Code/User/workspaceStorage/84ec5397c755324168b63fb7f2f9cbf3/ms-dotnettools.csdevkit/RGDSCapture.sln",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary;ForceNoAlign"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "publish",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "publish",
+                "../Users/josha/AppData/Roaming/Code/User/workspaceStorage/84ec5397c755324168b63fb7f2f9cbf3/ms-dotnettools.csdevkit/RGDSCapture.sln",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary;ForceNoAlign"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "watch",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "watch",
+                "run",
+                "--project",
+                "../Users/josha/AppData/Roaming/Code/User/workspaceStorage/84ec5397c755324168b63fb7f2f9cbf3/ms-dotnettools.csdevkit/RGDSCapture.sln"
+            ],
+            "problemMatcher": "$msCompile"
+        }
+    ]
+}
