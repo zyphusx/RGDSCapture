@@ -9,7 +9,7 @@ Stream, record, and monitor both screens of your RG DS on Windows — no hardwar
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue.svg)]()
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-purple.svg)]()
-[![Release](https://img.shields.io/github/v/release/zyphusx/RGDSCapture?color=green)]()
+
 
 </div>
 
