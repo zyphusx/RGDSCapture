@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
@@ -49,8 +50,8 @@ namespace RGDSCapture
         private DispatcherTimer? _renderTimer;
 
         // ── Audio (Line-In passthrough) ───────────────────────────────
-        private AudioMonitor _audioMonitor = new();
-        private bool         _audioRunning = false;
+        private AudioMonitor     _audioMonitor = new();
+        private bool             _audioRunning = false;
         private DispatcherTimer? _vuTimer;
 
         // ── Speedrun timer ────────────────────────────────────────────
@@ -72,6 +73,11 @@ namespace RGDSCapture
             Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
             "RGDSCapture");
 
+        // ── Log drawer ────────────────────────────────────────────────
+        private bool         _drawerOpen   = false;
+        private const double DrawerWidth   = 260.0;
+        private const int    DrawerAnimMs  = 200;
+
         // ── Log ───────────────────────────────────────────────────────
         private const int MaxLogLines = 300;
 
@@ -84,7 +90,6 @@ namespace RGDSCapture
             Directory.CreateDirectory(_screenshotFolder);
             Directory.CreateDirectory(_recordingFolder);
 
-            // Apply saved theme before any UI is visible
             var theme = ThemeManager.Load();
             UpdateThemeButton(theme);
 
@@ -106,6 +111,35 @@ namespace RGDSCapture
         }
 
         // ─────────────────────────────────────────────────────────────
+        // LOG DRAWER
+        // ─────────────────────────────────────────────────────────────
+        private void BtnToggleLog_Click(object sender, RoutedEventArgs e)
+            => ToggleDrawer();
+
+        private void ToggleDrawer()
+        {
+            _drawerOpen = !_drawerOpen;
+
+            // Animate the TranslateTransform X:
+            //   Closed → X = DrawerWidth  (fully off-screen to the right)
+            //   Open   → X = 0            (fully visible)
+            double targetX = _drawerOpen ? 0 : DrawerWidth;
+
+            var anim = new DoubleAnimation
+            {
+                To             = targetX,
+                Duration       = TimeSpan.FromMilliseconds(DrawerAnimMs),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+
+            DrawerTranslate.BeginAnimation(
+                System.Windows.Media.TranslateTransform.XProperty, anim);
+
+            // Update toolbar button label
+            BtnToggleLog.Content = _drawerOpen ? "📋 Log ❯" : "📋 Log";
+        }
+
+        // ─────────────────────────────────────────────────────────────
         // AUDIO — device population
         // ─────────────────────────────────────────────────────────────
         private void PopulateAudioDevices()
@@ -113,10 +147,9 @@ namespace RGDSCapture
             var inputs  = AudioMonitor.GetInputDevices();
             var outputs = AudioMonitor.GetOutputDevices();
 
-            CmbAudioInput.ItemsSource   = inputs;
-            CmbAudioOutput.ItemsSource  = outputs;
+            CmbAudioInput.ItemsSource  = inputs;
+            CmbAudioOutput.ItemsSource = outputs;
 
-            // Pre-select first device that looks like a Line-In / Stereo Mix
             int lineInIdx = 0;
             for (int i = 0; i < inputs.Count; i++)
             {
@@ -132,30 +165,23 @@ namespace RGDSCapture
         }
 
         // ─────────────────────────────────────────────────────────────
-        // AUDIO — start / stop button
+        // AUDIO — start / stop
         // ─────────────────────────────────────────────────────────────
         private void BtnAudioStart_Click(object sender, RoutedEventArgs e)
         {
-            if (!_audioRunning)
-                StartAudio();
-            else
-                StopAudio();
+            if (!_audioRunning) StartAudio();
+            else                StopAudio();
         }
 
         private void StartAudio()
         {
             int inIdx  = CmbAudioInput.SelectedIndex;
-            // GetOutputDevices() returns "System Default" at slot 0 (index=-1),
-            // then real devices. SelectedIndex 0 = default (-1), 1 = device 0, etc.
             int outIdx = CmbAudioOutput.SelectedIndex <= 0
                             ? -1
                             : CmbAudioOutput.SelectedIndex - 1;
 
             if (inIdx < 0)
-            {
-                AppendLog("[AUDIO] No input device selected.", isError: true);
-                return;
-            }
+            { AppendLog("[AUDIO] No input device selected.", isError: true); return; }
 
             try
             {
@@ -165,13 +191,10 @@ namespace RGDSCapture
                 BtnAudioStart.Content    = "⏹ Audio";
                 BtnAudioStart.Background = new SolidColorBrush(Color.FromRgb(140, 30, 30));
                 StartVuTimer();
-                AppendLog($"[AUDIO] Line-In monitoring started — " +
-                          $"{CmbAudioInput.Text} → {CmbAudioOutput.Text}");
+                AppendLog($"[AUDIO] Line-In started — {CmbAudioInput.Text} → {CmbAudioOutput.Text}");
             }
             catch (Exception ex)
-            {
-                AppendLog($"[AUDIO] Failed to start: {ex.Message}", isError: true);
-            }
+            { AppendLog($"[AUDIO] Failed to start: {ex.Message}", isError: true); }
         }
 
         private void StopAudio()
@@ -186,13 +209,10 @@ namespace RGDSCapture
             AppendLog("[AUDIO] Line-In monitoring stopped.");
         }
 
-        // ── VU meter update timer ─────────────────────────────────────
         private void StartVuTimer()
         {
             _vuTimer = new DispatcherTimer(DispatcherPriority.Render)
-            {
-                Interval = TimeSpan.FromMilliseconds(40)  // ~25 fps meter refresh
-            };
+            { Interval = TimeSpan.FromMilliseconds(40) };
             _vuTimer.Tick += (_, _) => UpdateVuMeters();
             _vuTimer.Start();
         }
@@ -200,35 +220,28 @@ namespace RGDSCapture
         private void UpdateVuMeters()
         {
             if (!_audioRunning) return;
-            // VU bars are 8px wide containers — fill proportionally
             const double maxW = 8.0;
             VuLeft.Width  = Math.Clamp(_audioMonitor.LevelLeft  * maxW * 3.0, 0, maxW);
             VuRight.Width = Math.Clamp(_audioMonitor.LevelRight * maxW * 3.0, 0, maxW);
 
-            // Colour: green → orange → red based on level
             float peak = Math.Max(_audioMonitor.LevelLeft, _audioMonitor.LevelRight);
-            Color c = peak < 0.6f
-                ? Color.FromRgb(0, 200, 100)
-                : peak < 0.85f
-                    ? Color.FromRgb(255, 165, 0)
-                    : Color.FromRgb(233, 69, 96);
+            Color c = peak < 0.6f  ? Color.FromRgb(0, 200, 100) :
+                      peak < 0.85f ? Color.FromRgb(255, 165, 0) :
+                                     Color.FromRgb(233, 69, 96);
             var brush = new SolidColorBrush(c);
             VuLeft.Fill = VuRight.Fill = brush;
         }
 
-        // ── Volume slider ─────────────────────────────────────────────
         private void SliderVolume_ValueChanged(object sender,
             RoutedPropertyChangedEventArgs<double> e)
         {
-            if (_audioRunning)
-                _audioMonitor.Volume = (float)e.NewValue;
+            if (_audioRunning) _audioMonitor.Volume = (float)e.NewValue;
             UpdateVolumeLabel(e.NewValue);
         }
 
         private void UpdateVolumeLabel(double v)
         {
-            if (TxtVolumeLabel != null)
-                TxtVolumeLabel.Text = $"{(int)(v * 100)}%";
+            if (TxtVolumeLabel != null) TxtVolumeLabel.Text = $"{(int)(v * 100)}%";
         }
 
         // ─────────────────────────────────────────────────────────────
@@ -237,9 +250,7 @@ namespace RGDSCapture
         private void StartRenderTimer()
         {
             _renderTimer = new DispatcherTimer(DispatcherPriority.Render)
-            {
-                Interval = TimeSpan.FromMilliseconds(33)
-            };
+            { Interval = TimeSpan.FromMilliseconds(33) };
             _renderTimer.Tick += RenderTick;
             _renderTimer.Start();
         }
@@ -289,8 +300,7 @@ namespace RGDSCapture
                 bitmapField.PixelHeight != h)
             {
                 bitmapField = new WriteableBitmap(w, h, 96, 96, PixelFormats.Bgra32, null);
-                foreach (var img in targets)
-                    img.Source = bitmapField;
+                foreach (var img in targets) img.Source = bitmapField;
             }
 
             var rect   = new System.Windows.Int32Rect(0, 0, w, h);
@@ -339,11 +349,8 @@ namespace RGDSCapture
         }
 
         private void CheckFreezeAndAutoRecover()
-{
-    if (!_isConnected ||
-        _ssh == null ||
-        !_ssh.IsConnected)
-        return;
+        {
+            if (!_isConnected || _ssh == null || !_ssh.IsConnected) return;
 
             if (_topReceiver?.IsFrozen == true &&
                 !_topRecovering && _topRetries < MaxAutoRetries)
@@ -373,9 +380,7 @@ namespace RGDSCapture
                 else                                   _bottomRecovering = false;
                 return;
             }
-
             await _ssh.RestartStreamAsync(stream);
-
             if (stream == StreamType.TopScreen)
             { _topStreamActive = false; _topRecovering = false; }
             else
@@ -386,7 +391,7 @@ namespace RGDSCapture
 
         private void SetStreamBadge(bool isTop, StreamBadgeState state)
         {
-            var dot  = isTop ? DotTop    : DotBottom;
+            var dot  = isTop ? DotTop      : DotBottom;
             var text = isTop ? TxtTopBadge : TxtBottomBadge;
             var fps  = isTop ? TxtTopFps   : TxtBottomFps;
 
@@ -480,8 +485,10 @@ namespace RGDSCapture
                 BtnConnect.IsEnabled = true;
                 StatusDot.Fill = new SolidColorBrush(Color.FromRgb(0, 200, 100));
                 SetConnectedControls(true);
-                AppendLog($"Connected to {ip}. Video streaming via RTP. " +
-                          $"Audio: connect 3.5mm cable and click ▶ Audio.");
+                AppendLog($"Connected to {ip}. Video via RTP. Audio: connect 3.5mm and click ▶ Audio.");
+
+                // Auto-open the log drawer on connect so the user sees stream startup messages
+                if (!_drawerOpen) ToggleDrawer();
             }
             else
             {
@@ -493,8 +500,7 @@ namespace RGDSCapture
         private void ConfirmAndDisconnect()
         {
             var r = MessageBox.Show(
-                "This will stop all GStreamer streams on the DS and close the SSH connection.\n\n" +
-                "Are you sure you want to disconnect?",
+                "This will stop all GStreamer streams on the DS and close the SSH connection.\n\nAre you sure?",
                 "Confirm Disconnect",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
@@ -541,51 +547,29 @@ namespace RGDSCapture
         // ─────────────────────────────────────────────────────────────
         // CONSOLE POWER
         // ─────────────────────────────────────────────────────────────
-private async void BtnShutdown_Click(object sender, RoutedEventArgs e)
-{
-    if (!_isConnected || _ssh == null)
-        return;
+        private async void BtnShutdown_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_isConnected || _ssh == null) return;
+            var r = MessageBox.Show("Shut down the console?", "Shutdown Console",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (r != MessageBoxResult.Yes) return;
+            AppendLog("[POWER] Shutdown command sent.", isError: true);
+            _ssh.ShutdownConsole();
+            await Task.Delay(1000);
+            DisconnectCleanup();
+        }
 
-    var r = MessageBox.Show(
-        "Shut down the console?",
-        "Shutdown Console",
-        MessageBoxButton.YesNo,
-        MessageBoxImage.Warning);
-
-    if (r != MessageBoxResult.Yes)
-        return;
-
-    AppendLog("[POWER] Shutdown command sent.");
-
-    _ssh.ShutdownConsole();
-
-    await Task.Delay(1000);
-
-    DisconnectCleanup();
-}
-
-private async void BtnReboot_Click(object sender, RoutedEventArgs e)
-{
-    if (!_isConnected || _ssh == null)
-        return;
-
-    var r = MessageBox.Show(
-        "Reboot the console?",
-        "Reboot Console",
-        MessageBoxButton.YesNo,
-        MessageBoxImage.Warning);
-
-    if (r != MessageBoxResult.Yes)
-        return;
-
-    AppendLog("[POWER] Reboot command sent.");
-
-    _ssh.RebootConsole();
-
-    await Task.Delay(1000);
-
-    DisconnectCleanup();
-}
+        private async void BtnReboot_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_isConnected || _ssh == null) return;
+            var r = MessageBox.Show("Reboot the console?", "Reboot Console",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (r != MessageBoxResult.Yes) return;
+            AppendLog("[POWER] Reboot command sent.", isError: true);
+            _ssh.RebootConsole();
+            await Task.Delay(1000);
+            DisconnectCleanup();
+        }
 
         // ─────────────────────────────────────────────────────────────
         // SCREENSHOT
@@ -629,10 +613,8 @@ private async void BtnReboot_Click(object sender, RoutedEventArgs e)
         private void ToggleRecording(StreamType stream)
         {
             bool isTop = stream == StreamType.TopScreen;
-            if (isTop ? _topRecording : _bottomRecording)
-                StopRecording(stream);
-            else
-                StartRecording(stream);
+            if (isTop ? _topRecording : _bottomRecording) StopRecording(stream);
+            else                                           StartRecording(stream);
         }
 
         private void StartRecording(StreamType stream)
@@ -643,21 +625,14 @@ private async void BtnReboot_Click(object sender, RoutedEventArgs e)
             string ts      = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             string outFile = Path.Combine(_recordingFolder, $"rg_{label}_{ts}.mp4");
 
-            // Receive the live RTP that is already arriving on the local UDP port
-            // and remux into MP4 with no re-encode (-c copy = zero extra CPU).
-            // -movflags +faststart makes the MP4 playable during/after recording.
             string ffmpegArgs =
                 $"-y -protocol_whitelist file,crypto,data,udp,rtp " +
                 $"-i rtp://127.0.0.1:{port} " +
-                $"-c copy -movflags +faststart " +
-                $"\"{outFile}\"";
+                $"-c copy -movflags +faststart \"{outFile}\"";
 
             string ffmpegPath = Path.Combine(AppContext.BaseDirectory, "ffmpeg.exe");
             if (!File.Exists(ffmpegPath))
-            {
-                AppendLog($"[RECORD] ffmpeg.exe not found at {AppContext.BaseDirectory}", isError: true);
-                return;
-            }
+            { AppendLog($"[RECORD] ffmpeg.exe not found at {AppContext.BaseDirectory}", isError: true); return; }
 
             var psi = new ProcessStartInfo
             {
@@ -673,15 +648,13 @@ private async void BtnReboot_Click(object sender, RoutedEventArgs e)
                 var proc = Process.Start(psi)!;
                 if (isTop)
                 {
-                    _topRecordProc = proc;
-                    _topRecording  = true;
+                    _topRecordProc = proc; _topRecording = true;
                     BtnRecordTop.Content    = "⏹ Stop Top";
                     BtnRecordTop.Background = new SolidColorBrush(Color.FromRgb(160, 30, 30));
                 }
                 else
                 {
-                    _bottomRecordProc = proc;
-                    _bottomRecording  = true;
+                    _bottomRecordProc = proc; _bottomRecording = true;
                     BtnRecordBottom.Content    = "⏹ Stop Bottom";
                     BtnRecordBottom.Background = new SolidColorBrush(Color.FromRgb(160, 30, 30));
                 }
@@ -737,9 +710,7 @@ private async void BtnReboot_Click(object sender, RoutedEventArgs e)
         private void StartSpeedrunDisplayTimer()
         {
             _speedrunTimer = new DispatcherTimer(DispatcherPriority.Render)
-            {
-                Interval = TimeSpan.FromMilliseconds(16)
-            };
+            { Interval = TimeSpan.FromMilliseconds(16) };
             _speedrunTimer.Tick += (_, _) => UpdateSpeedrunDisplay();
             _speedrunTimer.Start();
         }
@@ -788,18 +759,15 @@ private async void BtnReboot_Click(object sender, RoutedEventArgs e)
             TxtSpeedrunTimer.Text = FormatTime(elapsed);
         }
 
-        private static string FormatTime(TimeSpan t)
-        {
-            return t.TotalHours >= 1
+        private static string FormatTime(TimeSpan t) =>
+            t.TotalHours >= 1
                 ? $"{(int)t.TotalHours:D2}:{t.Minutes:D2}:{t.Seconds:D2}.{t.Milliseconds:D3}"
                 : $"{t.Minutes:D2}:{t.Seconds:D2}.{t.Milliseconds:D3}";
-        }
 
         // ─────────────────────────────────────────────────────────────
         // KEYBOARD SHORTCUTS
         // ─────────────────────────────────────────────────────────────
-        private void MainWindow_KeyDown(object sender,
-            System.Windows.Input.KeyEventArgs e)
+        private void MainWindow_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
             switch (e.Key)
             {
@@ -812,11 +780,13 @@ private async void BtnReboot_Click(object sender, RoutedEventArgs e)
                 case System.Windows.Input.Key.F7:
                     if (_isConnected) _ = RestartStreamAsync(StreamType.BottomScreen);
                     break;
+                case System.Windows.Input.Key.F8:
+                    ToggleDrawer();
+                    break;
                 case System.Windows.Input.Key.F12:
                     if (_isConnected) TakeScreenshot();
                     break;
                 case System.Windows.Input.Key.Space:
-                    // Only trigger timer if focus is not in a text field
                     if (e.OriginalSource is not System.Windows.Controls.TextBox)
                         ToggleSpeedrunTimer();
                     break;
@@ -831,16 +801,12 @@ private async void BtnReboot_Click(object sender, RoutedEventArgs e)
             _topReceiver = new RtpStreamReceiver(5000)
             { FreezeThresholdSeconds = FreezeThresholdSec };
             _topReceiver.FrameReady += (data, w, h) =>
-            {
-                lock (_topLock) { _topPending = data; _topW = w; _topH = h; }
-            };
+            { lock (_topLock) { _topPending = data; _topW = w; _topH = h; } };
 
             _bottomReceiver = new RtpStreamReceiver(5001)
             { FreezeThresholdSeconds = FreezeThresholdSec };
             _bottomReceiver.FrameReady += (data, w, h) =>
-            {
-                lock (_bottomLock) { _bottomPending = data; _bottomW = w; _bottomH = h; }
-            };
+            { lock (_bottomLock) { _bottomPending = data; _bottomW = w; _bottomH = h; } };
 
             _topReceiver.Start();
             _bottomReceiver.Start();
@@ -870,24 +836,19 @@ private async void BtnReboot_Click(object sender, RoutedEventArgs e)
             });
         }
 
-       private void OnSshDisconnected()
-{
-    Dispatcher.Invoke(() =>
-    {
-        AppendLog("[SSH] Connection lost.");
-
-        _isConnected = false;
-
-        StatusDot.Fill =
-            new SolidColorBrush(Color.FromRgb(233, 69, 96));
-
-        BtnConnect.Content = "Reconnect";
-        BtnConnect.IsEnabled = true;
-
-        SetStreamBadge(true, StreamBadgeState.Frozen);
-        SetStreamBadge(false, StreamBadgeState.Frozen);
-    });
-}
+        private void OnSshDisconnected()
+        {
+            Dispatcher.Invoke(() =>
+            {
+                AppendLog("[SSH] Connection lost.", isError: true);
+                _isConnected = false;
+                StatusDot.Fill   = new SolidColorBrush(Color.FromRgb(233, 69, 96));
+                BtnConnect.Content   = "Reconnect";
+                BtnConnect.IsEnabled = true;
+                SetStreamBadge(true,  StreamBadgeState.Frozen);
+                SetStreamBadge(false, StreamBadgeState.Frozen);
+            });
+        }
 
         // ─────────────────────────────────────────────────────────────
         // LAYOUT SELECTOR
@@ -918,7 +879,6 @@ private async void BtnReboot_Click(object sender, RoutedEventArgs e)
             string ts = DateTime.Now.ToString("HH:mm:ss");
             TxtEventLog.AppendText($"[{ts}] {message}\n");
 
-            // Trim excess lines
             while (TxtEventLog.LineCount > MaxLogLines)
             {
                 int end = TxtEventLog.GetLineLength(0) + 1;
@@ -1000,14 +960,9 @@ private async void BtnReboot_Click(object sender, RoutedEventArgs e)
             {
                 var r = MessageBox.Show(
                     "Streams are currently running on the DS.\n\n" +
-                    "Closing will stop all GStreamer pipelines on the device and disconnect SSH.\n\n" +
-                    "Exit anyway?",
-                    "Confirm Exit",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Warning);
-
-                if (r != MessageBoxResult.Yes)
-                { e.Cancel = true; return; }
+                    "Closing will stop all GStreamer pipelines and disconnect SSH.\n\nExit anyway?",
+                    "Confirm Exit", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (r != MessageBoxResult.Yes) { e.Cancel = true; return; }
             }
 
             _speedrunTimer?.Stop();
@@ -1055,8 +1010,7 @@ private async void BtnReboot_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                using var socket = new Socket(
-                    AddressFamily.InterNetwork, SocketType.Dgram, 0);
+                using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0);
                 socket.Connect("8.8.8.8", 65530);
                 var ep = socket.LocalEndPoint as IPEndPoint;
                 return ep?.Address.ToString() ?? "127.0.0.1";
