@@ -2,9 +2,9 @@
 
 ## Project Creator
 
-**Joshua** ([@zyphusx](https://github.com/zyphusx))
+**ZyphusX** ([@zyphusx](https://github.com/zyphusx))
 
-RGDSCapture was designed, built, and maintained by Joshua as an independent community project for the Anbernic RG Dual Screen handheld.
+RGDSCapture was designed, built, and maintained by ZyphusX as an independent community project for the Anbernic RG Dual Screen handheld.
 
 ---
 

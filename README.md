@@ -102,15 +102,8 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 ## Requirements
 
 ### RG DS Device
-- Anbernic RG Dual Screen running a Linux-based firmware
-- SSH enabled (most custom firmware enables this by default)
-- GStreamer installed on the device (`gst-launch-1.0` must be in PATH)
-- Connected to the same local network as your PC (Wi-Fi or USB tethering)
-
-**Verify GStreamer is present on your device:**
-```bash
-ssh user@<device-ip> which gst-launch-1.0
-```
+- Anbernic RG Dual Screen running the latest release of Anbernic's Linux FW 1.0
+- Connected to the same local network as your PC (Wi-Fi)
 
 ### Windows PC
 - Windows 10 or Windows 11 (64-bit)
@@ -129,12 +122,7 @@ ssh user@<device-ip> which gst-launch-1.0
 1. Go to the [Releases](https://github.com/zyphusx/RGDSCapture/releases) page
 2. Download **`RGDSCaptureSetup.exe`**
 3. Run the installer and follow the prompts
-4. The installer will:
-   - Install RGDSCapture and all required files
-   - Create a Start Menu shortcut
-   - Create a Desktop shortcut
-   - Register an uninstaller under `Add or Remove Programs`
-5. Launch RGDSCapture from the Start Menu or Desktop
+4. Launch RGDSCapture from the Start Menu or Desktop
 
 If .NET 8 is not already installed, Windows will prompt you to install it before the app launches. Click the link in the prompt and run the Microsoft installer, then launch RGDSCapture again.
 
@@ -165,6 +153,12 @@ See [Building from Source](#building-from-source) below.
 3. Leave Port as `22` unless your firmware uses a different SSH port
 4. Click **Connect**
 5. Enter your SSH username and password when prompted
+
+
+   Default Username: root 
+   Default Password: root
+
+
 6. Both screens should appear within a few seconds
 
 ---
