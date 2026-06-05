@@ -31,20 +31,6 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 
 </div>
 
----
-
-## Screenshots
-
-| Dark Theme | Light Theme |
-|:---:|:---:|
-| ![Dark Theme](docs/screenshots/dark-theme.png) | ![Light Theme](docs/screenshots/light-theme.png) |
-
-| Connected & Streaming |
-|:---:|
-| ![Streaming](docs/screenshots/streaming-state.png) |
-
----
-
 ## Features
 
 ### Video
