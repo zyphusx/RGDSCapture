@@ -33,18 +33,6 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 
 ---
 
-## Screenshots
-
-| Dark Theme | Light Theme |
-|:---:|:---:|
-| ![Dark Theme](docs/screenshots/dark-theme.png) | ![Light Theme](docs/screenshots/light-theme.png) |
-
-| Connected & Streaming |
-|:---:|
-| ![Streaming](docs/screenshots/streaming-state.png) |
-
----
-
 ## Features
 
 ### Video
@@ -102,15 +90,8 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 ## Requirements
 
 ### RG DS Device
-- Anbernic RG Dual Screen running a Linux-based firmware
-- SSH enabled (most custom firmware enables this by default)
-- GStreamer installed on the device (`gst-launch-1.0` must be in PATH)
-- Connected to the same local network as your PC (Wi-Fi or USB tethering)
-
-**Verify GStreamer is present on your device:**
-```bash
-ssh user@<device-ip> which gst-launch-1.0
-```
+- Anbernic RG Dual Screen running the latest Anbernic Linux FW ver 1.0. 
+- Connected to the same local network as your PC (Wi-Fi)
 
 ### Windows PC
 - Windows 10 or Windows 11 (64-bit)
