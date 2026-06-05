@@ -554,7 +554,7 @@ namespace RGDSCapture
                 MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (r != MessageBoxResult.Yes) return;
             AppendLog("[POWER] Shutdown command sent.", isError: true);
-            _ssh.ShutdownConsole();
+            await _ssh.ShutdownConsoleAsync();
             await Task.Delay(1000);
             DisconnectCleanup();
         }
@@ -566,7 +566,7 @@ namespace RGDSCapture
                 MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (r != MessageBoxResult.Yes) return;
             AppendLog("[POWER] Reboot command sent.", isError: true);
-            _ssh.RebootConsole();
+            await _ssh.RebootConsoleAsync();
             await Task.Delay(1000);
             DisconnectCleanup();
         }
@@ -842,7 +842,10 @@ namespace RGDSCapture
             {
                 AppendLog("[SSH] Connection lost.", isError: true);
                 _isConnected = false;
-                StatusDot.Fill   = new SolidColorBrush(Color.FromRgb(233, 69, 96));
+                // Stop audio on unexpected disconnect so it doesn't
+                // keep running against a dead connection.
+                if (_audioRunning) StopAudio();
+                StatusDot.Fill       = new SolidColorBrush(Color.FromRgb(233, 69, 96));
                 BtnConnect.Content   = "Reconnect";
                 BtnConnect.IsEnabled = true;
                 SetStreamBadge(true,  StreamBadgeState.Frozen);
@@ -920,6 +923,8 @@ namespace RGDSCapture
         private void DisconnectCleanup()
         {
             _connectCts?.Cancel();
+            _connectCts?.Dispose();
+            _connectCts = null;
             StopAllRecording();
             StopReceivers();
             _ssh?.Disconnect();

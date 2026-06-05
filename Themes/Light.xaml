@@ -68,4 +68,36 @@
     <SolidColorBrush x:Key="VuBg"              Color="#ECECEC"/>
     <SolidColorBrush x:Key="VuBorder"          Color="#D9D9D9"/>
 
+    <!-- ── ComboBox dropdown item colours ───────────────────────── -->
+    <SolidColorBrush x:Key="ComboItemFg"       Color="#1F1F1F"/>
+    <SolidColorBrush x:Key="ComboItemBg"       Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ComboItemHoverBg"  Color="#E5F3FF"/>
+    <SolidColorBrush x:Key="ComboItemHoverFg"  Color="#000000"/>
+
+    <Style TargetType="ComboBoxItem">
+        <Setter Property="Background"  Value="{DynamicResource ComboItemBg}"/>
+        <Setter Property="Foreground"  Value="{DynamicResource ComboItemFg}"/>
+        <Setter Property="Padding"     Value="7,4"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBoxItem">
+                    <Border Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource ComboItemHoverBg}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource ComboItemHoverFg}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource ComboItemHoverBg}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource ComboItemHoverFg}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>

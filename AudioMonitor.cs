@@ -6,48 +6,40 @@ using NAudio.Wave;
 namespace RGDSCapture
 {
     /// <summary>
-    /// Low-latency Line-In passthrough using NAudio WaveInEvent → WaveOutEvent.
+    /// Low-latency Line-In passthrough: WaveInEvent → RingBufferProvider → WaveOutEvent.
     ///
-    /// Deliberately avoids WASAPI and VolumeSampleProvider to eliminate all
-    /// format-negotiation errors.  Volume and level metering are applied manually
-    /// in the capture callback so the output chain stays as simple as possible:
-    ///
-    ///   WaveInEvent → RingBufferProvider → WaveOutEvent
-    ///
-    /// Glitch resistance:
-    ///   - Ring buffer with drift correction (latency creep clamped silently)
-    ///   - Silence insertion on underrun to prevent starve-clicks
-    ///   - 30 ms capture buffer (reliable floor for WMME on all systems)
-    ///   - Process priority boosted to AboveNormal for the lifetime of audio
+    /// All audio stays as 48 kHz 16-bit stereo PCM throughout — no format
+    /// conversion chain, so no NAudio "Must be already floating point" errors.
+    /// Volume is applied in-place in the capture callback before the ring buffer.
+    /// Drift correction prevents latency creep and starve-clicks.
     /// </summary>
     public sealed class AudioMonitor : IDisposable
     {
         // ── Tuning ────────────────────────────────────────────────────
-        private const int CaptureBufMs  = 30;   // WMME capture callback interval
-        private const int TargetFillMs  = 80;   // ideal ring buffer fill ahead of playback
-        private const int MaxFillMs     = 160;  // above this → drop oldest to clamp latency
-        private const int MinFillMs     = 20;   // below this → insert silence to prevent click
-        private const int RingBufferMs  = 2000; // total ring buffer capacity
+        private const int CaptureBufMs = 30;   // WMME reliable minimum
+        private const int TargetFillMs = 80;   // ideal buffer ahead of playback
+        private const int MaxFillMs    = 160;  // above this → drop oldest silently
+        private const int MinFillMs    = 20;   // below this → insert silence
+        private const int RingBufMs    = 2000; // total ring buffer capacity
 
-        // ── Public ────────────────────────────────────────────────────
-        public bool  IsRunning { get; private set; }
+        // ── Public state ──────────────────────────────────────────────
+        public bool IsRunning { get; private set; }
 
         private float _volume = 0.85f;
-        public  float Volume
+        public float Volume
         {
             get => _volume;
             set => _volume = Math.Clamp(value, 0f, 1f);
         }
 
         private float _levelLeft, _levelRight;
-        public  float LevelLeft  => Volatile.Read(ref _levelLeft);
-        public  float LevelRight => Volatile.Read(ref _levelRight);
+        public float LevelLeft  => Volatile.Read(ref _levelLeft);
+        public float LevelRight => Volatile.Read(ref _levelRight);
 
         // ── Internals ─────────────────────────────────────────────────
-        private WaveInEvent?         _input;
-        private WaveOutEvent?        _output;
-        private RingBufferProvider?  _ring;
-        private WaveFormat?          _fmt;
+        private WaveInEvent?        _input;
+        private WaveOutEvent?       _output;
+        private RingBufferProvider? _ring;
         private int _targetFillBytes, _maxFillBytes, _minFillBytes;
 
         // ── Device enumeration ────────────────────────────────────────
@@ -55,8 +47,11 @@ namespace RGDSCapture
         {
             var list = new List<AudioDevice>();
             for (int i = 0; i < WaveIn.DeviceCount; i++)
-                list.Add(new AudioDevice { Index = i,
-                    Name = WaveIn.GetCapabilities(i).ProductName });
+                list.Add(new AudioDevice
+                {
+                    Index = i,
+                    Name  = WaveIn.GetCapabilities(i).ProductName
+                });
             return list;
         }
 
@@ -67,8 +62,11 @@ namespace RGDSCapture
                 new AudioDevice { Index = -1, Name = "System Default" }
             };
             for (int i = 0; i < WaveOut.DeviceCount; i++)
-                list.Add(new AudioDevice { Index = i,
-                    Name = WaveOut.GetCapabilities(i).ProductName });
+                list.Add(new AudioDevice
+                {
+                    Index = i,
+                    Name  = WaveOut.GetCapabilities(i).ProductName
+                });
             return list;
         }
 
@@ -79,36 +77,29 @@ namespace RGDSCapture
         {
             if (IsRunning) return;
 
-            // 48 kHz 16-bit stereo PCM throughout — no format conversion needed.
-            // WaveInEvent captures it, RingBufferProvider stores it,
-            // WaveOutEvent plays it back.  All three use the same WaveFormat
-            // so nothing has to convert anything.
-            _fmt = new WaveFormat(48000, 16, 2);
+            var fmt = new WaveFormat(48000, 16, 2);
 
-            int bytesPerMs   = _fmt.AverageBytesPerSecond / 1000;
-            _targetFillBytes = TargetFillMs * bytesPerMs;
-            _maxFillBytes    = MaxFillMs    * bytesPerMs;
-            _minFillBytes    = MinFillMs    * bytesPerMs;
+            int bpm           = fmt.AverageBytesPerSecond / 1000;
+            _targetFillBytes  = TargetFillMs * bpm;
+            _maxFillBytes     = MaxFillMs    * bpm;
+            _minFillBytes     = MinFillMs    * bpm;
 
-            // Ring buffer — stores raw 16-bit PCM, pre-filled with silence
-            _ring = new RingBufferProvider(_fmt, RingBufferMs * bytesPerMs);
+            _ring = new RingBufferProvider(fmt, RingBufMs * bpm);
             _ring.PrimeSilence(_targetFillBytes);
 
-            // Output — plain WaveOutEvent, no sample provider chain
             _output = new WaveOutEvent
             {
                 DeviceNumber    = outputDevice,
                 DesiredLatency  = TargetFillMs,
                 NumberOfBuffers = 3
             };
-            _output.Init(_ring);   // _ring is IWaveProvider — no conversion needed
+            _output.Init(_ring);
             _output.Play();
 
-            // Capture
             _input = new WaveInEvent
             {
                 DeviceNumber       = inputDevice,
-                WaveFormat         = _fmt,
+                WaveFormat         = fmt,
                 BufferMilliseconds = CaptureBufMs,
                 NumberOfBuffers    = 3
             };
@@ -142,21 +133,16 @@ namespace RGDSCapture
         }
 
         // ─────────────────────────────────────────────────────────────
-        // CAPTURE CALLBACK
-        // Runs on WMME capture thread — must return quickly.
-        // Volume scaling and metering happen here so the playback chain
-        // stays a simple PCM passthrough with no ISampleProvider involved.
+        // CAPTURE CALLBACK — runs on WMME thread, must be fast
         // ─────────────────────────────────────────────────────────────
         private void OnDataAvailable(object? sender, WaveInEventArgs e)
         {
             if (_ring == null || e.BytesRecorded == 0) return;
 
-            // Apply volume in-place on the captured buffer (16-bit PCM)
             float vol = _volume;
             if (Math.Abs(vol - 1.0f) > 0.001f)
                 ApplyVolume(e.Buffer, e.BytesRecorded, vol);
 
-            // Drift correction — clamp ring buffer fill between Min and Max
             int fill = _ring.BufferedBytes;
             if (fill > _maxFillBytes)
                 _ring.DropOldest(fill - _targetFillBytes);
@@ -164,8 +150,6 @@ namespace RGDSCapture
                 _ring.InsertSilence(_targetFillBytes - fill);
 
             _ring.Write(e.Buffer, 0, e.BytesRecorded);
-
-            // Level metering (lock-free)
             ComputeLevels(e.Buffer, e.BytesRecorded);
         }
 
@@ -173,30 +157,26 @@ namespace RGDSCapture
         {
             if (e.Exception != null)
                 System.Diagnostics.Debug.WriteLine(
-                    $"[AudioMonitor] Capture error: {e.Exception.Message}");
+                    $"[AudioMonitor] Capture stopped: {e.Exception.Message}");
         }
 
         // ─────────────────────────────────────────────────────────────
         // HELPERS
         // ─────────────────────────────────────────────────────────────
 
-        /// <summary>
-        /// Scale interleaved 16-bit PCM samples in-place by a float volume factor.
-        /// Clamps to short range to prevent wrapping artefacts.
-        /// </summary>
+        /// <summary>Scale 16-bit PCM samples in-place. Clamps to prevent wrap.</summary>
         private static void ApplyVolume(byte[] buf, int count, float vol)
         {
             for (int i = 0; i < count - 1; i += 2)
             {
                 short s = (short)(buf[i] | (buf[i + 1] << 8));
-                int   v = (int)(s * vol);
-                v = Math.Clamp(v, short.MinValue, short.MaxValue);
+                int   v = Math.Clamp((int)(s * vol), short.MinValue, short.MaxValue);
                 buf[i]     = (byte)(v & 0xFF);
                 buf[i + 1] = (byte)((v >> 8) & 0xFF);
             }
         }
 
-        /// <summary>RMS level per channel, stored with Volatile.Write.</summary>
+        /// <summary>RMS per channel, written lock-free for UI thread reads.</summary>
         private void ComputeLevels(byte[] buf, int count)
         {
             if (count < 4) return;
@@ -224,29 +204,34 @@ namespace RGDSCapture
                 if (proc.PriorityClass < System.Diagnostics.ProcessPriorityClass.AboveNormal)
                     proc.PriorityClass = System.Diagnostics.ProcessPriorityClass.AboveNormal;
             }
-            catch { }
+            catch { /* non-fatal — may fail without elevated rights */ }
         }
 
         public void Dispose() => Stop();
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // RING BUFFER — single-writer / single-reader circular byte buffer.
+    // RING BUFFER
+    // Single-writer (capture thread) / single-reader (playback thread).
     // Implements IWaveProvider so WaveOutEvent.Init() accepts it directly
-    // without any format conversion.
+    // with no format conversion.
     // ─────────────────────────────────────────────────────────────────
     internal sealed class RingBufferProvider : IWaveProvider
     {
-        private readonly byte[]  _buf;
-        private readonly int     _capacity;
-        private readonly object  _lock = new();
+        private readonly byte[] _buf;
+        private readonly int    _capacity;
+        private readonly object _lock = new();
         private int _writePos, _readPos;
 
         public WaveFormat WaveFormat { get; }
 
         public int BufferedBytes
         {
-            get { lock (_lock) { return (_writePos - _readPos + _capacity) % _capacity; } }
+            get
+            {
+                lock (_lock)
+                    return (_writePos - _readPos + _capacity) % _capacity;
+            }
         }
 
         public RingBufferProvider(WaveFormat fmt, int capacityBytes)
@@ -260,9 +245,9 @@ namespace RGDSCapture
         {
             lock (_lock)
             {
-                bytes = Math.Min(bytes, _capacity - 1);
-                // Buffer is already zero-initialised — just advance write pointer
+                bytes     = Math.Min(bytes, _capacity - 1);
                 _writePos = (_writePos + bytes) % _capacity;
+                // _buf is already zero-initialised — no explicit fill needed
             }
         }
 
@@ -280,7 +265,10 @@ namespace RGDSCapture
         {
             lock (_lock)
             {
-                int space = _capacity - BufferedBytes - 1;
+                // Calculate available space inside the lock to avoid the
+                // BufferedBytes property acquiring the lock a second time.
+                int buffered = (_writePos - _readPos + _capacity) % _capacity;
+                int space    = _capacity - buffered - 1;
                 bytes = Math.Min(bytes, space);
                 if (bytes <= 0) return;
                 for (int i = 0; i < bytes; i++)
@@ -293,24 +281,23 @@ namespace RGDSCapture
         {
             lock (_lock)
             {
-                bytes    = Math.Min(bytes, BufferedBytes);
+                int buffered = (_writePos - _readPos + _capacity) % _capacity;
+                bytes    = Math.Min(bytes, buffered);
                 _readPos = (_readPos + bytes) % _capacity;
             }
         }
 
-        // Called by WaveOutEvent on the playback thread
         public int Read(byte[] buffer, int offset, int count)
         {
             lock (_lock)
             {
-                int avail  = BufferedBytes;
+                int avail  = (_writePos - _readPos + _capacity) % _capacity;
                 int toRead = Math.Min(count, avail);
 
                 for (int i = 0; i < toRead; i++)
                     buffer[offset + i] = _buf[(_readPos + i) % _capacity];
                 _readPos = (_readPos + toRead) % _capacity;
 
-                // Pad remainder with silence — never return short read
                 if (toRead < count)
                     Array.Clear(buffer, offset + toRead, count - toRead);
 
@@ -320,10 +307,10 @@ namespace RGDSCapture
     }
 
     // ─────────────────────────────────────────────────────────────────
-    public class AudioDevice
+    public sealed class AudioDevice
     {
-        public int    Index { get; set; }
-        public string Name  { get; set; } = string.Empty;
+        public int    Index { get; init; }
+        public string Name  { get; init; } = string.Empty;
         public override string ToString() => Name;
     }
 }

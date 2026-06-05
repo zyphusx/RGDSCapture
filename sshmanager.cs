@@ -5,11 +5,11 @@ using Renci.SshNet;
 
 namespace RGDSCapture
 {
-    public class SshManager : IDisposable
+    public sealed class SshManager : IDisposable
     {
         private SshClient? _sshClient;
-        private bool        _disposed = false;
-        private string      _windowsIp = string.Empty;
+        private bool       _disposed  = false;
+        private string     _windowsIp = string.Empty;
 
         public bool IsConnected => _sshClient?.IsConnected ?? false;
 
@@ -17,13 +17,11 @@ namespace RGDSCapture
         public event Action<StreamType>?   StreamStarted;
         public event Action?               Disconnected;
 
-        // ── GStreamer commands (audio removed) ────────────────────────
-        // GOP=10 → IDR keyframe every 10 frames (~333ms at 30fps).
-        // Shorter GOP means pixellation from a lost packet self-heals faster.
-        // config-interval=-1 on h264parse re-sends SPS/PPS with every keyframe
-        // so the decoder can re-sync without a full pipeline restart.
-        // intra-refresh=true spreads intra blocks across frames to further
-        // reduce visible blocking when packets are lost.
+        // ── GStreamer pipelines ───────────────────────────────────────
+        // GOP=10 → IDR keyframe every ~333ms at 30fps so pixellation from
+        // a lost packet self-heals quickly.
+        // config-interval=-1 re-sends SPS/PPS with every keyframe so the
+        // decoder can re-sync without a full pipeline restart.
         private const string GST_TOP =
             "nohup gst-launch-1.0 -e " +
             "kmssrc plane-id=98 ! " +
@@ -46,6 +44,7 @@ namespace RGDSCapture
             "udpsink host={HOST} port=5001 sync=false buffer-size=2097152 " +
             "> /tmp/gst_bottom.log 2>&1 &";
 
+        // ── Connect ───────────────────────────────────────────────────
         public async Task<bool> ConnectAsync(
             string host, int port, string username, string password,
             string windowsIp,
@@ -108,79 +107,49 @@ namespace RGDSCapture
             }
         }
 
-        // ── Individual stream restart ─────────────────────────────────
-        public async Task RestartStreamAsync(StreamType stream, CancellationToken ct = default)
+        // ── Stream restart ────────────────────────────────────────────
+        public async Task RestartStreamAsync(StreamType stream,
+            CancellationToken ct = default)
         {
             if (!IsConnected) return;
 
-            string killCmd, startCmd, label;
-            switch (stream)
-            {
-                case StreamType.TopScreen:
-                    killCmd  = "pkill -f 'port=5000'";
-                    startCmd = GST_TOP.Replace("{HOST}", _windowsIp);
-                    label    = "top";
-                    break;
-                case StreamType.BottomScreen:
-                    killCmd  = "pkill -f 'port=5001'";
-                    startCmd = GST_BOTTOM.Replace("{HOST}", _windowsIp);
-                    label    = "bottom";
-                    break;
-                default:
-                    return;
-            }
+            int    port     = stream == StreamType.TopScreen ? 5000 : 5001;
+            string startCmd = stream == StreamType.TopScreen
+                ? GST_TOP.Replace("{HOST}", _windowsIp)
+                : GST_BOTTOM.Replace("{HOST}", _windowsIp);
+            string label    = stream == StreamType.TopScreen ? "Top" : "Bottom";
 
             RaiseStatus($"Restarting {label} stream...", false);
-            // More targeted kill — only the pipeline for this port
-            RunCommand($"pkill -f 'udpsink host={_windowsIp} port={(stream == StreamType.TopScreen ? 5000 : 5001)}'");
+            RunCommand($"pkill -f 'udpsink host={_windowsIp} port={port}'");
             await Task.Delay(400, ct);
             RunCommand(startCmd);
             await Task.Delay(300, ct);
             StreamStarted?.Invoke(stream);
-            RaiseStatus($"{label.Substring(0,1).ToUpper()}{label[1..]} stream restarted.", false);
+            RaiseStatus($"{label} stream restarted.", false);
         }
 
-        // ── Console power commands ────────────────────────────────────
-        public void ShutdownConsole()
-{
-    if (!IsConnected)
-        return;
+        // ── Console power ─────────────────────────────────────────────
+        public async Task ShutdownConsoleAsync()
+        {
+            if (!IsConnected) return;
+            RaiseStatus("Stopping streams...", false);
+            RunCommand("pkill -f gst-launch-1.0");
+            await Task.Delay(500);
+            RaiseStatus("Sending shutdown command...", false);
+            RunCommand("poweroff");
+        }
 
-    try
-    {
-        RaiseStatus("Stopping streams...", false);
-        RunCommand("pkill -f gst-launch-1.0");
+        public async Task RebootConsoleAsync()
+        {
+            if (!IsConnected) return;
+            RaiseStatus("Stopping streams...", false);
+            RunCommand("pkill -f gst-launch-1.0");
+            await Task.Delay(500);
+            RaiseStatus("Sending reboot command...", false);
+            RunCommand("reboot");
+        }
 
-        Thread.Sleep(500);
-
-        RaiseStatus("Sending shutdown command...", false);
-        RunCommand("poweroff");
-    }
-    catch
-    {
-    }
-}
-
-     public void RebootConsole()
-{
-    if (!IsConnected)
-        return;
-
-    RaiseStatus("Stopping streams...", false);
-
-    try
-    {
-        RunCommand("pkill -f gst-launch-1.0");
-        Thread.Sleep(500);
-
-        RaiseStatus("Sending reboot command...", false);
-        RunCommand("reboot");
-    }
-    catch
-    {
-    }
-}
-
+        // ── Disconnect ────────────────────────────────────────────────
         public void Disconnect()
         {
             try
@@ -201,18 +170,7 @@ namespace RGDSCapture
             }
         }
 
-        public string GetStreamLog(StreamType stream)
-        {
-            if (!IsConnected) return "Not connected.";
-            string logFile = stream switch
-            {
-                StreamType.TopScreen    => "/tmp/gst_top.log",
-                StreamType.BottomScreen => "/tmp/gst_bottom.log",
-                _                       => "/tmp/gst_top.log"
-            };
-            return RunCommand($"tail -30 {logFile}");
-        }
-
+        // ── Internals ─────────────────────────────────────────────────
         private string RunCommand(string command)
         {
             if (_sshClient?.IsConnected != true) return string.Empty;
@@ -226,11 +184,9 @@ namespace RGDSCapture
 
         public void Dispose()
         {
-            if (!_disposed)
-            {
-                Disconnect();
-                _disposed = true;
-            }
+            if (_disposed) return;
+            Disconnect();
+            _disposed = true;
         }
     }
 
@@ -238,6 +194,5 @@ namespace RGDSCapture
     {
         TopScreen,
         BottomScreen
-        // Audio removed — using 3.5mm jack to host machine instead
     }
 }

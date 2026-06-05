@@ -33,6 +33,18 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 
 ---
 
+## Screenshots
+
+| Dark Theme | Light Theme |
+|:---:|:---:|
+| ![Dark Theme](docs/screenshots/dark-theme.png) | ![Light Theme](docs/screenshots/light-theme.png) |
+
+| Connected & Streaming |
+|:---:|
+| ![Streaming](docs/screenshots/streaming-state.png) |
+
+---
+
 ## Features
 
 ### Video
@@ -63,8 +75,8 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 - Space bar toggles the timer (when no text field has focus)
 
 ### Console Control
-- **Shutdown** — sends `sudo shutdown -h now` with confirmation dialog
-- **Reboot** — sends `sudo reboot` with confirmation dialog
+- **Shutdown** — sends `poweroff` with confirmation dialog
+- **Reboot** — sends `restart` with confirmation dialog
 - Disconnect confirmation prevents accidental stream drops
 - Exit confirmation if streams are running
 
@@ -90,8 +102,15 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 ## Requirements
 
 ### RG DS Device
-- Anbernic RG Dual Screen running the latest Anbernic Linux FW ver 1.0. 
-- Connected to the same local network as your PC (Wi-Fi)
+- Anbernic RG Dual Screen running a Linux-based firmware
+- SSH enabled (most custom firmware enables this by default)
+- GStreamer installed on the device (`gst-launch-1.0` must be in PATH)
+- Connected to the same local network as your PC (Wi-Fi or USB tethering)
+
+**Verify GStreamer is present on your device:**
+```bash
+ssh user@<device-ip> which gst-launch-1.0
+```
 
 ### Windows PC
 - Windows 10 or Windows 11 (64-bit)
@@ -146,11 +165,6 @@ See [Building from Source](#building-from-source) below.
 3. Leave Port as `22` unless your firmware uses a different SSH port
 4. Click **Connect**
 5. Enter your SSH username and password when prompted
-
-   If unchanged from default, it should be:
-   Username: root
-   Password: root
-   
 6. Both screens should appear within a few seconds
 
 ---
