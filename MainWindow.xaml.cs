@@ -75,7 +75,7 @@ namespace RGDSCapture
 
         // ── Log drawer ────────────────────────────────────────────────
         private bool         _drawerOpen   = false;
-        private const double DrawerWidth   = 260.0;
+        private const double DrawerWidth   = 270.0;
         private const int    DrawerAnimMs  = 200;
 
         // ── Log ───────────────────────────────────────────────────────
@@ -90,8 +90,8 @@ namespace RGDSCapture
             Directory.CreateDirectory(_screenshotFolder);
             Directory.CreateDirectory(_recordingFolder);
 
-            var theme = ThemeManager.Load();
-            UpdateThemeButton(theme);
+            ThemeManager.Load();
+            SyncThemeMenuChecks();
 
             PopulateAudioDevices();
             StartSpeedrunDisplayTimer();
@@ -853,26 +853,7 @@ namespace RGDSCapture
             });
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // LAYOUT SELECTOR
-        // ─────────────────────────────────────────────────────────────
-        private void CmbLayout_SelectionChanged(object sender,
-            System.Windows.Controls.SelectionChangedEventArgs e)
-        {
-            if (LayoutVertical == null) return;
-            LayoutVertical.Visibility   = Visibility.Collapsed;
-            LayoutSideBySide.Visibility = Visibility.Collapsed;
-            LayoutTopOnly.Visibility    = Visibility.Collapsed;
-            LayoutBottomOnly.Visibility = Visibility.Collapsed;
 
-            switch (CmbLayout.SelectedIndex)
-            {
-                case 0: LayoutVertical.Visibility   = Visibility.Visible; break;
-                case 1: LayoutSideBySide.Visibility = Visibility.Visible; break;
-                case 2: LayoutTopOnly.Visibility    = Visibility.Visible; break;
-                case 3: LayoutBottomOnly.Visibility = Visibility.Visible; break;
-            }
-        }
 
         // ─────────────────────────────────────────────────────────────
         // LOG
@@ -903,19 +884,53 @@ namespace RGDSCapture
         }
 
         // ─────────────────────────────────────────────────────────────
-        // THEME
+        // THEME — menu-driven, supports all four themes
         // ─────────────────────────────────────────────────────────────
-        private void BtnTheme_Click(object sender, RoutedEventArgs e)
+        private void MnuTheme_Click(object sender, RoutedEventArgs e)
         {
-            var theme = ThemeManager.Toggle();
-            UpdateThemeButton(theme);
-            AppendLog($"[THEME] Switched to {theme} mode.");
+            if (sender is not System.Windows.Controls.MenuItem item) return;
+            if (!Enum.TryParse(item.Tag?.ToString(), out ThemeManager.Theme t)) return;
+
+            ThemeManager.Apply(t);
+            SyncThemeMenuChecks();
+            AppendLog($"[THEME] {ThemeManager.ThemeDisplayNames[(int)t]}");
         }
 
-        private void UpdateThemeButton(ThemeManager.Theme theme)
+        private void SyncThemeMenuChecks()
         {
-            BtnTheme.Content = theme == ThemeManager.Theme.Dark ? "☀ Light" : "🌙 Dark";
+            MnuThemeDark.IsChecked  = ThemeManager.Current == ThemeManager.Theme.Dark;
+            MnuThemeLight.IsChecked = ThemeManager.Current == ThemeManager.Theme.Light;
+            MnuThemeHCD.IsChecked   = ThemeManager.Current == ThemeManager.Theme.HighContrastDark;
+            MnuThemeHCL.IsChecked   = ThemeManager.Current == ThemeManager.Theme.HighContrastLight;
         }
+
+        // ─────────────────────────────────────────────────────────────
+        // LAYOUT — menu-driven
+        // ─────────────────────────────────────────────────────────────
+        private void MnuLayout_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.MenuItem item) return;
+            if (!int.TryParse(item.Tag?.ToString(), out int idx)) return;
+
+            LayoutVertical.Visibility   = idx == 0 ? Visibility.Visible : Visibility.Collapsed;
+            LayoutSideBySide.Visibility = idx == 1 ? Visibility.Visible : Visibility.Collapsed;
+            LayoutTopOnly.Visibility    = idx == 2 ? Visibility.Visible : Visibility.Collapsed;
+            LayoutBottomOnly.Visibility = idx == 3 ? Visibility.Visible : Visibility.Collapsed;
+
+            MnuLayoutVertical.IsChecked   = idx == 0;
+            MnuLayoutSide.IsChecked       = idx == 1;
+            MnuLayoutTopOnly.IsChecked    = idx == 2;
+            MnuLayoutBottomOnly.IsChecked = idx == 3;
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // MENU — File items
+        // ─────────────────────────────────────────────────────────────
+        private void MnuDisconnect_Click(object sender, RoutedEventArgs e)
+            => ConfirmAndDisconnect();
+
+        private void MnuExit_Click(object sender, RoutedEventArgs e)
+            => Close();
 
         // ─────────────────────────────────────────────────────────────
         // DISCONNECT / CLEANUP
@@ -994,6 +1009,17 @@ namespace RGDSCapture
             BtnReboot.IsEnabled        = on;
             BtnRecordTop.IsEnabled     = on;
             BtnRecordBottom.IsEnabled  = on;
+            // Mirror to menu items
+            MnuDisconnect.IsEnabled    = on;
+            MnuScreenshot.IsEnabled    = on;
+            MnuRestartTop.IsEnabled    = on;
+            MnuRestartBottom.IsEnabled = on;
+            MnuRestartAll.IsEnabled    = on;
+            MnuRecordTop.IsEnabled     = on;
+            MnuRecordBottom.IsEnabled  = on;
+            MnuShutdown.IsEnabled      = on;
+            MnuReboot.IsEnabled        = on;
+            MnuConnect.IsEnabled       = !on;
         }
 
         private void ResetStreamBadges()

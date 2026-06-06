@@ -1,43 +1,71 @@
 <Window x:Class="RGDSCapture.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="RGDSCapture" Height="780" Width="980"
-        MinHeight="600" MinWidth="700"
+        Title="RGDSCapture"
+        Height="820" Width="1040"
+        MinHeight="620" MinWidth="760"
         Background="{DynamicResource WindowBg}"
         WindowStartupLocation="CenterScreen"
-        KeyDown="MainWindow_KeyDown">
+        KeyDown="MainWindow_KeyDown"
+        FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+        FontSize="13"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
 
     <Window.Resources>
 
+        <!-- ── Focus ring used by all interactive controls ── -->
+        <Style x:Key="FocusRingStyle" TargetType="Control">
+            <Style.Triggers>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource FocusRing}"/>
+                    <Setter Property="BorderThickness" Value="2"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- ── Standard button ── -->
         <Style TargetType="Button" x:Key="Btn">
             <Setter Property="Background"      Value="{DynamicResource BtnBg}"/>
             <Setter Property="Foreground"      Value="{DynamicResource BtnFg}"/>
             <Setter Property="BorderBrush"     Value="{DynamicResource BtnBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding"         Value="10,5"/>
+            <Setter Property="Padding"         Value="12,6"/>
             <Setter Property="Margin"          Value="3,0"/>
-            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="FontSize"        Value="13"/>
             <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="4"
-                                Padding="{TemplateBinding Padding}">
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="{DynamicResource BtnHover}"/>
+                                <Setter TargetName="Root" Property="Background"
+                                        Value="{DynamicResource BtnHover}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="{DynamicResource BtnPress}"/>
+                                <Setter TargetName="Root" Property="Background"
+                                        Value="{DynamicResource BtnPress}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Root" Property="BorderBrush"
+                                        Value="{DynamicResource FocusRing}"/>
+                                <Setter TargetName="Root" Property="BorderThickness"
+                                        Value="2"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.35"/>
+                                <Setter Property="Opacity" Value="0.4"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -45,211 +73,516 @@
             </Setter>
         </Style>
 
+        <!-- ── Accent / Connect button ── -->
+        <Style TargetType="Button" x:Key="BtnAccent" BasedOn="{StaticResource Btn}">
+            <Setter Property="Background"  Value="{DynamicResource BtnConnectBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BtnConnectBorder}"/>
+            <Setter Property="Foreground"  Value="{DynamicResource BtnConnectFg}"/>
+            <Setter Property="Width"       Value="110"/>
+            <Setter Property="FontWeight"  Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background"
+                                        Value="{DynamicResource AccentHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Background"
+                                        Value="{DynamicResource AccentPress}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Root" Property="BorderBrush"
+                                        Value="{DynamicResource FocusRing}"/>
+                                <Setter TargetName="Root" Property="BorderThickness"
+                                        Value="2"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Danger button ── -->
         <Style TargetType="Button" x:Key="BtnDanger" BasedOn="{StaticResource Btn}">
             <Setter Property="Background"  Value="{DynamicResource BtnDangerBg}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource BtnDangerBorder}"/>
             <Setter Property="Foreground"  Value="{DynamicResource BtnDangerFg}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background"
+                                        Value="{DynamicResource BtnDangerHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Background"
+                                        Value="{DynamicResource BtnPress}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Root" Property="BorderBrush"
+                                        Value="{DynamicResource FocusRing}"/>
+                                <Setter TargetName="Root" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
-        <Style TargetType="Button" x:Key="BtnConnect" BasedOn="{StaticResource Btn}">
-            <Setter Property="Background"  Value="{DynamicResource BtnConnectBg}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BtnConnectBorder}"/>
-            <Setter Property="Foreground"  Value="#ffffff"/>
-            <Setter Property="Width"       Value="100"/>
-            <Setter Property="Padding"     Value="0,6"/>
-        </Style>
-
+        <!-- ── TextBox ── -->
         <Style TargetType="TextBox" x:Key="TBox">
             <Setter Property="Background"               Value="{DynamicResource InputBg}"/>
             <Setter Property="Foreground"               Value="{DynamicResource InputFg}"/>
+            <Setter Property="CaretBrush"               Value="{DynamicResource InputCaret}"/>
             <Setter Property="BorderBrush"              Value="{DynamicResource InputBorder}"/>
             <Setter Property="BorderThickness"          Value="1"/>
-            <Setter Property="Padding"                  Value="7,5"/>
-            <Setter Property="CaretBrush"               Value="{DynamicResource InputCaret}"/>
+            <Setter Property="Padding"                  Value="10,7"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="FontSize"                 Value="12"/>
+            <Setter Property="FontSize"                 Value="13"/>
+            <Setter Property="SnapsToDevicePixels"      Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                SnapsToDevicePixels="True">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Root" Property="BorderBrush"
+                                        Value="{DynamicResource InputBorderFocus}"/>
+                                <Setter TargetName="Root" Property="BorderThickness"
+                                        Value="2"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
+        <!-- ── ComboBox ── -->
         <Style TargetType="ComboBox" x:Key="CBox">
             <Setter Property="Background"      Value="{DynamicResource InputBg}"/>
             <Setter Property="Foreground"      Value="{DynamicResource InputFg}"/>
             <Setter Property="BorderBrush"     Value="{DynamicResource InputBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding"         Value="7,5"/>
-            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="Padding"         Value="10,7"/>
+            <Setter Property="FontSize"        Value="13"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
         </Style>
 
+        <!-- ── Dim label ── -->
         <Style TargetType="TextBlock" x:Key="Lbl">
             <Setter Property="Foreground"        Value="{DynamicResource LabelFg}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="FontSize"          Value="12"/>
-            <Setter Property="Margin"            Value="4,0"/>
+            <Setter Property="FontSize"          Value="13"/>
+            <Setter Property="Margin"            Value="6,0"/>
         </Style>
 
-        <Style TargetType="Border" x:Key="SectionBar">
+        <!-- ── Toolbar surface ── -->
+        <Style TargetType="Border" x:Key="ToolbarSurface">
             <Setter Property="Background"      Value="{DynamicResource ToolbarBg}"/>
             <Setter Property="BorderBrush"     Value="{DynamicResource ToolbarBorder}"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
-            <Setter Property="Padding"         Value="8,5"/>
+            <Setter Property="Padding"         Value="12,8"/>
+        </Style>
+
+        <!-- ── Section label (small caps above groups) ── -->
+        <Style TargetType="TextBlock" x:Key="SectionLbl">
+            <Setter Property="Foreground"        Value="{DynamicResource TextSecondary}"/>
+            <Setter Property="FontSize"          Value="11"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin"            Value="6,0,4,0"/>
         </Style>
 
     </Window.Resources>
 
     <DockPanel>
 
-        <!-- ══ TOOLBAR 1 — Connection + Layout + Theme ══ -->
-        <Border DockPanel.Dock="Top" Style="{StaticResource SectionBar}" Padding="10,7">
-            <WrapPanel VerticalAlignment="Center">
+        <!-- ══════════════════════════════════════════════════════════
+             MENU BAR
+        ══════════════════════════════════════════════════════════════ -->
+        <Menu DockPanel.Dock="Top"
+              Background="{DynamicResource MenuBg}"
+              Foreground="{DynamicResource MenuFg}"
+              BorderBrush="{DynamicResource MenuBorder}"
+              BorderThickness="0,0,0,1"
+              Padding="4,2"
+              FontSize="13">
 
-                <TextBlock Text="Device IP:" Style="{StaticResource Lbl}"/>
-                <TextBox x:Name="TxtIpAddress" Style="{StaticResource TBox}"
-                         Width="145" Text="192.168.1.100" ToolTip="IP address of your RG DS"/>
+            <!-- File -->
+            <MenuItem Header="_File" Foreground="{DynamicResource MenuFg}">
+                <MenuItem x:Name="MnuConnect"    Header="_Connect"    Click="BtnConnect_Click"
+                          InputGestureText=""/>
+                <MenuItem x:Name="MnuDisconnect" Header="_Disconnect" Click="MnuDisconnect_Click"
+                          IsEnabled="False"/>
+                <Separator/>
+                <MenuItem Header="_Screenshot"   Click="BtnScreenshot_Click"
+                          InputGestureText="F12" IsEnabled="False" x:Name="MnuScreenshot"/>
+                <Separator/>
+                <MenuItem Header="E_xit"         Click="MnuExit_Click"
+                          InputGestureText="Alt+F4"/>
+            </MenuItem>
 
-                <TextBlock Text="Port:" Style="{StaticResource Lbl}" Margin="10,0,4,0"/>
-                <TextBox x:Name="TxtSshPort" Style="{StaticResource TBox}"
-                         Width="52" Text="22" ToolTip="SSH port (usually 22)"/>
+            <!-- Streams -->
+            <MenuItem Header="_Streams" Foreground="{DynamicResource MenuFg}">
+                <MenuItem x:Name="MnuRestartTop"    Header="Restart _Top Screen"
+                          Click="BtnRestartTop_Click"    IsEnabled="False"
+                          InputGestureText="F6"/>
+                <MenuItem x:Name="MnuRestartBottom" Header="Restart _Bottom Screen"
+                          Click="BtnRestartBottom_Click" IsEnabled="False"
+                          InputGestureText="F7"/>
+                <MenuItem x:Name="MnuRestartAll"    Header="Restart _All"
+                          Click="BtnRestartAll_Click"    IsEnabled="False"
+                          InputGestureText="F5"/>
+                <Separator/>
+                <MenuItem x:Name="MnuRecordTop"    Header="Record Top to MP4"
+                          Click="BtnRecordTop_Click"    IsEnabled="False"/>
+                <MenuItem x:Name="MnuRecordBottom" Header="Record Bottom to MP4"
+                          Click="BtnRecordBottom_Click" IsEnabled="False"/>
+            </MenuItem>
+
+            <!-- Console -->
+            <MenuItem Header="_Console" Foreground="{DynamicResource MenuFg}">
+                <MenuItem x:Name="MnuShutdown" Header="_Shutdown Console"
+                          Click="BtnShutdown_Click" IsEnabled="False"/>
+                <MenuItem x:Name="MnuReboot"   Header="_Reboot Console"
+                          Click="BtnReboot_Click"   IsEnabled="False"/>
+            </MenuItem>
+
+            <!-- View -->
+            <MenuItem Header="_View" Foreground="{DynamicResource MenuFg}">
+                <MenuItem Header="_Layout">
+                    <MenuItem x:Name="MnuLayoutVertical"   Header="_Vertical Stack"
+                              IsCheckable="True" IsChecked="True"
+                              Click="MnuLayout_Click" Tag="0"/>
+                    <MenuItem x:Name="MnuLayoutSide"       Header="_Side by Side"
+                              IsCheckable="True"
+                              Click="MnuLayout_Click" Tag="1"/>
+                    <MenuItem x:Name="MnuLayoutTopOnly"    Header="Top _Only"
+                              IsCheckable="True"
+                              Click="MnuLayout_Click" Tag="2"/>
+                    <MenuItem x:Name="MnuLayoutBottomOnly" Header="_Bottom Only"
+                              IsCheckable="True"
+                              Click="MnuLayout_Click" Tag="3"/>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="_Theme">
+                    <MenuItem x:Name="MnuThemeDark"    Header="_Dark"
+                              IsCheckable="True" IsChecked="True"
+                              Click="MnuTheme_Click" Tag="Dark"/>
+                    <MenuItem x:Name="MnuThemeLight"   Header="_Light"
+                              IsCheckable="True"
+                              Click="MnuTheme_Click" Tag="Light"/>
+                    <MenuItem x:Name="MnuThemeHCD"     Header="High Contrast _Dark"
+                              IsCheckable="True"
+                              Click="MnuTheme_Click" Tag="HighContrastDark"/>
+                    <MenuItem x:Name="MnuThemeHCL"     Header="High Contrast _Light"
+                              IsCheckable="True"
+                              Click="MnuTheme_Click" Tag="HighContrastLight"/>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Toggle Event _Log" Click="BtnToggleLog_Click"
+                          InputGestureText="F8"/>
+            </MenuItem>
+
+        </Menu>
+
+        <!-- ══════════════════════════════════════════════════════════
+             TOOLBAR 1 — Connection
+        ══════════════════════════════════════════════════════════════ -->
+        <Border DockPanel.Dock="Top" Style="{StaticResource ToolbarSurface}">
+            <WrapPanel VerticalAlignment="Center" Margin="0">
+
+                <!-- IP + Port -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,4,0">
+                    <TextBlock Text="Device IP" Style="{StaticResource SectionLbl}"
+                               ToolTip="IP address of your RG DS"/>
+                    <TextBox x:Name="TxtIpAddress" Style="{StaticResource TBox}"
+                             Width="148" Text="192.168.1.100"
+                             AutomationProperties.Name="Device IP Address"
+                             ToolTip="IP address of your RG DS"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                    <TextBlock Text="Port" Style="{StaticResource SectionLbl}"
+                               ToolTip="SSH port (usually 22)"/>
+                    <TextBox x:Name="TxtSshPort" Style="{StaticResource TBox}"
+                             Width="56" Text="22"
+                             AutomationProperties.Name="SSH Port"
+                             ToolTip="SSH port (usually 22)"/>
+                </StackPanel>
 
                 <Button x:Name="BtnConnect" Content="Connect"
-                        Style="{StaticResource BtnConnect}" Margin="12,0,0,0"
-                        Click="BtnConnect_Click" ToolTip="SSH into RG DS and start streams"/>
+                        Style="{StaticResource BtnAccent}"
+                        Margin="0,0,12,0"
+                        Click="BtnConnect_Click"
+                        AutomationProperties.Name="Connect to device"
+                        ToolTip="SSH into RG DS and start streams"/>
 
-                <Separator Width="1" Height="22" Background="{DynamicResource SeparatorBg}" Margin="12,0"/>
+                <!-- Separator -->
+                <Separator Width="1" Height="24"
+                           Background="{DynamicResource SeparatorBg}"
+                           Margin="0,0,12,0" VerticalAlignment="Center"/>
 
-                <TextBlock Text="Layout:" Style="{StaticResource Lbl}"/>
-                <ComboBox x:Name="CmbLayout" Style="{StaticResource CBox}" Width="155"
-                          SelectionChanged="CmbLayout_SelectionChanged">
-                    <ComboBoxItem Content="Vertical Stack" IsSelected="True"/>
-                    <ComboBoxItem Content="Side by Side"/>
-                    <ComboBoxItem Content="Top Only"/>
-                    <ComboBoxItem Content="Bottom Only"/>
-                </ComboBox>
-
-                <Separator Width="1" Height="22" Background="{DynamicResource SeparatorBg}" Margin="12,0"/>
-
-                <Button x:Name="BtnScreenshot" Content="📷 Screenshot"
+                <!-- Screenshot -->
+                <Button x:Name="BtnScreenshot" Content="📷  Screenshot"
                         Style="{StaticResource Btn}" IsEnabled="False"
-                        Click="BtnScreenshot_Click" ToolTip="Save PNG of both screens (F12)"/>
+                        Click="BtnScreenshot_Click"
+                        AutomationProperties.Name="Take screenshot"
+                        ToolTip="Save PNG of both screens  (F12)"/>
 
-                <Separator Width="1" Height="22" Background="{DynamicResource SeparatorBg}" Margin="12,0"/>
-
-                <Button x:Name="BtnTheme" Content="☀ Light"
+                <!-- Log toggle -->
+                <Button x:Name="BtnToggleLog" Content="📋  Log"
                         Style="{StaticResource Btn}"
-                        Click="BtnTheme_Click" ToolTip="Toggle dark / light mode"/>
-
-                <Separator Width="1" Height="22" Background="{DynamicResource SeparatorBg}" Margin="12,0"/>
-
-                <!-- Log drawer toggle button in toolbar -->
-                <Button x:Name="BtnToggleLog" Content="📋 Log"
-                        Style="{StaticResource Btn}"
-                        Click="BtnToggleLog_Click" ToolTip="Show / hide event log (F8)"/>
+                        Click="BtnToggleLog_Click"
+                        AutomationProperties.Name="Toggle event log"
+                        ToolTip="Show / hide event log  (F8)"/>
 
             </WrapPanel>
         </Border>
 
-        <!-- ══ TOOLBAR 2 — Streams + Record + Power ══ -->
-        <Border DockPanel.Dock="Top" Style="{StaticResource SectionBar}" Padding="10,6">
+        <!-- ══════════════════════════════════════════════════════════
+             TOOLBAR 2 — Streams + Record + Power
+        ══════════════════════════════════════════════════════════════ -->
+        <Border DockPanel.Dock="Top" Style="{StaticResource ToolbarSurface}">
             <WrapPanel VerticalAlignment="Center">
 
-                <TextBlock Text="Streams:" Style="{StaticResource Lbl}"/>
-                <Button x:Name="BtnRestartTop" Content="↺ Top" Style="{StaticResource Btn}"
-                        IsEnabled="False" Click="BtnRestartTop_Click" ToolTip="Restart top stream (F6)"/>
-                <Button x:Name="BtnRestartBottom" Content="↺ Bottom" Style="{StaticResource Btn}"
-                        IsEnabled="False" Click="BtnRestartBottom_Click" ToolTip="Restart bottom stream (F7)"/>
-                <Button x:Name="BtnRestartAll" Content="↺ All" Style="{StaticResource Btn}"
-                        IsEnabled="False" Click="BtnRestartAll_Click" ToolTip="Restart all streams (F5)"/>
+                <TextBlock Text="Streams" Style="{StaticResource SectionLbl}"/>
+                <Button x:Name="BtnRestartTop" Content="↺  Top"
+                        Style="{StaticResource Btn}" IsEnabled="False"
+                        Click="BtnRestartTop_Click"
+                        AutomationProperties.Name="Restart top stream"
+                        ToolTip="Restart top screen stream  (F6)"/>
+                <Button x:Name="BtnRestartBottom" Content="↺  Bottom"
+                        Style="{StaticResource Btn}" IsEnabled="False"
+                        Click="BtnRestartBottom_Click"
+                        AutomationProperties.Name="Restart bottom stream"
+                        ToolTip="Restart bottom screen stream  (F7)"/>
+                <Button x:Name="BtnRestartAll" Content="↺  All"
+                        Style="{StaticResource Btn}" IsEnabled="False"
+                        Click="BtnRestartAll_Click"
+                        AutomationProperties.Name="Restart all streams"
+                        ToolTip="Restart all streams  (F5)"/>
 
-                <Separator Width="1" Height="22" Background="{DynamicResource SeparatorBg}" Margin="10,0"/>
+                <Separator Width="1" Height="24"
+                           Background="{DynamicResource SeparatorBg}"
+                           Margin="8,0" VerticalAlignment="Center"/>
 
-                <TextBlock Text="Record:" Style="{StaticResource Lbl}"/>
-                <Button x:Name="BtnRecordTop" Content="⏺ Rec Top" Style="{StaticResource Btn}"
-                        IsEnabled="False" Click="BtnRecordTop_Click" ToolTip="Record top screen to MP4"/>
-                <Button x:Name="BtnRecordBottom" Content="⏺ Rec Bottom" Style="{StaticResource Btn}"
-                        IsEnabled="False" Click="BtnRecordBottom_Click" ToolTip="Record bottom screen to MP4"/>
+                <TextBlock Text="Record" Style="{StaticResource SectionLbl}"/>
+                <Button x:Name="BtnRecordTop" Content="⏺  Top"
+                        Style="{StaticResource Btn}" IsEnabled="False"
+                        Click="BtnRecordTop_Click"
+                        AutomationProperties.Name="Record top screen"
+                        ToolTip="Record top screen to MP4"/>
+                <Button x:Name="BtnRecordBottom" Content="⏺  Bottom"
+                        Style="{StaticResource Btn}" IsEnabled="False"
+                        Click="BtnRecordBottom_Click"
+                        AutomationProperties.Name="Record bottom screen"
+                        ToolTip="Record bottom screen to MP4"/>
 
-                <Separator Width="1" Height="22" Background="{DynamicResource SeparatorBg}" Margin="10,0"/>
+                <Separator Width="1" Height="24"
+                           Background="{DynamicResource SeparatorBg}"
+                           Margin="8,0" VerticalAlignment="Center"/>
 
-                <TextBlock Text="Console:" Style="{StaticResource Lbl}"/>
-                <Button x:Name="BtnShutdown" Content="⏻ Shutdown" Style="{StaticResource BtnDanger}"
-                        IsEnabled="False" Click="BtnShutdown_Click" ToolTip="Shutdown console"/>
-                <Button x:Name="BtnReboot" Content="↻ Reboot" Style="{StaticResource BtnDanger}"
-                        IsEnabled="False" Click="BtnReboot_Click" ToolTip="Reboot console"/>
+                <TextBlock Text="Console" Style="{StaticResource SectionLbl}"/>
+                <Button x:Name="BtnShutdown" Content="⏻  Shutdown"
+                        Style="{StaticResource BtnDanger}" IsEnabled="False"
+                        Click="BtnShutdown_Click"
+                        AutomationProperties.Name="Shutdown console"
+                        ToolTip="Send shutdown command to console"/>
+                <Button x:Name="BtnReboot" Content="↻  Reboot"
+                        Style="{StaticResource BtnDanger}" IsEnabled="False"
+                        Click="BtnReboot_Click"
+                        AutomationProperties.Name="Reboot console"
+                        ToolTip="Send reboot command to console"/>
 
             </WrapPanel>
         </Border>
 
-        <!-- ══ TOOLBAR 3 — Audio + Speedrun timer ══ -->
-        <Border DockPanel.Dock="Top" Style="{StaticResource SectionBar}" Padding="10,6">
+        <!-- ══════════════════════════════════════════════════════════
+             TOOLBAR 3 — Audio + Speedrun Timer
+        ══════════════════════════════════════════════════════════════ -->
+        <Border DockPanel.Dock="Top" Style="{StaticResource ToolbarSurface}">
             <WrapPanel VerticalAlignment="Center">
 
-                <TextBlock Text="🔊 Line-In:" Style="{StaticResource Lbl}"/>
-                <ComboBox x:Name="CmbAudioInput" Style="{StaticResource CBox}" Width="200"
+                <TextBlock Text="🔊" FontSize="15"
+                           Foreground="{DynamicResource LabelFg}"
+                           VerticalAlignment="Center" Margin="0,0,6,0"/>
+
+                <ComboBox x:Name="CmbAudioInput" Style="{StaticResource CBox}"
+                          Width="198"
+                          AutomationProperties.Name="Audio input device"
                           ToolTip="Select Line-In / audio input device"/>
 
-                <TextBlock Text="Out:" Style="{StaticResource Lbl}" Margin="8,0,4,0"/>
-                <ComboBox x:Name="CmbAudioOutput" Style="{StaticResource CBox}" Width="180"
-                          ToolTip="Select audio output (speakers/headphones)"/>
+                <TextBlock Text="→" Style="{StaticResource SectionLbl}"/>
 
-                <Button x:Name="BtnAudioStart" Content="▶ Audio" Style="{StaticResource Btn}"
-                        Margin="8,0,0,0" Click="BtnAudioStart_Click" ToolTip="Start Line-In audio passthrough"/>
+                <ComboBox x:Name="CmbAudioOutput" Style="{StaticResource CBox}"
+                          Width="178"
+                          AutomationProperties.Name="Audio output device"
+                          ToolTip="Select audio output"/>
 
-                <TextBlock Text="Vol:" Style="{StaticResource Lbl}" Margin="8,0,4,0"/>
-                <Slider x:Name="SliderVolume" Width="80" Minimum="0" Maximum="1" Value="0.85"
-                        VerticalAlignment="Center" TickFrequency="0.1"
-                        ValueChanged="SliderVolume_ValueChanged" ToolTip="Output volume"/>
-                <TextBlock x:Name="TxtVolumeLabel" Text="85%" Style="{StaticResource Lbl}" Width="32"/>
+                <Button x:Name="BtnAudioStart" Content="▶  Audio"
+                        Style="{StaticResource Btn}"
+                        Margin="8,0,0,0"
+                        Click="BtnAudioStart_Click"
+                        AutomationProperties.Name="Start audio passthrough"
+                        ToolTip="Start Line-In audio passthrough"/>
 
-                <Border Width="8" Height="18" Background="{DynamicResource VuBg}"
-                        BorderBrush="{DynamicResource VuBorder}" BorderThickness="1"
-                        Margin="8,0,1,0" ToolTip="Left channel level">
-                    <Grid><Rectangle x:Name="VuLeft" Fill="#00c864" HorizontalAlignment="Left" Width="0"/></Grid>
+                <!-- Volume -->
+                <TextBlock Text="Vol" Style="{StaticResource SectionLbl}" Margin="10,0,4,0"/>
+                <Slider x:Name="SliderVolume"
+                        Width="84" Minimum="0" Maximum="1" Value="0.85"
+                        VerticalAlignment="Center"
+                        ValueChanged="SliderVolume_ValueChanged"
+                        AutomationProperties.Name="Volume"
+                        ToolTip="Output volume"/>
+                <TextBlock x:Name="TxtVolumeLabel" Text="85%"
+                           Foreground="{DynamicResource TextSecondary}"
+                           VerticalAlignment="Center" Width="34"
+                           FontSize="12" Margin="4,0,0,0"/>
+
+                <!-- VU meters -->
+                <Border Width="6" Height="20"
+                        Background="{DynamicResource VuBg}"
+                        BorderBrush="{DynamicResource VuBorder}"
+                        BorderThickness="1" CornerRadius="2"
+                        Margin="8,0,2,0"
+                        ToolTip="Left channel level"
+                        AutomationProperties.Name="Left channel level">
+                    <Grid>
+                        <Rectangle x:Name="VuLeft" Fill="#0078D4"
+                                   HorizontalAlignment="Left" Width="0"
+                                   RadiusX="2" RadiusY="2"/>
+                    </Grid>
                 </Border>
-                <Border Width="8" Height="18" Background="{DynamicResource VuBg}"
-                        BorderBrush="{DynamicResource VuBorder}" BorderThickness="1"
-                        Margin="0,0,8,0" ToolTip="Right channel level">
-                    <Grid><Rectangle x:Name="VuRight" Fill="#00c864" HorizontalAlignment="Left" Width="0"/></Grid>
+                <Border Width="6" Height="20"
+                        Background="{DynamicResource VuBg}"
+                        BorderBrush="{DynamicResource VuBorder}"
+                        BorderThickness="1" CornerRadius="2"
+                        Margin="0,0,10,0"
+                        ToolTip="Right channel level"
+                        AutomationProperties.Name="Right channel level">
+                    <Grid>
+                        <Rectangle x:Name="VuRight" Fill="#0078D4"
+                                   HorizontalAlignment="Left" Width="0"
+                                   RadiusX="2" RadiusY="2"/>
+                    </Grid>
                 </Border>
 
-                <Separator Width="1" Height="22" Background="{DynamicResource SeparatorBg}" Margin="4,0"/>
+                <Separator Width="1" Height="24"
+                           Background="{DynamicResource SeparatorBg}"
+                           Margin="0,0,10,0" VerticalAlignment="Center"/>
 
-                <TextBlock Text="⏱" FontSize="14" Foreground="{DynamicResource LabelFg}"
-                           VerticalAlignment="Center" Margin="6,0,4,0"/>
-                <Border Background="{DynamicResource TimerBg}" BorderBrush="{DynamicResource TimerBorder}"
-                        BorderThickness="1" CornerRadius="3" Padding="10,3" Margin="0,0,6,0">
-                    <TextBlock x:Name="TxtSpeedrunTimer" Text="00:00.000"
+                <!-- Speedrun timer -->
+                <TextBlock Text="⏱" FontSize="15"
+                           Foreground="{DynamicResource LabelFg}"
+                           VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <Border Background="{DynamicResource TimerBg}"
+                        BorderBrush="{DynamicResource TimerBorder}"
+                        BorderThickness="1" CornerRadius="6"
+                        Padding="12,4" Margin="0,0,6,0">
+                    <TextBlock x:Name="TxtSpeedrunTimer"
+                               Text="00:00.000"
                                Foreground="{DynamicResource TimerFg}"
-                               FontFamily="Consolas" FontSize="17" FontWeight="Bold"
-                               VerticalAlignment="Center"/>
+                               FontFamily="Cascadia Code, Consolas, monospace"
+                               FontSize="18" FontWeight="SemiBold"
+                               VerticalAlignment="Center"
+                               AutomationProperties.Name="Speedrun timer"/>
                 </Border>
 
-                <Button x:Name="BtnTimerStartStop" Content="▶ Start" Style="{StaticResource Btn}"
-                        Click="BtnTimerStartStop_Click" ToolTip="Start / pause timer (Space)"/>
-                <Button x:Name="BtnTimerLap" Content="⚑ Lap" Style="{StaticResource Btn}"
-                        Click="BtnTimerLap_Click" ToolTip="Record lap split"/>
-                <Button x:Name="BtnTimerReset" Content="✕ Reset" Style="{StaticResource Btn}"
-                        Click="BtnTimerReset_Click" ToolTip="Reset timer"/>
+                <Button x:Name="BtnTimerStartStop" Content="▶  Start"
+                        Style="{StaticResource Btn}"
+                        Click="BtnTimerStartStop_Click"
+                        AutomationProperties.Name="Start or pause timer"
+                        ToolTip="Start / pause timer  (Space)"/>
+                <Button x:Name="BtnTimerLap" Content="⚑  Lap"
+                        Style="{StaticResource Btn}"
+                        Click="BtnTimerLap_Click"
+                        AutomationProperties.Name="Record lap"
+                        ToolTip="Record lap split to log"/>
+                <Button x:Name="BtnTimerReset" Content="✕  Reset"
+                        Style="{StaticResource Btn}"
+                        Click="BtnTimerReset_Click"
+                        AutomationProperties.Name="Reset timer"
+                        ToolTip="Reset timer to zero"/>
 
             </WrapPanel>
         </Border>
 
-        <!-- ══ STATUS BAR ══ -->
+        <!-- ══════════════════════════════════════════════════════════
+             STATUS BAR
+        ══════════════════════════════════════════════════════════════ -->
         <Border DockPanel.Dock="Bottom"
                 Background="{DynamicResource StatusBarBg}"
                 BorderBrush="{DynamicResource StatusBarBorder}"
-                BorderThickness="0,1,0,0" Padding="12,4">
-            <DockPanel>
-                <Ellipse x:Name="StatusDot" Width="8" Height="8"
-                         Fill="{DynamicResource StatusDotOff}"
-                         VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <TextBlock x:Name="TxtStatus" Text="Not connected"
-                           Foreground="{DynamicResource StatusFg}"
-                           VerticalAlignment="Center" FontSize="11"/>
+                BorderThickness="0,1,0,0"
+                Padding="14,5">
+            <DockPanel LastChildFill="False">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Ellipse x:Name="StatusDot"
+                             Width="8" Height="8"
+                             Fill="{DynamicResource StatusDotOff}"
+                             VerticalAlignment="Center"
+                             Margin="0,0,8,0"/>
+                    <TextBlock x:Name="TxtStatus"
+                               Text="Not connected"
+                               Foreground="{DynamicResource StatusFg}"
+                               FontSize="12"/>
+                </StackPanel>
+
+                <!-- Keyboard shortcut hint on the right -->
+                <TextBlock DockPanel.Dock="Right"
+                           Foreground="{DynamicResource TextDisabled}"
+                           FontSize="11"
+                           VerticalAlignment="Center"
+                           Text="F5 Restart All  ·  F6 Top  ·  F7 Bottom  ·  F8 Log  ·  F12 Screenshot  ·  Space Timer"/>
             </DockPanel>
         </Border>
 
-        <!-- ══ MAIN CONTENT — full-width video + overlay drawer ══ -->
+        <!-- ══════════════════════════════════════════════════════════
+             MAIN CONTENT — full-width video + overlay log drawer
+        ══════════════════════════════════════════════════════════════ -->
         <Grid x:Name="ContentGrid" ClipToBounds="True">
 
-            <!-- ── VIDEO AREA (always full width) ── -->
+            <!-- ── VIDEO AREA ── -->
             <Grid x:Name="VideoGrid" Background="{DynamicResource VideoAreaBg}">
 
                 <!-- VERTICAL STACK (default) -->
@@ -259,50 +592,70 @@
                         <RowDefinition Height="6"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <Border Grid.Row="0" Background="{DynamicResource ScreenBg}"
+
+                    <Border Grid.Row="0"
+                            Background="{DynamicResource ScreenBg}"
                             BorderBrush="{DynamicResource ScreenBorder}"
-                            BorderThickness="1" Margin="8,8,8,0">
+                            BorderThickness="1" CornerRadius="8"
+                            Margin="10,10,10,0">
                         <Grid>
-                            <TextBlock Text="TOP SCREEN" Foreground="{DynamicResource ScreenLabelFg}"
-                                       FontSize="16" FontWeight="Bold"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock Text="TOP SCREEN"
+                                       Foreground="{DynamicResource ScreenLabelFg}"
+                                       FontSize="18" FontWeight="SemiBold"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       AutomationProperties.Name="Top screen display"/>
                             <Image x:Name="ImgTopScreen" Stretch="Uniform"
-                                   RenderOptions.BitmapScalingMode="NearestNeighbor"/>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left"
-                                        VerticalAlignment="Top" Margin="6,4">
-                                <Ellipse x:Name="DotTop" Width="7" Height="7"
+                                   RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                   AutomationProperties.Name="Top screen video"/>
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Top"
+                                        Margin="10,6">
+                                <Ellipse x:Name="DotTop" Width="8" Height="8"
                                          Fill="{DynamicResource BadgeWaiting}"
-                                         VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                         VerticalAlignment="Center" Margin="0,0,5,0"/>
                                 <TextBlock x:Name="TxtTopBadge" Text="○ WAITING"
                                            Foreground="{DynamicResource BadgeWaiting}"
-                                           FontSize="10" FontWeight="Bold"/>
+                                           FontSize="11" FontWeight="SemiBold"/>
                                 <TextBlock x:Name="TxtTopFps" Text="-- fps"
                                            Foreground="{DynamicResource FpsFg}"
-                                           FontSize="10" Margin="8,0,0,0"/>
+                                           FontSize="11" Margin="10,0,0,0"/>
                             </StackPanel>
                         </Grid>
                     </Border>
-                    <Border Grid.Row="1" Background="{DynamicResource ScreenDivider}"/>
-                    <Border Grid.Row="2" Background="{DynamicResource ScreenBg}"
+
+                    <Border Grid.Row="1"
+                            Background="{DynamicResource ScreenDivider}"/>
+
+                    <Border Grid.Row="2"
+                            Background="{DynamicResource ScreenBg}"
                             BorderBrush="{DynamicResource ScreenBorder}"
-                            BorderThickness="1" Margin="8,0,8,8">
+                            BorderThickness="1" CornerRadius="8"
+                            Margin="10,0,10,10">
                         <Grid>
-                            <TextBlock Text="BOTTOM SCREEN" Foreground="{DynamicResource ScreenLabelFg}"
-                                       FontSize="16" FontWeight="Bold"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock Text="BOTTOM SCREEN"
+                                       Foreground="{DynamicResource ScreenLabelFg}"
+                                       FontSize="18" FontWeight="SemiBold"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       AutomationProperties.Name="Bottom screen display"/>
                             <Image x:Name="ImgBottomScreen" Stretch="Uniform"
-                                   RenderOptions.BitmapScalingMode="NearestNeighbor"/>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left"
-                                        VerticalAlignment="Top" Margin="6,4">
-                                <Ellipse x:Name="DotBottom" Width="7" Height="7"
+                                   RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                   AutomationProperties.Name="Bottom screen video"/>
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Top"
+                                        Margin="10,6">
+                                <Ellipse x:Name="DotBottom" Width="8" Height="8"
                                          Fill="{DynamicResource BadgeWaiting}"
-                                         VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                         VerticalAlignment="Center" Margin="0,0,5,0"/>
                                 <TextBlock x:Name="TxtBottomBadge" Text="○ WAITING"
                                            Foreground="{DynamicResource BadgeWaiting}"
-                                           FontSize="10" FontWeight="Bold"/>
+                                           FontSize="11" FontWeight="SemiBold"/>
                                 <TextBlock x:Name="TxtBottomFps" Text="-- fps"
                                            Foreground="{DynamicResource FpsFg}"
-                                           FontSize="10" Margin="8,0,0,0"/>
+                                           FontSize="11" Margin="10,0,0,0"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -316,10 +669,12 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <Border Grid.Column="0" Background="{DynamicResource ScreenBg}"
-                            BorderBrush="{DynamicResource ScreenBorder}" BorderThickness="1" Margin="8">
+                            BorderBrush="{DynamicResource ScreenBorder}"
+                            BorderThickness="1" CornerRadius="8" Margin="10">
                         <Grid>
-                            <TextBlock Text="TOP SCREEN" Foreground="{DynamicResource ScreenLabelFg}"
-                                       FontSize="16" FontWeight="Bold"
+                            <TextBlock Text="TOP SCREEN"
+                                       Foreground="{DynamicResource ScreenLabelFg}"
+                                       FontSize="18" FontWeight="SemiBold"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <Image x:Name="ImgTopScreenSide" Stretch="Uniform"
                                    RenderOptions.BitmapScalingMode="NearestNeighbor"/>
@@ -327,10 +682,12 @@
                     </Border>
                     <Border Grid.Column="1" Background="{DynamicResource ScreenDivider}"/>
                     <Border Grid.Column="2" Background="{DynamicResource ScreenBg}"
-                            BorderBrush="{DynamicResource ScreenBorder}" BorderThickness="1" Margin="8">
+                            BorderBrush="{DynamicResource ScreenBorder}"
+                            BorderThickness="1" CornerRadius="8" Margin="10">
                         <Grid>
-                            <TextBlock Text="BOTTOM SCREEN" Foreground="{DynamicResource ScreenLabelFg}"
-                                       FontSize="16" FontWeight="Bold"
+                            <TextBlock Text="BOTTOM SCREEN"
+                                       Foreground="{DynamicResource ScreenLabelFg}"
+                                       FontSize="18" FontWeight="SemiBold"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <Image x:Name="ImgBottomScreenSide" Stretch="Uniform"
                                    RenderOptions.BitmapScalingMode="NearestNeighbor"/>
@@ -341,10 +698,12 @@
                 <!-- TOP ONLY -->
                 <Grid x:Name="LayoutTopOnly" Visibility="Collapsed">
                     <Border Background="{DynamicResource ScreenBg}"
-                            BorderBrush="{DynamicResource ScreenBorder}" BorderThickness="1" Margin="8">
+                            BorderBrush="{DynamicResource ScreenBorder}"
+                            BorderThickness="1" CornerRadius="8" Margin="10">
                         <Grid>
-                            <TextBlock Text="TOP SCREEN" Foreground="{DynamicResource ScreenLabelFg}"
-                                       FontSize="16" FontWeight="Bold"
+                            <TextBlock Text="TOP SCREEN"
+                                       Foreground="{DynamicResource ScreenLabelFg}"
+                                       FontSize="18" FontWeight="SemiBold"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <Image x:Name="ImgTopScreenOnly" Stretch="Uniform"
                                    RenderOptions.BitmapScalingMode="NearestNeighbor"/>
@@ -355,10 +714,12 @@
                 <!-- BOTTOM ONLY -->
                 <Grid x:Name="LayoutBottomOnly" Visibility="Collapsed">
                     <Border Background="{DynamicResource ScreenBg}"
-                            BorderBrush="{DynamicResource ScreenBorder}" BorderThickness="1" Margin="8">
+                            BorderBrush="{DynamicResource ScreenBorder}"
+                            BorderThickness="1" CornerRadius="8" Margin="10">
                         <Grid>
-                            <TextBlock Text="BOTTOM SCREEN" Foreground="{DynamicResource ScreenLabelFg}"
-                                       FontSize="16" FontWeight="Bold"
+                            <TextBlock Text="BOTTOM SCREEN"
+                                       Foreground="{DynamicResource ScreenLabelFg}"
+                                       FontSize="18" FontWeight="SemiBold"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <Image x:Name="ImgBottomScreenOnly" Stretch="Uniform"
                                    RenderOptions.BitmapScalingMode="NearestNeighbor"/>
@@ -368,61 +729,61 @@
 
             </Grid>
 
-            <!-- ── SLIDE-OUT LOG DRAWER (overlays right edge, starts off-screen) ── -->
+            <!-- ── SLIDE-OUT LOG DRAWER ── -->
             <Border x:Name="LogDrawer"
-                    Width="260"
+                    Width="270"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Stretch"
                     Background="{DynamicResource SidePanelBg}"
                     BorderBrush="{DynamicResource SidePanelBorder}"
                     BorderThickness="1,0,0,0"
-                    Panel.ZIndex="10">
+                    Panel.ZIndex="10"
+                    AutomationProperties.Name="Event log drawer">
                 <Border.RenderTransform>
-                    <!-- Starts fully translated right (hidden). Animated to 0 when open. -->
-                    <TranslateTransform x:Name="DrawerTranslate" X="260"/>
+                    <TranslateTransform x:Name="DrawerTranslate" X="270"/>
                 </Border.RenderTransform>
                 <DockPanel>
 
-                    <!-- Header with close button -->
                     <Border DockPanel.Dock="Top"
                             Background="{DynamicResource LogHeaderBg}"
                             BorderBrush="{DynamicResource SidePanelBorder}"
                             BorderThickness="0,0,0,1"
-                            Padding="8,5">
+                            Padding="12,8">
                         <DockPanel>
                             <Button DockPanel.Dock="Right"
                                     Content="✕"
                                     Style="{StaticResource Btn}"
-                                    Padding="6,2" Margin="0"
+                                    Padding="8,4" Margin="0"
                                     Click="BtnToggleLog_Click"
-                                    ToolTip="Close log"/>
-                            <TextBlock Text="EVENT LOG"
+                                    AutomationProperties.Name="Close log"
+                                    ToolTip="Close log  (F8)"/>
+                            <TextBlock Text="Event Log"
                                        Foreground="{DynamicResource LogHeaderFg}"
-                                       FontSize="11" FontWeight="Bold"
-                                       FontFamily="Consolas"
+                                       FontSize="13" FontWeight="SemiBold"
                                        VerticalAlignment="Center"/>
                         </DockPanel>
                     </Border>
 
-                    <!-- Clear button -->
                     <Button DockPanel.Dock="Bottom"
                             Content="Clear Log"
                             Style="{StaticResource Btn}"
-                            Margin="6"
-                            Click="BtnClearLog_Click"/>
+                            Margin="8"
+                            Click="BtnClearLog_Click"
+                            AutomationProperties.Name="Clear event log"/>
 
-                    <!-- Log text -->
                     <TextBox x:Name="TxtEventLog"
                              Background="{DynamicResource LogBg}"
                              Foreground="{DynamicResource LogFg}"
-                             FontFamily="Consolas"
-                             FontSize="10"
+                             FontFamily="Cascadia Code, Consolas, monospace"
+                             FontSize="11"
                              BorderThickness="0"
                              IsReadOnly="True"
                              TextWrapping="Wrap"
                              VerticalScrollBarVisibility="Auto"
-                             Padding="6"
-                             AcceptsReturn="True"/>
+                             Padding="10"
+                             AcceptsReturn="True"
+                             AutomationProperties.Name="Event log output"
+                             AutomationProperties.LiveSetting="Polite"/>
                 </DockPanel>
             </Border>
 

@@ -1,101 +1,134 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- ── Window / chrome ───────────────────────────────────────── -->
-    <SolidColorBrush x:Key="WindowBg"          Color="#202020"/>
-    <SolidColorBrush x:Key="VideoAreaBg"       Color="#1C1C1C"/>
+    <!-- ╔══════════════════════════════════════════════════════════════╗
+         ║  RGDSCapture — Dark Theme (Windows 11 Fluent)               ║
+         ║  Accent: #0078D4 (Windows 11 system blue)                   ║
+         ╚══════════════════════════════════════════════════════════════╝ -->
 
-    <!-- ── Toolbar bars ──────────────────────────────────────────── -->
-    <SolidColorBrush x:Key="ToolbarBg"         Color="#2B2B2B"/>
-    <SolidColorBrush x:Key="ToolbarBorder"     Color="#3F3F46"/>
+    <!-- Surfaces follow the Win11 layered model:
+         Base → Layer1 (+2 L) → Layer2 (+4 L) → Layer3 (+6 L)         -->
+    <SolidColorBrush x:Key="WindowBg"           Color="#202020"/>
+    <SolidColorBrush x:Key="Layer1Bg"           Color="#2C2C2C"/>
+    <SolidColorBrush x:Key="Layer2Bg"           Color="#323232"/>
+    <SolidColorBrush x:Key="Layer3Bg"           Color="#3C3C3C"/>
+    <SolidColorBrush x:Key="VideoAreaBg"        Color="#141414"/>
 
-    <!-- ── Buttons ───────────────────────────────────────────────── -->
-    <SolidColorBrush x:Key="BtnBg"             Color="#2D2D30"/>
-    <SolidColorBrush x:Key="BtnBorder"         Color="#454545"/>
-    <SolidColorBrush x:Key="BtnFg"             Color="#F0F0F0"/>
-    <SolidColorBrush x:Key="BtnHover"          Color="#383838"/>
-    <SolidColorBrush x:Key="BtnPress"          Color="#4A4A4A"/>
+    <!-- Toolbar -->
+    <SolidColorBrush x:Key="ToolbarBg"          Color="#2C2C2C"/>
+    <SolidColorBrush x:Key="ToolbarBorder"      Color="#404040"/>
+    <SolidColorBrush x:Key="SeparatorBg"        Color="#484848"/>
 
-    <!-- Accent button -->
-    <SolidColorBrush x:Key="BtnConnectBg"      Color="#005FB8"/>
-    <SolidColorBrush x:Key="BtnConnectBorder"  Color="#0078D4"/>
+    <!-- Accent -->
+    <SolidColorBrush x:Key="AccentBg"           Color="#0078D4"/>
+    <SolidColorBrush x:Key="AccentHover"        Color="#1A86DC"/>
+    <SolidColorBrush x:Key="AccentPress"        Color="#006CBE"/>
+    <SolidColorBrush x:Key="AccentFg"           Color="#FFFFFF"/>
 
-    <!-- Danger button -->
-    <SolidColorBrush x:Key="BtnDangerBg"       Color="#5A1D1D"/>
-    <SolidColorBrush x:Key="BtnDangerBorder"   Color="#8B2E2E"/>
-    <SolidColorBrush x:Key="BtnDangerFg"       Color="#FFFFFF"/>
+    <!-- Standard buttons -->
+    <SolidColorBrush x:Key="BtnBg"              Color="#3C3C3C"/>
+    <SolidColorBrush x:Key="BtnBorder"          Color="#545454"/>
+    <SolidColorBrush x:Key="BtnFg"              Color="#E8E8E8"/>
+    <SolidColorBrush x:Key="BtnHover"           Color="#484848"/>
+    <SolidColorBrush x:Key="BtnPress"           Color="#545454"/>
+    <SolidColorBrush x:Key="BtnConnectBg"       Color="#0078D4"/>
+    <SolidColorBrush x:Key="BtnConnectBorder"   Color="#0078D4"/>
+    <SolidColorBrush x:Key="BtnConnectFg"       Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="BtnDangerBg"        Color="#442222"/>
+    <SolidColorBrush x:Key="BtnDangerBorder"    Color="#6B2B2B"/>
+    <SolidColorBrush x:Key="BtnDangerFg"        Color="#FF8585"/>
+    <SolidColorBrush x:Key="BtnDangerHover"     Color="#5A2A2A"/>
 
-    <!-- ── Inputs ────────────────────────────────────────────────── -->
-    <SolidColorBrush x:Key="InputBg"           Color="#2A2A2A"/>
-    <SolidColorBrush x:Key="InputFg"           Color="#F0F0F0"/>
-    <SolidColorBrush x:Key="InputBorder"       Color="#505050"/>
-    <SolidColorBrush x:Key="InputCaret"        Color="#FFFFFF"/>
+    <!-- Inputs -->
+    <SolidColorBrush x:Key="InputBg"            Color="#2C2C2C"/>
+    <SolidColorBrush x:Key="InputFg"            Color="#E8E8E8"/>
+    <SolidColorBrush x:Key="InputBorder"        Color="#545454"/>
+    <SolidColorBrush x:Key="InputBorderFocus"   Color="#0078D4"/>
+    <SolidColorBrush x:Key="InputCaret"         Color="#E8E8E8"/>
+    <SolidColorBrush x:Key="InputPlaceholder"   Color="#888888"/>
 
-    <!-- ── Labels / separators ───────────────────────────────────── -->
-    <SolidColorBrush x:Key="LabelFg"           Color="#D0D0D0"/>
-    <SolidColorBrush x:Key="SeparatorBg"       Color="#404040"/>
+    <!-- Typography -->
+    <SolidColorBrush x:Key="TextPrimary"        Color="#E8E8E8"/>
+    <SolidColorBrush x:Key="TextSecondary"      Color="#ABABAB"/>
+    <SolidColorBrush x:Key="TextDisabled"       Color="#606060"/>
+    <SolidColorBrush x:Key="LabelFg"            Color="#C8C8C8"/>
 
-    <!-- ── Status bar ────────────────────────────────────────────── -->
-    <SolidColorBrush x:Key="StatusBarBg"       Color="#181818"/>
-    <SolidColorBrush x:Key="StatusBarBorder"   Color="#3F3F46"/>
-    <SolidColorBrush x:Key="StatusFg"          Color="#C8C8C8"/>
-    <SolidColorBrush x:Key="StatusDotOff"      Color="#5A5A5A"/>
+    <!-- Status bar -->
+    <SolidColorBrush x:Key="StatusBarBg"        Color="#1C1C1C"/>
+    <SolidColorBrush x:Key="StatusBarBorder"    Color="#383838"/>
+    <SolidColorBrush x:Key="StatusFg"           Color="#ABABAB"/>
+    <SolidColorBrush x:Key="StatusDotOff"       Color="#606060"/>
 
-    <!-- ── Video screen panels ───────────────────────────────────── -->
-    <SolidColorBrush x:Key="ScreenBg"          Color="#000000"/>
-    <SolidColorBrush x:Key="ScreenBorder"      Color="#404040"/>
-    <SolidColorBrush x:Key="ScreenDivider"     Color="#202020"/>
-    <SolidColorBrush x:Key="ScreenLabelFg"     Color="#B0B0B0"/>
+    <!-- Video panels -->
+    <SolidColorBrush x:Key="ScreenBg"           Color="#0A0A0A"/>
+    <SolidColorBrush x:Key="ScreenBorder"       Color="#404040"/>
+    <SolidColorBrush x:Key="ScreenDivider"      Color="#202020"/>
+    <SolidColorBrush x:Key="ScreenLabelFg"      Color="#404040"/>
 
-    <!-- ── Stream badges ─────────────────────────────────────────── -->
-    <SolidColorBrush x:Key="BadgeWaiting"      Color="#606060"/>
-    <SolidColorBrush x:Key="FpsFg"             Color="#A0A0A0"/>
+    <!-- Stream badges -->
+    <SolidColorBrush x:Key="BadgeWaiting"       Color="#686868"/>
+    <SolidColorBrush x:Key="FpsFg"             Color="#888888"/>
 
-    <!-- ── Side panel / log ──────────────────────────────────────── -->
-    <SolidColorBrush x:Key="SidePanelBg"       Color="#1E1E1E"/>
-    <SolidColorBrush x:Key="SidePanelBorder"   Color="#404040"/>
-    <SolidColorBrush x:Key="LogHeaderBg"       Color="#2B2B2B"/>
-    <SolidColorBrush x:Key="LogHeaderFg"       Color="#D0D0D0"/>
-    <SolidColorBrush x:Key="LogBg"             Color="#181818"/>
-    <SolidColorBrush x:Key="LogFg"             Color="#9CDC9C"/>
+    <!-- Log drawer -->
+    <SolidColorBrush x:Key="SidePanelBg"        Color="#252525"/>
+    <SolidColorBrush x:Key="SidePanelBorder"    Color="#3C3C3C"/>
+    <SolidColorBrush x:Key="LogHeaderBg"        Color="#2C2C2C"/>
+    <SolidColorBrush x:Key="LogHeaderFg"        Color="#ABABAB"/>
+    <SolidColorBrush x:Key="LogBg"              Color="#1C1C1C"/>
+    <SolidColorBrush x:Key="LogFg"              Color="#6DC06D"/>
 
-    <!-- ── Speedrun timer ────────────────────────────────────────── -->
-    <SolidColorBrush x:Key="TimerBg"           Color="#1E1E1E"/>
-    <SolidColorBrush x:Key="TimerBorder"       Color="#404040"/>
-    <SolidColorBrush x:Key="TimerFg"           Color="#FFD966"/>
+    <!-- Speedrun timer -->
+    <SolidColorBrush x:Key="TimerBg"            Color="#1C1C1C"/>
+    <SolidColorBrush x:Key="TimerBorder"        Color="#404040"/>
+    <SolidColorBrush x:Key="TimerFg"            Color="#FFD966"/>
 
-    <!-- ── VU meter ──────────────────────────────────────────────── -->
-    <SolidColorBrush x:Key="VuBg"              Color="#1E1E1E"/>
-    <SolidColorBrush x:Key="VuBorder"          Color="#404040"/>
+    <!-- VU meter -->
+    <SolidColorBrush x:Key="VuBg"              Color="#1C1C1C"/>
+    <SolidColorBrush x:Key="VuBorder"          Color="#3C3C3C"/>
 
-    <!-- ── ComboBox dropdown item colours ───────────────────────── -->
-    <!-- WPF ComboBoxItem uses system popup colours by default which
-         ignore the ComboBox Foreground.  This override forces the
-         correct text/background inside the opened dropdown list.   -->
-    <SolidColorBrush x:Key="ComboItemFg"       Color="#F0F0F0"/>
-    <SolidColorBrush x:Key="ComboItemBg"       Color="#2A2A2A"/>
-    <SolidColorBrush x:Key="ComboItemHoverBg"  Color="#383838"/>
-    <SolidColorBrush x:Key="ComboItemHoverFg"  Color="#FFFFFF"/>
+    <!-- Menu -->
+    <SolidColorBrush x:Key="MenuBg"             Color="#2C2C2C"/>
+    <SolidColorBrush x:Key="MenuFg"             Color="#E8E8E8"/>
+    <SolidColorBrush x:Key="MenuBorder"         Color="#404040"/>
+    <SolidColorBrush x:Key="MenuItemHover"      Color="#3C3C3C"/>
+    <SolidColorBrush x:Key="MenuItemPress"      Color="#484848"/>
+    <SolidColorBrush x:Key="MenuSeparator"      Color="#484848"/>
+
+    <!-- Focus ring -->
+    <SolidColorBrush x:Key="FocusRing"          Color="#0078D4"/>
+
+    <!-- ComboBox dropdown items -->
+    <SolidColorBrush x:Key="ComboItemFg"        Color="#E8E8E8"/>
+    <SolidColorBrush x:Key="ComboItemBg"        Color="#2C2C2C"/>
+    <SolidColorBrush x:Key="ComboItemHoverBg"   Color="#3C3C3C"/>
+    <SolidColorBrush x:Key="ComboItemHoverFg"   Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ComboPopupBg"       Color="#2C2C2C"/>
+    <SolidColorBrush x:Key="ComboPopupBorder"   Color="#545454"/>
 
     <Style TargetType="ComboBoxItem">
-        <Setter Property="Background"  Value="{DynamicResource ComboItemBg}"/>
-        <Setter Property="Foreground"  Value="{DynamicResource ComboItemFg}"/>
-        <Setter Property="Padding"     Value="7,4"/>
+        <Setter Property="Background"   Value="{DynamicResource ComboItemBg}"/>
+        <Setter Property="Foreground"   Value="{DynamicResource ComboItemFg}"/>
+        <Setter Property="Padding"      Value="10,6"/>
+        <Setter Property="FontSize"     Value="13"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ComboBoxItem">
-                    <Border Background="{TemplateBinding Background}"
-                            Padding="{TemplateBinding Padding}">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}" CornerRadius="4"
+                            Margin="3,1">
                         <ContentPresenter/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsHighlighted" Value="True">
-                            <Setter Property="Background" Value="{DynamicResource ComboItemHoverBg}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource ComboItemHoverFg}"/>
+                            <Setter TargetName="Bd" Property="Background"
+                                    Value="{DynamicResource ComboItemHoverBg}"/>
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource ComboItemHoverFg}"/>
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="Background" Value="{DynamicResource ComboItemHoverBg}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource ComboItemHoverFg}"/>
+                            <Setter TargetName="Bd" Property="Background"
+                                    Value="{DynamicResource AccentBg}"/>
+                            <Setter Property="Foreground" Value="#FFFFFF"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

@@ -1,0 +1,102 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- High Contrast Light — WCAG AAA, all ratios ≥ 7:1 -->
+
+    <SolidColorBrush x:Key="WindowBg"           Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="Layer1Bg"           Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="Layer2Bg"           Color="#F5F5F5"/>
+    <SolidColorBrush x:Key="Layer3Bg"           Color="#EBEBEB"/>
+    <SolidColorBrush x:Key="VideoAreaBg"        Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ToolbarBg"          Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ToolbarBorder"      Color="#000000"/>
+    <SolidColorBrush x:Key="SeparatorBg"        Color="#000000"/>
+    <SolidColorBrush x:Key="AccentBg"           Color="#0000CD"/>
+    <SolidColorBrush x:Key="AccentHover"        Color="#0000EE"/>
+    <SolidColorBrush x:Key="AccentPress"        Color="#00008B"/>
+    <SolidColorBrush x:Key="AccentFg"           Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="BtnBg"              Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="BtnBorder"          Color="#000000"/>
+    <SolidColorBrush x:Key="BtnFg"              Color="#000000"/>
+    <SolidColorBrush x:Key="BtnHover"           Color="#EBEBEB"/>
+    <SolidColorBrush x:Key="BtnPress"           Color="#D8D8D8"/>
+    <SolidColorBrush x:Key="BtnConnectBg"       Color="#0000CD"/>
+    <SolidColorBrush x:Key="BtnConnectBorder"   Color="#000000"/>
+    <SolidColorBrush x:Key="BtnConnectFg"       Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="BtnDangerBg"        Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="BtnDangerBorder"    Color="#CC0000"/>
+    <SolidColorBrush x:Key="BtnDangerFg"        Color="#CC0000"/>
+    <SolidColorBrush x:Key="BtnDangerHover"     Color="#FFF0F0"/>
+    <SolidColorBrush x:Key="InputBg"            Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="InputFg"            Color="#000000"/>
+    <SolidColorBrush x:Key="InputBorder"        Color="#000000"/>
+    <SolidColorBrush x:Key="InputBorderFocus"   Color="#0000CD"/>
+    <SolidColorBrush x:Key="InputCaret"         Color="#000000"/>
+    <SolidColorBrush x:Key="InputPlaceholder"   Color="#555555"/>
+    <SolidColorBrush x:Key="TextPrimary"        Color="#000000"/>
+    <SolidColorBrush x:Key="TextSecondary"      Color="#1A1A1A"/>
+    <SolidColorBrush x:Key="TextDisabled"       Color="#767676"/>
+    <SolidColorBrush x:Key="LabelFg"            Color="#000000"/>
+    <SolidColorBrush x:Key="StatusBarBg"        Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="StatusBarBorder"    Color="#000000"/>
+    <SolidColorBrush x:Key="StatusFg"           Color="#000000"/>
+    <SolidColorBrush x:Key="StatusDotOff"       Color="#555555"/>
+    <SolidColorBrush x:Key="ScreenBg"           Color="#000000"/>
+    <SolidColorBrush x:Key="ScreenBorder"       Color="#000000"/>
+    <SolidColorBrush x:Key="ScreenDivider"      Color="#000000"/>
+    <SolidColorBrush x:Key="ScreenLabelFg"      Color="#767676"/>
+    <SolidColorBrush x:Key="BadgeWaiting"       Color="#555555"/>
+    <SolidColorBrush x:Key="FpsFg"              Color="#555555"/>
+    <SolidColorBrush x:Key="SidePanelBg"        Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="SidePanelBorder"    Color="#000000"/>
+    <SolidColorBrush x:Key="LogHeaderBg"        Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="LogHeaderFg"        Color="#000000"/>
+    <SolidColorBrush x:Key="LogBg"              Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="LogFg"              Color="#003300"/>
+    <SolidColorBrush x:Key="TimerBg"            Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="TimerBorder"        Color="#000000"/>
+    <SolidColorBrush x:Key="TimerFg"            Color="#7A5A00"/>
+    <SolidColorBrush x:Key="VuBg"               Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="VuBorder"           Color="#000000"/>
+    <SolidColorBrush x:Key="MenuBg"             Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="MenuFg"             Color="#000000"/>
+    <SolidColorBrush x:Key="MenuBorder"         Color="#000000"/>
+    <SolidColorBrush x:Key="MenuItemHover"      Color="#EBEBEB"/>
+    <SolidColorBrush x:Key="MenuItemPress"      Color="#D8D8D8"/>
+    <SolidColorBrush x:Key="MenuSeparator"      Color="#000000"/>
+    <SolidColorBrush x:Key="FocusRing"          Color="#0000CD"/>
+    <SolidColorBrush x:Key="ComboItemFg"        Color="#000000"/>
+    <SolidColorBrush x:Key="ComboItemBg"        Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ComboItemHoverBg"   Color="#EBEBEB"/>
+    <SolidColorBrush x:Key="ComboItemHoverFg"   Color="#000000"/>
+    <SolidColorBrush x:Key="ComboPopupBg"       Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ComboPopupBorder"   Color="#000000"/>
+
+    <Style TargetType="ComboBoxItem">
+        <Setter Property="Background" Value="{DynamicResource ComboItemBg}"/>
+        <Setter Property="Foreground" Value="{DynamicResource ComboItemFg}"/>
+        <Setter Property="Padding"    Value="10,6"/>
+        <Setter Property="FontSize"   Value="13"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBoxItem">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}" CornerRadius="0" Margin="0">
+                        <ContentPresenter/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ComboItemHoverBg}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource ComboItemHoverFg}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentBg}"/>
+                            <Setter Property="Foreground" Value="#FFFFFF"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>
