@@ -43,7 +43,7 @@ namespace RGDSCapture
             var root = new Grid();
 
             // Video image — fills the entire window, letterboxed
-            _image = new Image
+         _image = new Image
 {
     Stretch = Stretch.Uniform,
     HorizontalAlignment = HorizontalAlignment.Center,
@@ -53,7 +53,6 @@ namespace RGDSCapture
 RenderOptions.SetBitmapScalingMode(
     _image,
     BitmapScalingMode.NearestNeighbor);
-    
             AutomationProperties.SetName(_image, $"{screenLabel} video");
             root.Children.Add(_image);
 
