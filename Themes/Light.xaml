@@ -1,93 +1,130 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- ╔══════════════════════════════════════════════════════════════╗
-         ║  RGDSCapture — Light Theme (Windows 11 Fluent)              ║
-         ╚══════════════════════════════════════════════════════════════╝ -->
+    <!-- ╔══════════════════════════════════════════════════════════════════╗
+         ║  RGDSCapture — Light Theme (Windows 11 Fluent Design)          ║
+         ║  Mica-inspired layered surfaces with WinUI 3 color tokens      ║
+         ╚══════════════════════════════════════════════════════════════════╝ -->
 
+    <!-- ── WINDOW SURFACES (Mica-style layering) ── -->
+    <!-- Base canvas: #F3F3F3 is the WinUI 3 SolidBackgroundFillColorBase -->
     <SolidColorBrush x:Key="WindowBg"           Color="#F3F3F3"/>
+    <!-- Layer1: Raised surface used for toolbars/cards (#FFFFFF in Win11) -->
     <SolidColorBrush x:Key="Layer1Bg"           Color="#FFFFFF"/>
+    <!-- Layer2: Subtle tint for inputs, hover states -->
     <SolidColorBrush x:Key="Layer2Bg"           Color="#F9F9F9"/>
+    <!-- Layer3: Top-most chrome (flyouts, tooltips) -->
     <SolidColorBrush x:Key="Layer3Bg"           Color="#F3F3F3"/>
-    <SolidColorBrush x:Key="VideoAreaBg"        Color="#E5E5E5"/>
+    <!-- Video area: dark regardless of theme — it holds screen content -->
+    <SolidColorBrush x:Key="VideoAreaBg"        Color="#DCDCDC"/>
 
+    <!-- ── TOOLBAR ── -->
+    <!-- Pure white toolbar matches Win11 app chrome in light mode -->
     <SolidColorBrush x:Key="ToolbarBg"          Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="ToolbarBorder"      Color="#E0E0E0"/>
-    <SolidColorBrush x:Key="SeparatorBg"        Color="#D8D8D8"/>
+    <SolidColorBrush x:Key="ToolbarBorder"      Color="#E5E5E5"/>
+    <SolidColorBrush x:Key="SeparatorBg"        Color="#DEDEDE"/>
 
+    <!-- ── ACCENT (Windows 11 system blue, unchanged across themes) ── -->
     <SolidColorBrush x:Key="AccentBg"           Color="#0078D4"/>
-    <SolidColorBrush x:Key="AccentHover"        Color="#1A86DC"/>
+    <SolidColorBrush x:Key="AccentHover"        Color="#1585D8"/>
     <SolidColorBrush x:Key="AccentPress"        Color="#006CBE"/>
     <SolidColorBrush x:Key="AccentFg"           Color="#FFFFFF"/>
 
+    <!-- ── STANDARD BUTTONS ── -->
+    <!-- Subtle fill: white bg with a light 1px stroke matches Win11 buttons -->
     <SolidColorBrush x:Key="BtnBg"              Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="BtnBorder"          Color="#D1D1D1"/>
+    <SolidColorBrush x:Key="BtnBorder"          Color="#D5D5D5"/>
     <SolidColorBrush x:Key="BtnFg"              Color="#1A1A1A"/>
     <SolidColorBrush x:Key="BtnHover"           Color="#F5F5F5"/>
-    <SolidColorBrush x:Key="BtnPress"           Color="#EBEBEB"/>
+    <SolidColorBrush x:Key="BtnPress"           Color="#EEEEEE"/>
+
+    <!-- ── ACCENT / CONNECT BUTTON ── -->
     <SolidColorBrush x:Key="BtnConnectBg"       Color="#0078D4"/>
     <SolidColorBrush x:Key="BtnConnectBorder"   Color="#0078D4"/>
     <SolidColorBrush x:Key="BtnConnectFg"       Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="BtnDangerBg"        Color="#FEF0EF"/>
-    <SolidColorBrush x:Key="BtnDangerBorder"    Color="#F0BCBB"/>
-    <SolidColorBrush x:Key="BtnDangerFg"        Color="#BC2F32"/>
-    <SolidColorBrush x:Key="BtnDangerHover"     Color="#FAE3E2"/>
 
+    <!-- ── DANGER BUTTONS ── -->
+    <!-- Light warm-red tint; dark red text meets WCAG AA on light bg -->
+    <SolidColorBrush x:Key="BtnDangerBg"        Color="#FEF0EF"/>
+    <SolidColorBrush x:Key="BtnDangerBorder"    Color="#F0C0BF"/>
+    <SolidColorBrush x:Key="BtnDangerFg"        Color="#C42B1C"/>
+    <SolidColorBrush x:Key="BtnDangerHover"     Color="#FAE4E3"/>
+
+    <!-- ── TEXT INPUTS ── -->
+    <!-- Win11 inputs use pure white on light; accent-colored focus ring -->
     <SolidColorBrush x:Key="InputBg"            Color="#FFFFFF"/>
     <SolidColorBrush x:Key="InputFg"            Color="#1A1A1A"/>
-    <SolidColorBrush x:Key="InputBorder"        Color="#D1D1D1"/>
+    <SolidColorBrush x:Key="InputBorder"        Color="#D5D5D5"/>
     <SolidColorBrush x:Key="InputBorderFocus"   Color="#0078D4"/>
     <SolidColorBrush x:Key="InputCaret"         Color="#1A1A1A"/>
-    <SolidColorBrush x:Key="InputPlaceholder"   Color="#A0A0A0"/>
+    <SolidColorBrush x:Key="InputPlaceholder"   Color="#9A9A9A"/>
 
+    <!-- ── TYPOGRAPHY ── -->
     <SolidColorBrush x:Key="TextPrimary"        Color="#1A1A1A"/>
-    <SolidColorBrush x:Key="TextSecondary"      Color="#606060"/>
-    <SolidColorBrush x:Key="TextDisabled"       Color="#B0B0B0"/>
-    <SolidColorBrush x:Key="LabelFg"            Color="#484848"/>
+    <SolidColorBrush x:Key="TextSecondary"      Color="#5E5E5E"/>
+    <SolidColorBrush x:Key="TextDisabled"       Color="#B4B4B4"/>
+    <SolidColorBrush x:Key="LabelFg"            Color="#444444"/>
 
-    <SolidColorBrush x:Key="StatusBarBg"        Color="#F0F0F0"/>
+    <!-- ── STATUS BAR ── -->
+    <!-- Slightly tinted vs. white toolbar to subtly delineate zones -->
+    <SolidColorBrush x:Key="StatusBarBg"        Color="#EFEFEF"/>
     <SolidColorBrush x:Key="StatusBarBorder"    Color="#E0E0E0"/>
-    <SolidColorBrush x:Key="StatusFg"           Color="#606060"/>
-    <SolidColorBrush x:Key="StatusDotOff"       Color="#B0B0B0"/>
+    <SolidColorBrush x:Key="StatusFg"           Color="#5E5E5E"/>
+    <SolidColorBrush x:Key="StatusDotOff"       Color="#B4B4B4"/>
 
+    <!-- ── VIDEO PANELS ── -->
+    <!-- Screen bg stays black for content; border is visible on light bg -->
     <SolidColorBrush x:Key="ScreenBg"           Color="#0A0A0A"/>
     <SolidColorBrush x:Key="ScreenBorder"       Color="#C8C8C8"/>
-    <SolidColorBrush x:Key="ScreenDivider"      Color="#E0E0E0"/>
-    <SolidColorBrush x:Key="ScreenLabelFg"      Color="#B0B0B0"/>
+    <SolidColorBrush x:Key="ScreenDivider"      Color="#E5E5E5"/>
+    <SolidColorBrush x:Key="ScreenLabelFg"      Color="#AAAAAA"/>
 
+    <!-- ── STREAM STATUS BADGES ── -->
     <SolidColorBrush x:Key="BadgeWaiting"       Color="#A0A0A0"/>
-    <SolidColorBrush x:Key="FpsFg"             Color="#808080"/>
+    <SolidColorBrush x:Key="FpsFg"              Color="#808080"/>
 
+    <!-- ── LOG DRAWER ── -->
+    <!-- Matches Layer2 to feel like it's part of the same chrome -->
     <SolidColorBrush x:Key="SidePanelBg"        Color="#FAFAFA"/>
-    <SolidColorBrush x:Key="SidePanelBorder"    Color="#E0E0E0"/>
+    <SolidColorBrush x:Key="SidePanelBorder"    Color="#E5E5E5"/>
     <SolidColorBrush x:Key="LogHeaderBg"        Color="#F3F3F3"/>
-    <SolidColorBrush x:Key="LogHeaderFg"        Color="#606060"/>
+    <SolidColorBrush x:Key="LogHeaderFg"        Color="#5E5E5E"/>
+    <!-- Log text: deep terminal-green on near-white — classic & legible -->
     <SolidColorBrush x:Key="LogBg"              Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="LogFg"              Color="#107C10"/>
+    <SolidColorBrush x:Key="LogFg"              Color="#0F7B0F"/>
 
-    <SolidColorBrush x:Key="TimerBg"            Color="#F0F0F0"/>
-    <SolidColorBrush x:Key="TimerBorder"        Color="#D8D8D8"/>
-    <SolidColorBrush x:Key="TimerFg"            Color="#7A5A00"/>
+    <!-- ── SPEEDRUN TIMER ── -->
+    <!-- Deep gold text on a very light tinted panel -->
+    <SolidColorBrush x:Key="TimerBg"            Color="#F5F0E0"/>
+    <SolidColorBrush x:Key="TimerBorder"        Color="#DEDAD0"/>
+    <SolidColorBrush x:Key="TimerFg"            Color="#7A5600"/>
 
-    <SolidColorBrush x:Key="VuBg"              Color="#E8E8E8"/>
-    <SolidColorBrush x:Key="VuBorder"          Color="#D1D1D1"/>
+    <!-- ── VU METER ── -->
+    <SolidColorBrush x:Key="VuBg"               Color="#EBEBEB"/>
+    <SolidColorBrush x:Key="VuBorder"           Color="#D5D5D5"/>
 
+    <!-- ── MENU BAR ── -->
+    <!-- Matches toolbar for seamless chrome continuity -->
     <SolidColorBrush x:Key="MenuBg"             Color="#FFFFFF"/>
     <SolidColorBrush x:Key="MenuFg"             Color="#1A1A1A"/>
-    <SolidColorBrush x:Key="MenuBorder"         Color="#E0E0E0"/>
+    <SolidColorBrush x:Key="MenuBorder"         Color="#E5E5E5"/>
     <SolidColorBrush x:Key="MenuItemHover"      Color="#F3F3F3"/>
-    <SolidColorBrush x:Key="MenuItemPress"      Color="#E8E8E8"/>
-    <SolidColorBrush x:Key="MenuSeparator"      Color="#E0E0E0"/>
+    <SolidColorBrush x:Key="MenuItemPress"      Color="#EBEBEB"/>
+    <SolidColorBrush x:Key="MenuSeparator"      Color="#E5E5E5"/>
 
+    <!-- ── FOCUS RING ── -->
     <SolidColorBrush x:Key="FocusRing"          Color="#0078D4"/>
 
+    <!-- ── COMBOBOX DROPDOWN ── -->
+    <!-- Popup stays white to float cleanly above the light surface -->
     <SolidColorBrush x:Key="ComboItemFg"        Color="#1A1A1A"/>
     <SolidColorBrush x:Key="ComboItemBg"        Color="#FFFFFF"/>
     <SolidColorBrush x:Key="ComboItemHoverBg"   Color="#F3F3F3"/>
     <SolidColorBrush x:Key="ComboItemHoverFg"   Color="#1A1A1A"/>
     <SolidColorBrush x:Key="ComboPopupBg"       Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="ComboPopupBorder"   Color="#D1D1D1"/>
+    <SolidColorBrush x:Key="ComboPopupBorder"   Color="#D5D5D5"/>
 
+    <!-- ── COMBOBOX ITEM TEMPLATE (applies in light popup) ── -->
     <Style TargetType="ComboBoxItem">
         <Setter Property="Background"   Value="{DynamicResource ComboItemBg}"/>
         <Setter Property="Foreground"   Value="{DynamicResource ComboItemFg}"/>

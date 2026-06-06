@@ -141,7 +141,9 @@ See [Building from Source](#building-from-source) below.
 5. Enter your SSH username and password when prompted
 
    If unchanged from default, it should be:
+
    Username: root
+   
    Password: root
    
 6. Both screens should appear within a few seconds
