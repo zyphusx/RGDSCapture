@@ -274,3 +274,6 @@ Other third-party components are MIT licensed — see [DEPENDENCIES.md](DEPENDEN
 ## Disclaimer
 
 RGDSCapture is an independent community project. It is not affiliated with, endorsed by, or supported by Anbernic. All product names and trademarks are the property of their respective owners.
+
+
+
