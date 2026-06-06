@@ -2,199 +2,46 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Connect to RG DS"
-        Height="248" Width="370"
+        Height="240" Width="360"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        ShowInTaskbar="False"
-        Background="{DynamicResource WindowBg}"
-        FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-        FontSize="13">
+        Background="#1a1a2e"
+        ShowInTaskbar="False">
 
-    <!-- ═══════════════════════════════════════════════════════════════════
-         CONNECT DIALOG — Windows 11 Fluent Design
-         Uses the same DynamicResource tokens as MainWindow so it adapts
-         automatically to whatever theme is currently active (Dark / Light /
-         High Contrast Dark / High Contrast Light).
-    ═══════════════════════════════════════════════════════════════════════ -->
-
-    <Window.Resources>
-
-        <!-- ── TextBox style (mirrors MainWindow TBox) ── -->
-        <Style x:Key="DlgTBox" TargetType="TextBox">
-            <Setter Property="Background"               Value="{DynamicResource InputBg}"/>
-            <Setter Property="Foreground"               Value="{DynamicResource InputFg}"/>
-            <Setter Property="CaretBrush"               Value="{DynamicResource InputCaret}"/>
-            <Setter Property="BorderBrush"              Value="{DynamicResource InputBorder}"/>
-            <Setter Property="BorderThickness"          Value="1"/>
-            <Setter Property="Padding"                  Value="10,7"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="FontSize"                 Value="13"/>
-            <Setter Property="SnapsToDevicePixels"      Value="True"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border x:Name="Root"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="6"
-                                SnapsToDevicePixels="True">
-                            <ScrollViewer x:Name="PART_ContentHost"
-                                          Margin="{TemplateBinding Padding}"
-                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="Root" Property="BorderBrush"
-                                        Value="{DynamicResource InputBorderFocus}"/>
-                                <Setter TargetName="Root" Property="BorderThickness" Value="2"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- ── PasswordBox style ── -->
-        <Style x:Key="DlgPBox" TargetType="PasswordBox">
-            <Setter Property="Background"               Value="{DynamicResource InputBg}"/>
-            <Setter Property="Foreground"               Value="{DynamicResource InputFg}"/>
-            <Setter Property="CaretBrush"               Value="{DynamicResource InputCaret}"/>
-            <Setter Property="BorderBrush"              Value="{DynamicResource InputBorder}"/>
-            <Setter Property="BorderThickness"          Value="1"/>
-            <Setter Property="Padding"                  Value="10,7"/>
-            <Setter Property="FontSize"                 Value="13"/>
-            <Setter Property="SnapsToDevicePixels"      Value="True"/>
-        </Style>
-
-        <!-- ── Standard button ── -->
-        <Style x:Key="DlgBtn" TargetType="Button">
-            <Setter Property="Background"          Value="{DynamicResource BtnBg}"/>
-            <Setter Property="Foreground"          Value="{DynamicResource BtnFg}"/>
-            <Setter Property="BorderBrush"         Value="{DynamicResource BtnBorder}"/>
-            <Setter Property="BorderThickness"     Value="1"/>
-            <Setter Property="Padding"             Value="14,7"/>
-            <Setter Property="FontSize"            Value="13"/>
-            <Setter Property="Cursor"              Value="Hand"/>
-            <Setter Property="SnapsToDevicePixels" Value="True"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Root"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="6"
-                                Padding="{TemplateBinding Padding}"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              RecognizesAccessKey="True"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Root" Property="Background"
-                                        Value="{DynamicResource BtnHover}"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Root" Property="Background"
-                                        Value="{DynamicResource BtnPress}"/>
-                            </Trigger>
-                            <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="Root" Property="BorderBrush"
-                                        Value="{DynamicResource FocusRing}"/>
-                                <Setter TargetName="Root" Property="BorderThickness" Value="2"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- ── Accent / Connect button ── -->
-        <Style x:Key="DlgBtnAccent" TargetType="Button" BasedOn="{StaticResource DlgBtn}">
-            <Setter Property="Background"  Value="{DynamicResource BtnConnectBg}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BtnConnectBorder}"/>
-            <Setter Property="Foreground"  Value="{DynamicResource BtnConnectFg}"/>
-            <Setter Property="FontWeight"  Value="SemiBold"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Root"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="6"
-                                Padding="{TemplateBinding Padding}"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              RecognizesAccessKey="True"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Root" Property="Background"
-                                        Value="{DynamicResource AccentHover}"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Root" Property="Background"
-                                        Value="{DynamicResource AccentPress}"/>
-                            </Trigger>
-                            <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="Root" Property="BorderBrush"
-                                        Value="{DynamicResource FocusRing}"/>
-                                <Setter TargetName="Root" Property="BorderThickness" Value="2"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-    </Window.Resources>
-
-    <!-- ── Content ── -->
     <StackPanel Margin="24">
 
-        <!-- Dialog heading -->
         <TextBlock Text="SSH Credentials"
-                   Foreground="{DynamicResource TextPrimary}"
+                   Foreground="#e0e0e0"
                    FontSize="15"
                    FontWeight="SemiBold"
-                   Margin="0,0,0,18"/>
+                   Margin="0,0,0,16"/>
 
-        <!-- Username field -->
-        <TextBlock Text="Username"
-                   Foreground="{DynamicResource TextSecondary}"
-                   FontSize="12"
-                   Margin="0,0,0,5"/>
+        <TextBlock Text="Username" Foreground="#a0a0b0" FontSize="12" Margin="0,0,0,4"/>
         <TextBox x:Name="TxtUsername"
-                 Style="{StaticResource DlgTBox}"
-                 Text="root"
-                 Margin="0,0,0,14"
-                 AutomationProperties.Name="SSH username"/>
+                 Background="#16213e" Foreground="#e0e0e0"
+                 BorderBrush="#0f3460" BorderThickness="1"
+                 Padding="8,6" Margin="0,0,0,12"
+                 CaretBrush="#e0e0e0"
+                 Text="root"/>
 
-        <!-- Password field -->
-        <TextBlock Text="Password"
-                   Foreground="{DynamicResource TextSecondary}"
-                   FontSize="12"
-                   Margin="0,0,0,5"/>
+        <TextBlock Text="Password" Foreground="#a0a0b0" FontSize="12" Margin="0,0,0,4"/>
         <PasswordBox x:Name="TxtPassword"
-                     Style="{StaticResource DlgPBox}"
-                     Margin="0,0,0,22"
-                     AutomationProperties.Name="SSH password"/>
+                     Background="#16213e" Foreground="#e0e0e0"
+                     BorderBrush="#0f3460" BorderThickness="1"
+                     Padding="8,6" Margin="0,0,0,20"
+                     CaretBrush="#e0e0e0"/>
 
-        <!-- Action buttons: Cancel (subtle) + Connect (accent) -->
-        <StackPanel Orientation="Horizontal"
-                    HorizontalAlignment="Right">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="Cancel"
-                    Style="{StaticResource DlgBtn}"
-                    Width="88"
+                    Width="80" Padding="0,6"
+                    Background="#16213e" Foreground="#e0e0e0"
+                    BorderBrush="#0f3460" BorderThickness="1"
                     Margin="0,0,8,0"
                     Click="BtnCancel_Click"/>
             <Button Content="Connect"
-                    Style="{StaticResource DlgBtnAccent}"
-                    Width="88"
+                    Width="80" Padding="0,6"
+                    Background="#0f3460" Foreground="#e0e0e0"
+                    BorderBrush="#0f3460" BorderThickness="1"
                     IsDefault="True"
                     Click="BtnConnect_Click"/>
         </StackPanel>

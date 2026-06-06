@@ -771,6 +771,12 @@ namespace RGDSCapture
         {
             switch (e.Key)
             {
+                case System.Windows.Input.Key.F2:
+                    OpenFullscreen(isTop: true);
+                    break;
+                case System.Windows.Input.Key.F3:
+                    OpenFullscreen(isTop: false);
+                    break;
                 case System.Windows.Input.Key.F5:
                     if (_isConnected) _ = RestartAllStreamsAsync();
                     break;
@@ -1048,5 +1054,29 @@ namespace RGDSCapture
             }
             catch { return "127.0.0.1"; }
         }
+        // ─────────────────────────────────────────────────────────────
+        // FULLSCREEN
+        // Opens a borderless black window on the primary screen showing
+        // the live WriteableBitmap for the chosen DS screen.
+        // Press Escape or click anywhere to close.
+        // ─────────────────────────────────────────────────────────────
+        private void BtnFullscreenTop_Click(object sender, RoutedEventArgs e)
+            => OpenFullscreen(isTop: true);
+
+        private void BtnFullscreenBottom_Click(object sender, RoutedEventArgs e)
+            => OpenFullscreen(isTop: false);
+
+        private void OpenFullscreen(bool isTop)
+        {
+            var bitmap = isTop ? _topBitmap : _bottomBitmap;
+            string label = isTop ? "Top Screen" : "Bottom Screen";
+
+            // Show the window even if no frame yet — it will update live
+            var fsWin = new FullScreenWindow(
+                isTop ? (() => _topBitmap) : (() => _bottomBitmap),
+                label);
+            fsWin.Show();
+        }
+
     }
 }
