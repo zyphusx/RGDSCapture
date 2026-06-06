@@ -131,6 +131,23 @@ See [Building from Source](#building-from-source) below.
 
 ---
 
+## First Launch
+
+1. Launch RGDSCapture
+2. Enter your RG DS **IP address** in the top bar
+   - Find this in your device's Wi-Fi settings, or check your router's connected devices list
+3. Leave Port as `22` unless your firmware uses a different SSH port
+4. Click **Connect**
+5. Enter your SSH username and password when prompted
+
+   If unchanged from default, it should be:
+   Username: root
+   Password: root
+   
+6. Both screens should appear within a few seconds
+
+---
+
 ## Audio Setup
 
 1. Connect a **3.5mm stereo cable** from the RG DS headphone jack to your PC's **Line-In port**
