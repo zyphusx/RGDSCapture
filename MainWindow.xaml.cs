@@ -320,7 +320,11 @@ namespace RGDSCapture
             if (_topReceiver != null)
             {
                 float fps = _topReceiver.CurrentFps;
-                TxtTopFps.Text = fps > 0 ? $"{fps:F1} fps" : "-- fps";
+                string fpsText = fps > 0 ? $"{fps:F1} fps" : "-- fps";
+
+                TxtTopFps.Text         = fpsText;   // vertical stack
+                TxtTopFpsValueSide.Text = fpsText;   // side-by-side
+                TxtTopFpsOnly.Text     = fpsText;   // top-only
 
                 if (_topRecovering)
                     SetStreamBadge(true, StreamBadgeState.Recovering);
@@ -335,7 +339,11 @@ namespace RGDSCapture
             if (_bottomReceiver != null)
             {
                 float fps = _bottomReceiver.CurrentFps;
-                TxtBottomFps.Text = fps > 0 ? $"{fps:F1} fps" : "-- fps";
+                string fpsText = fps > 0 ? $"{fps:F1} fps" : "-- fps";
+
+                TxtBottomFps.Text         = fpsText;   // vertical stack
+                TxtBottomFpsValueSide.Text = fpsText;   // side-by-side
+                TxtBottomFpsOnly.Text     = fpsText;   // bottom-only
 
                 if (_bottomRecovering)
                     SetStreamBadge(false, StreamBadgeState.Recovering);
@@ -391,9 +399,20 @@ namespace RGDSCapture
 
         private void SetStreamBadge(bool isTop, StreamBadgeState state)
         {
+            // Vertical stack view
             var dot  = isTop ? DotTop      : DotBottom;
             var text = isTop ? TxtTopBadge : TxtBottomBadge;
             var fps  = isTop ? TxtTopFps   : TxtBottomFps;
+
+            // Side-by-side view
+            var dotSide  = isTop ? DotTopSide        : DotBottomSide;
+            var textSide = isTop ? TxtTopBadgeSide   : TxtBottomBadgeSide;
+            var fpsSide  = isTop ? TxtTopFpsValueSide : TxtBottomFpsValueSide;
+
+            // Single-screen view
+            var dotOnly  = isTop ? DotTopOnly      : DotBottomOnly;
+            var textOnly = isTop ? TxtTopBadgeOnly : TxtBottomBadgeOnly;
+            var fpsOnly  = isTop ? TxtTopFpsOnly   : TxtBottomFpsOnly;
 
             (string label, Color c) = state switch
             {
@@ -404,13 +423,28 @@ namespace RGDSCapture
             };
 
             var brush = new SolidColorBrush(c);
-            dot.Fill        = brush;
-            text.Text       = label;
-            text.Foreground = brush;
-            fps.Foreground  = new SolidColorBrush(
+            var fpsBrush = new SolidColorBrush(
                 state == StreamBadgeState.Live
                     ? Color.FromRgb(60, 130, 90)
                     : Color.FromRgb(58, 74, 96));
+
+            // Vertical stack
+            dot.Fill        = brush;
+            text.Text       = label;
+            text.Foreground = brush;
+            fps.Foreground  = fpsBrush;
+
+            // Side-by-side
+            dotSide.Fill        = brush;
+            textSide.Text       = label;
+            textSide.Foreground = brush;
+            fpsSide.Foreground  = fpsBrush;
+
+            // Single-screen
+            dotOnly.Fill        = brush;
+            textOnly.Text       = label;
+            textOnly.Foreground = brush;
+            fpsOnly.Foreground  = fpsBrush;
         }
 
         // ─────────────────────────────────────────────────────────────
@@ -969,6 +1003,8 @@ namespace RGDSCapture
             AppendLog("Disconnected — streams stopped on device.");
 
             TxtTopFps.Text = TxtBottomFps.Text = "-- fps";
+            TxtTopFpsValueSide.Text = TxtBottomFpsValueSide.Text = "-- fps";
+            TxtTopFpsOnly.Text = TxtBottomFpsOnly.Text = "-- fps";
             foreach (var img in new[] {
                 ImgTopScreen, ImgBottomScreen,
                 ImgTopScreenSide, ImgBottomScreenSide,
@@ -1041,6 +1077,9 @@ namespace RGDSCapture
             _ssh?.Dispose();
             _ssh = null;
             StatusDot.Fill = new SolidColorBrush(Color.FromRgb(233, 69, 96));
+            TxtTopFps.Text = TxtBottomFps.Text = "-- fps";
+            TxtTopFpsValueSide.Text = TxtBottomFpsValueSide.Text = "-- fps";
+            TxtTopFpsOnly.Text = TxtBottomFpsOnly.Text = "-- fps";
         }
 
         private static string GetLocalIpAddress()

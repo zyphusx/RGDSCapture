@@ -197,7 +197,7 @@
             </Setter>
         </Style>
 
-        <!-- ── ComboBox ── -->
+        <!-- ── ComboBox with proper text rendering ── -->
         <Style TargetType="ComboBox" x:Key="CBox">
             <Setter Property="Background"      Value="{DynamicResource InputBg}"/>
             <Setter Property="Foreground"      Value="{DynamicResource InputFg}"/>
@@ -206,6 +206,110 @@
             <Setter Property="Padding"         Value="10,7"/>
             <Setter Property="FontSize"        Value="13"/>
             <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid x:Name="templateRoot" SnapsToDevicePixels="True">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="Background" 
+                                    Grid.ColumnSpan="2"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="6"/>
+                            <TextBox x:Name="PART_EditableTextBox"
+                                     Grid.Column="0"
+                                     Margin="{TemplateBinding Padding}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Foreground="{TemplateBinding Foreground}"
+                                     FontSize="{TemplateBinding FontSize}"
+                                     FontFamily="{TemplateBinding FontFamily}"
+                                     VerticalAlignment="Center"
+                                     IsReadOnly="True"
+                                     TextOptions.TextFormattingMode="Display"
+                                     TextOptions.TextRenderingMode="ClearType"/>
+                            <ToggleButton x:Name="toggleButton"
+                                          Grid.Column="1"
+                                          Background="Transparent"
+                                          BorderThickness="0"
+                                          Foreground="{TemplateBinding Foreground}"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          Padding="8,0"
+                                          ClickMode="Press">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border Background="Transparent">
+                                            <TextBlock Text="▼" Foreground="{TemplateBinding Foreground}" 
+                                                       FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <Popup x:Name="PART_Popup"
+                                   AllowsTransparency="True"
+                                   Grid.ColumnSpan="2"
+                                   IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}"
+                                   PopupAnimation="{DynamicResource {x:Static SystemParameters.ComboBoxPopupAnimationKey}}"
+                                   Placement="Bottom">
+                                <Border x:Name="DropDownBorder"
+                                        Background="{DynamicResource InputBg}"
+                                        BorderBrush="{DynamicResource InputBorder}"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Margin="0,4,0,0">
+                                    <ScrollViewer x:Name="DropDownScrollViewer">
+                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"
+                                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Background" Property="BorderBrush"
+                                        Value="{DynamicResource InputBorderFocus}"/>
+                                <Setter TargetName="Background" Property="BorderThickness"
+                                        Value="2"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="Foreground" Value="{DynamicResource InputFg}"/>
+                        <Setter Property="Background" Value="{DynamicResource InputBg}"/>
+                        <Setter Property="Padding" Value="10,7"/>
+                        <Setter Property="FontSize" Value="13"/>
+                        <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
+                        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ComboBoxItem">
+                                    <Border Background="{TemplateBinding Background}" 
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter TextOptions.TextFormattingMode="Display"
+                                                          TextOptions.TextRenderingMode="ClearType"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsHighlighted" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource BtnHover}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource BtnPress}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <!-- ── Dim label ── -->
@@ -232,6 +336,15 @@
             <Setter Property="Margin"            Value="6,0,4,0"/>
         </Style>
 
+        <!-- ── Menu Item Text Rendering ── -->
+        <Style TargetType="MenuItem">
+            <Setter Property="Foreground" Value="{DynamicResource MenuFg}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
+            <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
+        </Style>
+
     </Window.Resources>
 
     <DockPanel>
@@ -250,77 +363,77 @@
             <!-- File -->
             <MenuItem Header="_File" Foreground="{DynamicResource MenuFg}">
                 <MenuItem x:Name="MnuConnect"    Header="_Connect"    Click="BtnConnect_Click"
-                          InputGestureText=""/>
+                          InputGestureText="" Foreground="{DynamicResource MenuFg}"/>
                 <MenuItem x:Name="MnuDisconnect" Header="_Disconnect" Click="MnuDisconnect_Click"
-                          IsEnabled="False"/>
+                          IsEnabled="False" Foreground="{DynamicResource MenuFg}"/>
                 <Separator/>
                 <MenuItem Header="_Screenshot"   Click="BtnScreenshot_Click"
-                          InputGestureText="F12" IsEnabled="False" x:Name="MnuScreenshot"/>
+                          InputGestureText="F12" IsEnabled="False" x:Name="MnuScreenshot" Foreground="{DynamicResource MenuFg}"/>
                 <Separator/>
                 <MenuItem Header="E_xit"         Click="MnuExit_Click"
-                          InputGestureText="Alt+F4"/>
+                          InputGestureText="Alt+F4" Foreground="{DynamicResource MenuFg}"/>
             </MenuItem>
 
             <!-- Streams -->
             <MenuItem Header="_Streams" Foreground="{DynamicResource MenuFg}">
                 <MenuItem x:Name="MnuRestartTop"    Header="Restart _Top Screen"
                           Click="BtnRestartTop_Click"    IsEnabled="False"
-                          InputGestureText="F6"/>
+                          InputGestureText="F6" Foreground="{DynamicResource MenuFg}"/>
                 <MenuItem x:Name="MnuRestartBottom" Header="Restart _Bottom Screen"
                           Click="BtnRestartBottom_Click" IsEnabled="False"
-                          InputGestureText="F7"/>
+                          InputGestureText="F7" Foreground="{DynamicResource MenuFg}"/>
                 <MenuItem x:Name="MnuRestartAll"    Header="Restart _All"
                           Click="BtnRestartAll_Click"    IsEnabled="False"
-                          InputGestureText="F5"/>
+                          InputGestureText="F5" Foreground="{DynamicResource MenuFg}"/>
                 <Separator/>
                 <MenuItem x:Name="MnuRecordTop"    Header="Record Top to MP4"
-                          Click="BtnRecordTop_Click"    IsEnabled="False"/>
+                          Click="BtnRecordTop_Click"    IsEnabled="False" Foreground="{DynamicResource MenuFg}"/>
                 <MenuItem x:Name="MnuRecordBottom" Header="Record Bottom to MP4"
-                          Click="BtnRecordBottom_Click" IsEnabled="False"/>
+                          Click="BtnRecordBottom_Click" IsEnabled="False" Foreground="{DynamicResource MenuFg}"/>
             </MenuItem>
 
             <!-- Console -->
             <MenuItem Header="_Console" Foreground="{DynamicResource MenuFg}">
                 <MenuItem x:Name="MnuShutdown" Header="_Shutdown Console"
-                          Click="BtnShutdown_Click" IsEnabled="False"/>
+                          Click="BtnShutdown_Click" IsEnabled="False" Foreground="{DynamicResource MenuFg}"/>
                 <MenuItem x:Name="MnuReboot"   Header="_Reboot Console"
-                          Click="BtnReboot_Click"   IsEnabled="False"/>
+                          Click="BtnReboot_Click"   IsEnabled="False" Foreground="{DynamicResource MenuFg}"/>
             </MenuItem>
 
             <!-- View -->
             <MenuItem Header="_View" Foreground="{DynamicResource MenuFg}">
-                <MenuItem Header="_Layout">
+                <MenuItem Header="_Layout" Foreground="{DynamicResource MenuFg}">
                     <MenuItem x:Name="MnuLayoutVertical"   Header="_Vertical Stack"
                               IsCheckable="True"
-                              Click="MnuLayout_Click" Tag="0"/>
+                              Click="MnuLayout_Click" Tag="0" Foreground="{DynamicResource MenuFg}"/>
                     <MenuItem x:Name="MnuLayoutSide"       Header="_Side by Side"
                               IsCheckable="True" IsChecked="True"
-                              Click="MnuLayout_Click" Tag="1"/>
+                              Click="MnuLayout_Click" Tag="1" Foreground="{DynamicResource MenuFg}"/>
                     <MenuItem x:Name="MnuLayoutTopOnly"    Header="Top _Only"
                               IsCheckable="True"
-                              Click="MnuLayout_Click" Tag="2"/>
+                              Click="MnuLayout_Click" Tag="2" Foreground="{DynamicResource MenuFg}"/>
                     <MenuItem x:Name="MnuLayoutBottomOnly" Header="_Bottom Only"
                               IsCheckable="True"
-                              Click="MnuLayout_Click" Tag="3"/>
+                              Click="MnuLayout_Click" Tag="3" Foreground="{DynamicResource MenuFg}"/>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="_Theme">
+                <MenuItem Header="_Theme" Foreground="{DynamicResource MenuFg}">
                     <MenuItem x:Name="MnuThemeDark"    Header="_Dark"
                               IsCheckable="True" IsChecked="True"
-                              Click="MnuTheme_Click" Tag="Dark"/>
+                              Click="MnuTheme_Click" Tag="Dark" Foreground="{DynamicResource MenuFg}"/>
                     <MenuItem x:Name="MnuThemeLight"   Header="_Light"
                               IsCheckable="True"
-                              Click="MnuTheme_Click" Tag="Light"/>
+                              Click="MnuTheme_Click" Tag="Light" Foreground="{DynamicResource MenuFg}"/>
                     <MenuItem x:Name="MnuThemeHCD"     Header="High Contrast _Dark"
                               IsCheckable="True"
-                              Click="MnuTheme_Click" Tag="HighContrastDark"/>
+                              Click="MnuTheme_Click" Tag="HighContrastDark" Foreground="{DynamicResource MenuFg}"/>
                     <MenuItem x:Name="MnuThemeHCL"     Header="High Contrast _Light"
                               IsCheckable="True"
-                              Click="MnuTheme_Click" Tag="HighContrastLight"/>
+                              Click="MnuTheme_Click" Tag="HighContrastLight" Foreground="{DynamicResource MenuFg}"/>
                 </MenuItem>
                 <Separator/>
                 <MenuItem Header="Toggle Event _Log" Click="BtnToggleLog_Click"
-                          InputGestureText="F8"/>
+                          InputGestureText="F8" Foreground="{DynamicResource MenuFg}"/>
             </MenuItem>
 
         </Menu>
@@ -345,7 +458,7 @@
                     <TextBlock Text="Port" Style="{StaticResource SectionLbl}"
                                ToolTip="SSH port (usually 22)"/>
                     <TextBox x:Name="TxtSshPort" Style="{StaticResource TBox}"
-                             Width="56" Text="22"
+                             Width="90" Text="22"
                              AutomationProperties.Name="SSH Port"
                              ToolTip="SSH port (usually 22)"/>
                 </StackPanel>
@@ -448,14 +561,14 @@
                            VerticalAlignment="Center" Margin="0,0,6,0"/>
 
                 <ComboBox x:Name="CmbAudioInput" Style="{StaticResource CBox}"
-                          Width="198"
+                          Width="220"
                           AutomationProperties.Name="Audio input device"
                           ToolTip="Select Line-In / audio input device"/>
 
                 <TextBlock Text="→" Style="{StaticResource SectionLbl}"/>
 
                 <ComboBox x:Name="CmbAudioOutput" Style="{StaticResource CBox}"
-                          Width="178"
+                          Width="200"
                           AutomationProperties.Name="Audio output device"
                           ToolTip="Select audio output"/>
 
@@ -750,11 +863,37 @@
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <Image x:Name="ImgTopScreenSide" Stretch="Uniform"
                                    RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                            <!-- Status Indicator -->
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Top"
+                                        Margin="10,6">
+                                <Ellipse x:Name="DotTopSide" Width="8" Height="8"
+                                         Fill="{DynamicResource BadgeWaiting}"
+                                         VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <TextBlock x:Name="TxtTopBadgeSide" Text="○ WAITING"
+                                           Foreground="{DynamicResource BadgeWaiting}"
+                                           FontSize="11" FontWeight="SemiBold"/>
+                            </StackPanel>
+                            <!-- FPS Overlay -->
+                            <Border Background="{DynamicResource ScreenBg}" 
+                                    CornerRadius="4"
+                                    Opacity="0.7"
+                                    Padding="6,3"
+                                    VerticalAlignment="Top"
+                                    HorizontalAlignment="Right"
+                                    Margin="0,6,6,0">
+                                <TextBlock x:Name="TxtTopFpsValueSide" Text="0.0 FPS"
+                                           Foreground="{DynamicResource ScreenLabelFg}"
+                                           FontFamily="Consolas, monospace"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"/>
+                            </Border>
                             <!-- Fullscreen button -->
                             <Button Content="⛶"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Top"
-                                    Margin="0,6,6,0"
+                                    Margin="0,32,6,0"
                                     Padding="6,3"
                                     FontSize="14"
                                     Opacity="0.75"
@@ -799,11 +938,37 @@
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <Image x:Name="ImgBottomScreenSide" Stretch="Uniform"
                                    RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                            <!-- Status Indicator -->
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Top"
+                                        Margin="10,6">
+                                <Ellipse x:Name="DotBottomSide" Width="8" Height="8"
+                                         Fill="{DynamicResource BadgeWaiting}"
+                                         VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <TextBlock x:Name="TxtBottomBadgeSide" Text="○ WAITING"
+                                           Foreground="{DynamicResource BadgeWaiting}"
+                                           FontSize="11" FontWeight="SemiBold"/>
+                            </StackPanel>
+                            <!-- FPS Overlay -->
+                            <Border Background="{DynamicResource ScreenBg}" 
+                                    CornerRadius="4"
+                                    Opacity="0.7"
+                                    Padding="6,3"
+                                    VerticalAlignment="Top"
+                                    HorizontalAlignment="Right"
+                                    Margin="0,6,6,0">
+                                <TextBlock x:Name="TxtBottomFpsValueSide" Text="0.0 FPS"
+                                           Foreground="{DynamicResource ScreenLabelFg}"
+                                           FontFamily="Consolas, monospace"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"/>
+                            </Border>
                             <!-- Fullscreen button -->
                             <Button Content="⛶"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Top"
-                                    Margin="0,6,6,0"
+                                    Margin="0,32,6,0"
                                     Padding="6,3"
                                     FontSize="14"
                                     Opacity="0.75"
@@ -851,6 +1016,21 @@
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <Image x:Name="ImgTopScreenOnly" Stretch="Uniform"
                                    RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                            <!-- Status Indicator -->
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Top"
+                                        Margin="10,6">
+                                <Ellipse x:Name="DotTopOnly" Width="8" Height="8"
+                                         Fill="{DynamicResource BadgeWaiting}"
+                                         VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <TextBlock x:Name="TxtTopBadgeOnly" Text="○ WAITING"
+                                           Foreground="{DynamicResource BadgeWaiting}"
+                                           FontSize="11" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="TxtTopFpsOnly" Text="-- fps"
+                                           Foreground="{DynamicResource FpsFg}"
+                                           FontSize="11" Margin="10,0,0,0"/>
+                            </StackPanel>
                             <!-- Fullscreen button -->
                             <Button Content="⛶"
                                     HorizontalAlignment="Right"
@@ -903,6 +1083,21 @@
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <Image x:Name="ImgBottomScreenOnly" Stretch="Uniform"
                                    RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                            <!-- Status Indicator -->
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Top"
+                                        Margin="10,6">
+                                <Ellipse x:Name="DotBottomOnly" Width="8" Height="8"
+                                         Fill="{DynamicResource BadgeWaiting}"
+                                         VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <TextBlock x:Name="TxtBottomBadgeOnly" Text="○ WAITING"
+                                           Foreground="{DynamicResource BadgeWaiting}"
+                                           FontSize="11" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="TxtBottomFpsOnly" Text="-- fps"
+                                           Foreground="{DynamicResource FpsFg}"
+                                           FontSize="11" Margin="10,0,0,0"/>
+                            </StackPanel>
                             <!-- Fullscreen button -->
                             <Button Content="⛶"
                                     HorizontalAlignment="Right"

@@ -136,4 +136,76 @@
         </Setter>
     </Style>
 
+    <!-- MenuItem Style for Dark Theme -->
+    <Style TargetType="MenuItem">
+        <Setter Property="Foreground" Value="{DynamicResource MenuFg}"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Padding" Value="8,4"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <Border x:Name="MenuItemBorder" 
+                            Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <!-- Icon -->
+                            <ContentPresenter Grid.Column="0"
+                                            ContentSource="Icon"
+                                            Margin="0,0,8,0"
+                                            VerticalAlignment="Center"/>
+                            
+                            <!-- Header Text - MUST USE TextBlock -->
+                            <TextBlock Grid.Column="1"
+                                     Text="{Binding Path=Header, RelativeSource={RelativeSource TemplatedParent}}"
+                                     Foreground="{TemplateBinding Foreground}"
+                                     VerticalAlignment="Center"
+                                     FontSize="{TemplateBinding FontSize}"
+                                     FontFamily="{TemplateBinding FontFamily}"
+                                     FontWeight="{TemplateBinding FontWeight}"/>
+                            
+                            <!-- Keyboard Shortcut -->
+                            <TextBlock Grid.Column="2"
+                                     Text="{TemplateBinding InputGestureText}"
+                                     Foreground="{DynamicResource TextSecondary}"
+                                     VerticalAlignment="Center"
+                                     Margin="16,0,0,0"
+                                     Opacity="0.7"
+                                     FontSize="11"/>
+                            
+                            <!-- Submenu Popup -->
+                            <Popup x:Name="PART_Popup"
+                                   AllowsTransparency="True"
+                                   Placement="Right"
+                                   VerticalOffset="-2"
+                                   IsOpen="{TemplateBinding IsSubmenuOpen}">
+                                <Border Background="{DynamicResource MenuBg}"
+                                        BorderBrush="{DynamicResource MenuBorder}"
+                                        BorderThickness="1">
+                                    <StackPanel IsItemsHost="True" KeyboardNavigation.TabNavigation="Cycle"/>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </Border>
+                    
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="MenuItemBorder" Property="Background" 
+                                    Value="{DynamicResource MenuItemHover}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{DynamicResource TextDisabled}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>

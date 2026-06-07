@@ -6,6 +6,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Windows.Automation;
+using System.Diagnostics;
 
 namespace RGDSCapture
 {
@@ -17,16 +18,31 @@ namespace RGDSCapture
     /// when stream resolution changes.
     ///
     /// Close: Escape key, double-click, or the on-screen close button.
+    /// 
+    /// Features:
+    /// - Stream freeze detection and recovery (restarts frame timer on stall)
+    /// - FPS counter in top-right corner
+    /// - Graceful recovery when stream data stops arriving
     /// </summary>
     public sealed class FullScreenWindow : Window
     {
         private readonly Func<WriteableBitmap?> _bitmapSource;
         private readonly Image                  _image;
         private readonly DispatcherTimer        _timer;
+        private readonly DispatcherTimer        _freezeDetectionTimer;
+        private readonly TextBlock              _fpsCounter;
+        private int                             _frameCount;
+        private Stopwatch                       _fpsStopwatch;
+        private WriteableBitmap?                _lastBitmap;
+        private int                             _freezeFrameCount;
+        private const int                       FreezeThresholdFrames = 30; // ~1 second at 30fps
 
         public FullScreenWindow(Func<WriteableBitmap?> bitmapSource, string screenLabel)
         {
             _bitmapSource = bitmapSource;
+            _frameCount = 0;
+            _freezeFrameCount = 0;
+            _fpsStopwatch = Stopwatch.StartNew();
 
             // ── Window chrome ─────────────────────────────────────────
             WindowStyle       = WindowStyle.None;
@@ -43,16 +59,16 @@ namespace RGDSCapture
             var root = new Grid();
 
             // Video image — fills the entire window, letterboxed
-         _image = new Image
-{
-    Stretch = Stretch.Uniform,
-    HorizontalAlignment = HorizontalAlignment.Center,
-    VerticalAlignment = VerticalAlignment.Center
-};
+            _image = new Image
+            {
+                Stretch = Stretch.Uniform,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
 
-RenderOptions.SetBitmapScalingMode(
-    _image,
-    BitmapScalingMode.NearestNeighbor);
+            RenderOptions.SetBitmapScalingMode(
+                _image,
+                BitmapScalingMode.NearestNeighbor);
             AutomationProperties.SetName(_image, $"{screenLabel} video");
             root.Children.Add(_image);
 
@@ -76,7 +92,24 @@ RenderOptions.SetBitmapScalingMode(
             };
             root.Children.Add(labelBorder);
 
-            // Close button — top-right corner
+            // FPS Counter in top-right corner
+            _fpsCounter = new TextBlock
+            {
+                Text                = "60.0 FPS",
+                Foreground          = new SolidColorBrush(Color.FromArgb(0xCC, 76, 175, 80)), // Green
+                FontFamily          = new FontFamily("Consolas, monospace"),
+                FontSize            = 12,
+                FontWeight          = FontWeights.SemiBold,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment   = VerticalAlignment.Top,
+                Margin              = new Thickness(0, 16, 16, 0),
+                Padding             = new Thickness(8, 4, 8, 4),
+                Background          = new SolidColorBrush(Color.FromArgb(0xAA, 0, 0, 0))
+            };
+            AutomationProperties.SetName(_fpsCounter, "FPS counter");
+            root.Children.Add(_fpsCounter);
+
+            // Close button — top-right corner (below FPS counter)
             var closeBtn = new Button
             {
                 Content             = "✕",
@@ -85,7 +118,7 @@ RenderOptions.SetBitmapScalingMode(
                 BorderBrush         = new SolidColorBrush(Color.FromArgb(0x55, 255, 255, 255)),
                 BorderThickness     = new Thickness(1),
                 Padding             = new Thickness(10, 5, 10, 5),
-                Margin              = new Thickness(0, 16, 16, 0),
+                Margin              = new Thickness(0, 70, 16, 0),
                 FontSize            = 16,
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment   = VerticalAlignment.Top,
@@ -124,6 +157,14 @@ RenderOptions.SetBitmapScalingMode(
             _timer.Tick += OnTick;
             _timer.Start();
 
+            // ── Freeze detection timer (runs every 100ms) ──────────────
+            _freezeDetectionTimer = new DispatcherTimer(DispatcherPriority.Normal)
+            {
+                Interval = TimeSpan.FromMilliseconds(100)
+            };
+            _freezeDetectionTimer.Tick += OnFreezeDetectionTick;
+            _freezeDetectionTimer.Start();
+
             // Fade out the label and hint after 3 seconds
             var fadeTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
             fadeTimer.Tick += (_, _) =>
@@ -134,14 +175,71 @@ RenderOptions.SetBitmapScalingMode(
             };
             fadeTimer.Start();
 
-            Closed += (_, _) => _timer.Stop();
+            Closed += (_, _) => 
+            {
+                _timer.Stop();
+                _freezeDetectionTimer.Stop();
+            };
         }
 
         private void OnTick(object? sender, EventArgs e)
         {
             var bmp = _bitmapSource();
-            if (bmp != null && !ReferenceEquals(_image.Source, bmp))
-                _image.Source = bmp;
+            if (bmp != null)
+            {
+                // Only update if bitmap changed (new frame arrived)
+                if (!ReferenceEquals(_image.Source, bmp))
+                {
+                    _image.Source = bmp;
+                    _lastBitmap = bmp;
+                    _frameCount++;
+                    _freezeFrameCount = 0; // Reset freeze counter on new frame
+                }
+                else
+                {
+                    _freezeFrameCount++;
+                }
+
+                // Update FPS counter every 500ms
+                if (_fpsStopwatch.ElapsedMilliseconds >= 500)
+                {
+                    double fps = (_frameCount * 1000.0) / _fpsStopwatch.ElapsedMilliseconds;
+                    _fpsCounter.Text = $"{fps:F1} FPS";
+                    
+                    // Change color based on FPS health
+                    if (fps >= 58)
+                        _fpsCounter.Foreground = new SolidColorBrush(Color.FromArgb(0xCC, 76, 175, 80)); // Green
+                    else if (fps >= 30)
+                        _fpsCounter.Foreground = new SolidColorBrush(Color.FromArgb(0xCC, 255, 193, 7)); // Amber
+                    else
+                        _fpsCounter.Foreground = new SolidColorBrush(Color.FromArgb(0xCC, 244, 67, 54)); // Red
+
+                    _frameCount = 0;
+                    _fpsStopwatch.Restart();
+                }
+            }
+        }
+
+        private void OnFreezeDetectionTick(object? sender, EventArgs e)
+        {
+            // If no new frame for ~1 second (30 frames @ 30fps), attempt recovery
+            if (_freezeFrameCount > FreezeThresholdFrames && _lastBitmap != null)
+            {
+                // Attempt recovery: Restart timer with aggressive retry
+                try
+                {
+                    _timer.Stop();
+                    _timer.Start();
+                    _freezeFrameCount = 0;
+                    
+                    // Optional: Log or notify user of recovery attempt
+                    System.Diagnostics.Debug.WriteLine($"Stream freeze detected and recovery attempted");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Freeze recovery error: {ex.Message}");
+                }
+            }
         }
 
         private static void FadeOut(UIElement element)
