@@ -86,9 +86,9 @@
     <SolidColorBrush x:Key="VuBg"              Color="#1C1C1C"/>
     <SolidColorBrush x:Key="VuBorder"          Color="#3C3C3C"/>
 
-    <!-- Menu -->
+    <!-- Menu: background and borders use dynamic resources, text is hardcoded black -->
     <SolidColorBrush x:Key="MenuBg"             Color="#2C2C2C"/>
-    <SolidColorBrush x:Key="MenuFg"             Color="#E8E8E8"/>
+    <SolidColorBrush x:Key="MenuFg"             Color="#000000"/>
     <SolidColorBrush x:Key="MenuBorder"         Color="#404040"/>
     <SolidColorBrush x:Key="MenuItemHover"      Color="#3C3C3C"/>
     <SolidColorBrush x:Key="MenuItemPress"      Color="#484848"/>
@@ -136,9 +136,9 @@
         </Setter>
     </Style>
 
-    <!-- MenuItem Style for Dark Theme -->
+    <!-- MenuItem Style for Dark Theme: text is pure black (#000000) for readability on dark backgrounds -->
     <Style TargetType="MenuItem">
-        <Setter Property="Foreground" Value="{DynamicResource MenuFg}"/>
+        <Setter Property="Foreground" Value="#000000"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Padding" Value="8,4"/>
         <Setter Property="Background" Value="Transparent"/>
@@ -161,10 +161,10 @@
                                             Margin="0,0,8,0"
                                             VerticalAlignment="Center"/>
                             
-                            <!-- Header Text - MUST USE TextBlock -->
+                            <!-- Header Text: hardcoded pure black for dark theme visibility -->
                             <TextBlock Grid.Column="1"
                                      Text="{Binding Path=Header, RelativeSource={RelativeSource TemplatedParent}}"
-                                     Foreground="{TemplateBinding Foreground}"
+                                     Foreground="#000000"
                                      VerticalAlignment="Center"
                                      FontSize="{TemplateBinding FontSize}"
                                      FontFamily="{TemplateBinding FontFamily}"
@@ -173,13 +173,13 @@
                             <!-- Keyboard Shortcut -->
                             <TextBlock Grid.Column="2"
                                      Text="{TemplateBinding InputGestureText}"
-                                     Foreground="{DynamicResource TextSecondary}"
+                                     Foreground="#000000"
                                      VerticalAlignment="Center"
                                      Margin="16,0,0,0"
                                      Opacity="0.7"
                                      FontSize="11"/>
                             
-                            <!-- Submenu Popup -->
+                            <!-- Submenu Popup: use hardcoded black for text in nested items -->
                             <Popup x:Name="PART_Popup"
                                    AllowsTransparency="True"
                                    Placement="Right"
