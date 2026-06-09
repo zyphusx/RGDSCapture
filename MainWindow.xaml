@@ -424,12 +424,6 @@
                     <MenuItem x:Name="MnuThemeLight"   Header="_Light"
                               IsCheckable="True"
                               Click="MnuTheme_Click" Tag="Light" Foreground="{DynamicResource MenuFg}"/>
-                    <MenuItem x:Name="MnuThemeHCD"     Header="High Contrast _Dark"
-                              IsCheckable="True"
-                              Click="MnuTheme_Click" Tag="HighContrastDark" Foreground="{DynamicResource MenuFg}"/>
-                    <MenuItem x:Name="MnuThemeHCL"     Header="High Contrast _Light"
-                              IsCheckable="True"
-                              Click="MnuTheme_Click" Tag="HighContrastLight" Foreground="{DynamicResource MenuFg}"/>
                 </MenuItem>
                 <Separator/>
                 <MenuItem Header="Toggle Event _Log" Click="BtnToggleLog_Click"
@@ -693,7 +687,7 @@
         <!-- ══════════════════════════════════════════════════════════
              MAIN CONTENT — full-width video + overlay log drawer
         ══════════════════════════════════════════════════════════════ -->
-        <Grid x:Name="ContentGrid" ClipToBounds="True">
+        <Grid x:Name="RootGrid" ClipToBounds="True">
 
             <!-- ── VIDEO AREA ── -->
             <Grid x:Name="VideoGrid" Background="{DynamicResource VideoAreaBg}">
@@ -720,6 +714,7 @@
                                        AutomationProperties.Name="Top screen display"/>
                             <Image x:Name="ImgTopScreen" Stretch="Uniform"
                                    RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                   MouseLeftButtonDown="ImgTopScreen_MouseLeftButtonDown"
                                    AutomationProperties.Name="Top screen video"/>
                             <!-- Fullscreen button -->
                             <Button Content="⛶"
@@ -767,9 +762,6 @@
                                 <TextBlock x:Name="TxtTopBadge" Text="○ WAITING"
                                            Foreground="{DynamicResource BadgeWaiting}"
                                            FontSize="11" FontWeight="SemiBold"/>
-                                <TextBlock x:Name="TxtTopFps" Text="-- fps"
-                                           Foreground="{DynamicResource FpsFg}"
-                                           FontSize="11" Margin="10,0,0,0"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -791,6 +783,7 @@
                                        AutomationProperties.Name="Bottom screen display"/>
                             <Image x:Name="ImgBottomScreen" Stretch="Uniform"
                                    RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                   MouseLeftButtonDown="ImgBottomScreen_MouseLeftButtonDown"
                                    AutomationProperties.Name="Bottom screen video"/>
                             <!-- Fullscreen button -->
                             <Button Content="⛶"
@@ -838,9 +831,6 @@
                                 <TextBlock x:Name="TxtBottomBadge" Text="○ WAITING"
                                            Foreground="{DynamicResource BadgeWaiting}"
                                            FontSize="11" FontWeight="SemiBold"/>
-                                <TextBlock x:Name="TxtBottomFps" Text="-- fps"
-                                           Foreground="{DynamicResource FpsFg}"
-                                           FontSize="11" Margin="10,0,0,0"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -862,7 +852,8 @@
                                        FontSize="18" FontWeight="SemiBold"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <Image x:Name="ImgTopScreenSide" Stretch="Uniform"
-                                   RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                                   RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                   MouseLeftButtonDown="ImgTopScreen_MouseLeftButtonDown"/>
                             <!-- Status Indicator -->
                             <StackPanel Orientation="Horizontal"
                                         HorizontalAlignment="Left"
@@ -882,13 +873,7 @@
                                     Padding="6,3"
                                     VerticalAlignment="Top"
                                     HorizontalAlignment="Right"
-                                    Margin="0,6,6,0">
-                                <TextBlock x:Name="TxtTopFpsValueSide" Text="0.0 FPS"
-                                           Foreground="{DynamicResource ScreenLabelFg}"
-                                           FontFamily="Consolas, monospace"
-                                           FontSize="11"
-                                           FontWeight="SemiBold"/>
-                            </Border>
+                                    Margin="0,6,6,0"/>
                             <!-- Fullscreen button -->
                             <Button Content="⛶"
                                     HorizontalAlignment="Right"
@@ -937,7 +922,8 @@
                                        FontSize="18" FontWeight="SemiBold"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <Image x:Name="ImgBottomScreenSide" Stretch="Uniform"
-                                   RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                                   RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                   MouseLeftButtonDown="ImgBottomScreen_MouseLeftButtonDown"/>
                             <!-- Status Indicator -->
                             <StackPanel Orientation="Horizontal"
                                         HorizontalAlignment="Left"
@@ -957,13 +943,7 @@
                                     Padding="6,3"
                                     VerticalAlignment="Top"
                                     HorizontalAlignment="Right"
-                                    Margin="0,6,6,0">
-                                <TextBlock x:Name="TxtBottomFpsValueSide" Text="0.0 FPS"
-                                           Foreground="{DynamicResource ScreenLabelFg}"
-                                           FontFamily="Consolas, monospace"
-                                           FontSize="11"
-                                           FontWeight="SemiBold"/>
-                            </Border>
+                                    Margin="0,6,6,0"/>
                             <!-- Fullscreen button -->
                             <Button Content="⛶"
                                     HorizontalAlignment="Right"
@@ -1015,7 +995,8 @@
                                        FontSize="18" FontWeight="SemiBold"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <Image x:Name="ImgTopScreenOnly" Stretch="Uniform"
-                                   RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                                   RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                   MouseLeftButtonDown="ImgTopScreen_MouseLeftButtonDown"/>
                             <!-- Status Indicator -->
                             <StackPanel Orientation="Horizontal"
                                         HorizontalAlignment="Left"
@@ -1027,9 +1008,6 @@
                                 <TextBlock x:Name="TxtTopBadgeOnly" Text="○ WAITING"
                                            Foreground="{DynamicResource BadgeWaiting}"
                                            FontSize="11" FontWeight="SemiBold"/>
-                                <TextBlock x:Name="TxtTopFpsOnly" Text="-- fps"
-                                           Foreground="{DynamicResource FpsFg}"
-                                           FontSize="11" Margin="10,0,0,0"/>
                             </StackPanel>
                             <!-- Fullscreen button -->
                             <Button Content="⛶"
@@ -1082,7 +1060,8 @@
                                        FontSize="18" FontWeight="SemiBold"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <Image x:Name="ImgBottomScreenOnly" Stretch="Uniform"
-                                   RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                                   RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                   MouseLeftButtonDown="ImgBottomScreen_MouseLeftButtonDown"/>
                             <!-- Status Indicator -->
                             <StackPanel Orientation="Horizontal"
                                         HorizontalAlignment="Left"
@@ -1094,9 +1073,6 @@
                                 <TextBlock x:Name="TxtBottomBadgeOnly" Text="○ WAITING"
                                            Foreground="{DynamicResource BadgeWaiting}"
                                            FontSize="11" FontWeight="SemiBold"/>
-                                <TextBlock x:Name="TxtBottomFpsOnly" Text="-- fps"
-                                           Foreground="{DynamicResource FpsFg}"
-                                           FontSize="11" Margin="10,0,0,0"/>
                             </StackPanel>
                             <!-- Fullscreen button -->
                             <Button Content="⛶"

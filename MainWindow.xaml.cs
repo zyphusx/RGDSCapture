@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
@@ -77,9 +78,14 @@ namespace RGDSCapture
         private bool         _drawerOpen   = false;
         private const double DrawerWidth   = 270.0;
         private const int    DrawerAnimMs  = 200;
+        private const int    MaxLogLines   = 300;
 
-        // ── Log ───────────────────────────────────────────────────────
-        private const int MaxLogLines = 300;
+        // ── Fullscreen overlay ────────────────────────────────────────
+        private bool         _fullscreenActive = false;
+        private FullScreenOverlay? _fullscreenOverlay;
+
+        // ── Freeze detection timer ─────────────────────────────────
+        private DispatcherTimer? _freezeCheckTimer;
 
         // ─────────────────────────────────────────────────────────────
         public MainWindow()
@@ -253,12 +259,20 @@ namespace RGDSCapture
             { Interval = TimeSpan.FromMilliseconds(33) };
             _renderTimer.Tick += RenderTick;
             _renderTimer.Start();
+
+            // Start separate freeze detection timer (runs every 1 second)
+            _freezeCheckTimer = new DispatcherTimer(DispatcherPriority.Normal)
+            { Interval = TimeSpan.FromSeconds(1) };
+            _freezeCheckTimer.Tick += (_, _) => CheckFreezeAndAutoRecover();
+            _freezeCheckTimer.Start();
         }
 
         private void StopRenderTimer()
         {
             _renderTimer?.Stop();
+            _freezeCheckTimer?.Stop();
             _renderTimer = null;
+            _freezeCheckTimer = null;
         }
 
         private void RenderTick(object? sender, EventArgs e)
@@ -272,7 +286,6 @@ namespace RGDSCapture
                          ImgBottomScreen, ImgBottomScreenSide, ImgBottomScreenOnly);
 
             UpdateHealthIndicators();
-            CheckFreezeAndAutoRecover();
         }
 
         private static void RenderScreen(
@@ -319,13 +332,6 @@ namespace RGDSCapture
 
             if (_topReceiver != null)
             {
-                float fps = _topReceiver.CurrentFps;
-                string fpsText = fps > 0 ? $"{fps:F1} fps" : "-- fps";
-
-                TxtTopFps.Text         = fpsText;   // vertical stack
-                TxtTopFpsValueSide.Text = fpsText;   // side-by-side
-                TxtTopFpsOnly.Text     = fpsText;   // top-only
-
                 if (_topRecovering)
                     SetStreamBadge(true, StreamBadgeState.Recovering);
                 else if (_topReceiver.IsFrozen)
@@ -338,13 +344,6 @@ namespace RGDSCapture
 
             if (_bottomReceiver != null)
             {
-                float fps = _bottomReceiver.CurrentFps;
-                string fpsText = fps > 0 ? $"{fps:F1} fps" : "-- fps";
-
-                TxtBottomFps.Text         = fpsText;   // vertical stack
-                TxtBottomFpsValueSide.Text = fpsText;   // side-by-side
-                TxtBottomFpsOnly.Text     = fpsText;   // bottom-only
-
                 if (_bottomRecovering)
                     SetStreamBadge(false, StreamBadgeState.Recovering);
                 else if (_bottomReceiver.IsFrozen)
@@ -360,39 +359,83 @@ namespace RGDSCapture
         {
             if (!_isConnected || _ssh == null || !_ssh.IsConnected) return;
 
-            if (_topReceiver?.IsFrozen == true &&
-                !_topRecovering && _topRetries < MaxAutoRetries)
+            // Check top screen
+            if (_topReceiver != null && _topReceiver.IsFrozen)
             {
-                _topRecovering = true;
-                _topRetries++;
-                AppendLog($"[AUTO] Top frozen — attempt {_topRetries}/{MaxAutoRetries}", isError: true);
-                _ = AutoRecoverStream(StreamType.TopScreen);
+                if (!_topRecovering && _topRetries < MaxAutoRetries)
+                {
+                    _topRecovering = true;
+                    _topRetries++;
+                    AppendLog($"[FREEZE] Top screen frozen — auto-recovery attempt {_topRetries}/{MaxAutoRetries}", isError: true);
+                    _ = AutoRecoverStream(StreamType.TopScreen);
+                }
+                else if (_topRetries >= MaxAutoRetries)
+                {
+                    AppendLog($"[FREEZE] Top screen frozen — max retries reached", isError: true);
+                }
+            }
+            else if (_topReceiver != null && _topReceiver.IsRunning && !_topReceiver.IsFrozen)
+            {
+                // Stream recovered
+                if (_topRecovering)
+                {
+                    _topRecovering = false;
+                    AppendLog($"[FREEZE] Top screen recovered", isError: false);
+                }
             }
 
-            if (_bottomReceiver?.IsFrozen == true &&
-                !_bottomRecovering && _bottomRetries < MaxAutoRetries)
+            // Check bottom screen
+            if (_bottomReceiver != null && _bottomReceiver.IsFrozen)
             {
-                _bottomRecovering = true;
-                _bottomRetries++;
-                AppendLog($"[AUTO] Bottom frozen — attempt {_bottomRetries}/{MaxAutoRetries}", isError: true);
-                _ = AutoRecoverStream(StreamType.BottomScreen);
+                if (!_bottomRecovering && _bottomRetries < MaxAutoRetries)
+                {
+                    _bottomRecovering = true;
+                    _bottomRetries++;
+                    AppendLog($"[FREEZE] Bottom screen frozen — auto-recovery attempt {_bottomRetries}/{MaxAutoRetries}", isError: true);
+                    _ = AutoRecoverStream(StreamType.BottomScreen);
+                }
+                else if (_bottomRetries >= MaxAutoRetries)
+                {
+                    AppendLog($"[FREEZE] Bottom screen frozen — max retries reached", isError: true);
+                }
+            }
+            else if (_bottomReceiver != null && _bottomReceiver.IsRunning && !_bottomReceiver.IsFrozen)
+            {
+                // Stream recovered
+                if (_bottomRecovering)
+                {
+                    _bottomRecovering = false;
+                    AppendLog($"[FREEZE] Bottom screen recovered", isError: false);
+                }
             }
         }
 
         private async Task AutoRecoverStream(StreamType stream)
         {
-            await Task.Delay(500);
-            if (!_isConnected || _ssh == null)
+            await Task.Delay(200); // Brief delay before restart
+            if (!_isConnected || _ssh == null || !_ssh.IsConnected)
             {
                 if (stream == StreamType.TopScreen)    _topRecovering    = false;
                 else                                   _bottomRecovering = false;
                 return;
             }
-            await _ssh.RestartStreamAsync(stream);
+
+            try
+            {
+                await _ssh.RestartStreamAsync(stream);
+                string label = stream == StreamType.TopScreen ? "top" : "bottom";
+                AppendLog($"[FREEZE] {label} stream restart sent to device");
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"[FREEZE] Stream restart failed: {ex.Message}", isError: true);
+            }
+
+            // Mark as not recovering (will be reset based on actual stream status)
             if (stream == StreamType.TopScreen)
-            { _topStreamActive = false; _topRecovering = false; }
+                _topRecovering = false;
             else
-            { _bottomStreamActive = false; _bottomRecovering = false; }
+                _bottomRecovering = false;
         }
 
         private enum StreamBadgeState { Waiting, Live, Frozen, Recovering }
@@ -402,17 +445,14 @@ namespace RGDSCapture
             // Vertical stack view
             var dot  = isTop ? DotTop      : DotBottom;
             var text = isTop ? TxtTopBadge : TxtBottomBadge;
-            var fps  = isTop ? TxtTopFps   : TxtBottomFps;
 
             // Side-by-side view
             var dotSide  = isTop ? DotTopSide        : DotBottomSide;
             var textSide = isTop ? TxtTopBadgeSide   : TxtBottomBadgeSide;
-            var fpsSide  = isTop ? TxtTopFpsValueSide : TxtBottomFpsValueSide;
 
             // Single-screen view
             var dotOnly  = isTop ? DotTopOnly      : DotBottomOnly;
             var textOnly = isTop ? TxtTopBadgeOnly : TxtBottomBadgeOnly;
-            var fpsOnly  = isTop ? TxtTopFpsOnly   : TxtBottomFpsOnly;
 
             (string label, Color c) = state switch
             {
@@ -423,28 +463,21 @@ namespace RGDSCapture
             };
 
             var brush = new SolidColorBrush(c);
-            var fpsBrush = new SolidColorBrush(
-                state == StreamBadgeState.Live
-                    ? Color.FromRgb(60, 130, 90)
-                    : Color.FromRgb(58, 74, 96));
 
             // Vertical stack
             dot.Fill        = brush;
             text.Text       = label;
             text.Foreground = brush;
-            fps.Foreground  = fpsBrush;
 
             // Side-by-side
             dotSide.Fill        = brush;
             textSide.Text       = label;
             textSide.Foreground = brush;
-            fpsSide.Foreground  = fpsBrush;
 
             // Single-screen
             dotOnly.Fill        = brush;
             textOnly.Text       = label;
             textOnly.Foreground = brush;
-            fpsOnly.Foreground  = fpsBrush;
         }
 
         // ─────────────────────────────────────────────────────────────
@@ -659,14 +692,18 @@ namespace RGDSCapture
             string ts      = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             string outFile = Path.Combine(_recordingFolder, $"rg_{label}_{ts}.mp4");
 
-            string ffmpegArgs =
-                $"-y -protocol_whitelist file,crypto,data,udp,rtp " +
-                $"-i rtp://127.0.0.1:{port} " +
-                $"-c copy -movflags +faststart \"{outFile}\"";
-
             string ffmpegPath = Path.Combine(AppContext.BaseDirectory, "ffmpeg.exe");
             if (!File.Exists(ffmpegPath))
-            { AppendLog($"[RECORD] ffmpeg.exe not found at {AppContext.BaseDirectory}", isError: true); return; }
+            {
+                AppendLog($"[RECORD] ffmpeg.exe not found at {AppContext.BaseDirectory}", isError: true);
+                return;
+            }
+
+            string ffmpegArgs =
+                $"-protocol_whitelist file,crypto,data,udp,rtp " +
+                $"-i rtp://127.0.0.1:{port} " +
+                $"-c:v libx264 -preset ultrafast -crf 23 " +
+                $"-y \"{outFile}\"";
 
             var psi = new ProcessStartInfo
             {
@@ -674,28 +711,68 @@ namespace RGDSCapture
                 Arguments             = ffmpegArgs,
                 UseShellExecute       = false,
                 CreateNoWindow        = true,
-                RedirectStandardInput = true
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError  = true
             };
 
             try
             {
                 var proc = Process.Start(psi)!;
+
+                // Drain stderr asynchronously to prevent deadlock
+                _ = Task.Run(() =>
+                {
+                    try
+                    {
+                        string? line;
+                        while ((line = proc.StandardError.ReadLine()) != null)
+                        {
+                            if (line.Contains("error", StringComparison.OrdinalIgnoreCase))
+                            {
+                                Dispatcher.Invoke(() =>
+                                    AppendLog($"[RECORD] {label} error: {line}", isError: true));
+                            }
+                        }
+                    }
+                    catch { }
+                });
+
+                // Drain stdout asynchronously
+                _ = Task.Run(() =>
+                {
+                    try
+                    {
+                        string? line;
+                        while ((line = proc.StandardOutput.ReadLine()) != null)
+                        {
+                            // Silent
+                        }
+                    }
+                    catch { }
+                });
+
                 if (isTop)
                 {
-                    _topRecordProc = proc; _topRecording = true;
+                    _topRecordProc = proc;
+                    _topRecording = true;
                     BtnRecordTop.Content    = "⏹ Stop Top";
                     BtnRecordTop.Background = new SolidColorBrush(Color.FromRgb(160, 30, 30));
                 }
                 else
                 {
-                    _bottomRecordProc = proc; _bottomRecording = true;
+                    _bottomRecordProc = proc;
+                    _bottomRecording = true;
                     BtnRecordBottom.Content    = "⏹ Stop Bottom";
                     BtnRecordBottom.Background = new SolidColorBrush(Color.FromRgb(160, 30, 30));
                 }
+
                 AppendLog($"[RECORD] {label} → {outFile}");
             }
             catch (Exception ex)
-            { AppendLog($"[RECORD] Start failed: {ex.Message}", isError: true); }
+            {
+                AppendLog($"[RECORD] Start failed: {ex.Message}", isError: true);
+            }
         }
 
         private void StopRecording(StreamType stream)
@@ -703,32 +780,65 @@ namespace RGDSCapture
             bool isTop = stream == StreamType.TopScreen;
             var  proc  = isTop ? _topRecordProc : _bottomRecordProc;
 
+            if (proc == null || proc.HasExited)
+            {
+                var defaultBg = new SolidColorBrush(Color.FromRgb(28, 42, 74));
+                if (isTop)
+                {
+                    _topRecordProc = null;
+                    _topRecording = false;
+                    BtnRecordTop.Content    = "⏺ Rec Top";
+                    BtnRecordTop.Background = defaultBg;
+                }
+                else
+                {
+                    _bottomRecordProc = null;
+                    _bottomRecording = false;
+                    BtnRecordBottom.Content    = "⏺ Rec Bottom";
+                    BtnRecordBottom.Background = defaultBg;
+                }
+                return;
+            }
+
             try
             {
-                if (proc != null && !proc.HasExited)
+                proc.StandardInput.Write('q');
+                proc.StandardInput.Flush();
+                proc.StandardInput.Close();
+
+                if (!proc.WaitForExit(5000))
                 {
-                    proc.StandardInput.Write('q');
-                    proc.StandardInput.Flush();
-                    proc.WaitForExit(3000);
-                    if (!proc.HasExited) proc.Kill();
+                    proc.Kill(entireProcessTree: true);
+                    proc.WaitForExit(1000);
                 }
             }
-            catch { }
-            finally { proc?.Dispose(); }
+            catch (Exception ex)
+            {
+                AppendLog($"[RECORD] Stop error: {ex.Message}", isError: true);
+                try { proc.Kill(entireProcessTree: true); }
+                catch { }
+            }
+            finally
+            {
+                proc?.Dispose();
+            }
 
-            var defaultBg = new SolidColorBrush(Color.FromRgb(28, 42, 74));
+            var defaultBg2 = new SolidColorBrush(Color.FromRgb(28, 42, 74));
             if (isTop)
             {
-                _topRecordProc = null; _topRecording = false;
+                _topRecordProc = null;
+                _topRecording = false;
                 BtnRecordTop.Content    = "⏺ Rec Top";
-                BtnRecordTop.Background = defaultBg;
+                BtnRecordTop.Background = defaultBg2;
             }
             else
             {
-                _bottomRecordProc = null; _bottomRecording = false;
+                _bottomRecordProc = null;
+                _bottomRecording = false;
                 BtnRecordBottom.Content    = "⏺ Rec Bottom";
-                BtnRecordBottom.Background = defaultBg;
+                BtnRecordBottom.Background = defaultBg2;
             }
+
             AppendLog($"[RECORD] {(isTop ? "Top" : "Bottom")} recording stopped.");
         }
 
@@ -803,6 +913,14 @@ namespace RGDSCapture
         // ─────────────────────────────────────────────────────────────
         private void MainWindow_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
+            // Handle Escape for fullscreen overlay
+            if (e.Key == System.Windows.Input.Key.Escape && _fullscreenActive)
+            {
+                CloseFullscreen();
+                e.Handled = true;
+                return;
+            }
+
             switch (e.Key)
             {
                 case System.Windows.Input.Key.F2:
@@ -940,8 +1058,6 @@ namespace RGDSCapture
         {
             MnuThemeDark.IsChecked  = ThemeManager.Current == ThemeManager.Theme.Dark;
             MnuThemeLight.IsChecked = ThemeManager.Current == ThemeManager.Theme.Light;
-            MnuThemeHCD.IsChecked   = ThemeManager.Current == ThemeManager.Theme.HighContrastDark;
-            MnuThemeHCL.IsChecked   = ThemeManager.Current == ThemeManager.Theme.HighContrastLight;
         }
 
         // ─────────────────────────────────────────────────────────────
@@ -1002,9 +1118,6 @@ namespace RGDSCapture
             ResetStreamBadges();
             AppendLog("Disconnected — streams stopped on device.");
 
-            TxtTopFps.Text = TxtBottomFps.Text = "-- fps";
-            TxtTopFpsValueSide.Text = TxtBottomFpsValueSide.Text = "-- fps";
-            TxtTopFpsOnly.Text = TxtBottomFpsOnly.Text = "-- fps";
             foreach (var img in new[] {
                 ImgTopScreen, ImgBottomScreen,
                 ImgTopScreenSide, ImgBottomScreenSide,
@@ -1077,9 +1190,6 @@ namespace RGDSCapture
             _ssh?.Dispose();
             _ssh = null;
             StatusDot.Fill = new SolidColorBrush(Color.FromRgb(233, 69, 96));
-            TxtTopFps.Text = TxtBottomFps.Text = "-- fps";
-            TxtTopFpsValueSide.Text = TxtBottomFpsValueSide.Text = "-- fps";
-            TxtTopFpsOnly.Text = TxtBottomFpsOnly.Text = "-- fps";
         }
 
         private static string GetLocalIpAddress()
@@ -1099,6 +1209,12 @@ namespace RGDSCapture
         // the live WriteableBitmap for the chosen DS screen.
         // Press Escape or click anywhere to close.
         // ─────────────────────────────────────────────────────────────
+        private void ImgTopScreen_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+            => OpenFullscreen(isTop: true);
+
+        private void ImgBottomScreen_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+            => OpenFullscreen(isTop: false);
+
         private void BtnFullscreenTop_Click(object sender, RoutedEventArgs e)
             => OpenFullscreen(isTop: true);
 
@@ -1107,14 +1223,34 @@ namespace RGDSCapture
 
         private void OpenFullscreen(bool isTop)
         {
-            var bitmap = isTop ? _topBitmap : _bottomBitmap;
+            if (_fullscreenActive) return;
+
+            _fullscreenActive = true;
             string label = isTop ? "Top Screen" : "Bottom Screen";
 
-            // Show the window even if no frame yet — it will update live
-            var fsWin = new FullScreenWindow(
+            // Create fullscreen window that covers entire screen
+            _fullscreenOverlay = new FullScreenOverlay(
                 isTop ? (() => _topBitmap) : (() => _bottomBitmap),
-                label);
-            fsWin.Show();
+                label,
+                () => _isConnected,
+                async () => await RestartAllStreamsAsync(),
+                async () => await RestartStreamAsync(StreamType.TopScreen),
+                async () => await RestartStreamAsync(StreamType.BottomScreen));
+
+            _fullscreenOverlay.Closed += (_, _) => CloseFullscreen();
+            _fullscreenOverlay.Show();
+        }
+
+        private void CloseFullscreen()
+        {
+            if (!_fullscreenActive) return;
+
+            _fullscreenActive = false;
+            if (_fullscreenOverlay != null)
+            {
+                _fullscreenOverlay.Close();
+                _fullscreenOverlay = null;
+            }
         }
 
     }

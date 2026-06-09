@@ -120,10 +120,10 @@ namespace RGDSCapture
             string label    = stream == StreamType.TopScreen ? "Top" : "Bottom";
 
             RaiseStatus($"Restarting {label} stream...", false);
-            RunCommand($"pkill -f 'udpsink host={_windowsIp} port={port}'");
-            await Task.Delay(400, ct);
+            RunCommand("pkill -f gst-launch-1.0");
+            await Task.Delay(800, ct);
             RunCommand(startCmd);
-            await Task.Delay(300, ct);
+            await Task.Delay(500, ct);
             StreamStarted?.Invoke(stream);
             RaiseStatus($"{label} stream restarted.", false);
         }
