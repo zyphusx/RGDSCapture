@@ -9,15 +9,18 @@ using RGDSCapture.Core;
 namespace RGDSCapture.Services
 {
     /// <summary>
-    /// Records both screens plus Line-In audio into a single MP4 with three
-    /// synced tracks (video copied, audio AAC-encoded by ffmpeg).
+    /// Records both screens plus Line-In audio into a single MP4. The screens
+    /// are composited into one vertically stacked video track (top over
+    /// bottom, like the DS itself) so the file plays correctly in any player —
+    /// multi-track MP4s only show their first video track. Stacking requires
+    /// re-encoding on the PC (libopenh264), which is cheap at 640×960@30.
     ///
     /// Sync strategy: each H.264 elementary stream carries no timestamps, so
-    /// track alignment comes from wall-clock measurement. The session arms
-    /// taps on both receivers and the audio device, waits until each video
-    /// stream produces an SPS (keyframe boundary — at most one GOP, ~333 ms),
-    /// then launches ffmpeg with per-input -itsoffset values computed from
-    /// the measured start times. Audio captured before the video base time is
+    /// alignment comes from wall-clock measurement. The session arms taps on
+    /// both receivers and the audio device, waits until each video stream
+    /// produces an SPS (keyframe boundary — at most one GOP, ~333 ms), then
+    /// builds a filter graph whose setpts expressions shift the later-starting
+    /// screen by whole frames. Audio captured before the video base time is
     /// trimmed to the sample. Net alignment is within a few tens of ms.
     /// </summary>
     public static class CombinedRecordingService
@@ -81,7 +84,7 @@ namespace RGDSCapture.Services
         private readonly List<byte[]> _preAudio = new();
 
         private Phase _phase = Phase.Arming;
-        private bool _spsTopSeen, _spsBottomSeen;
+        private bool _spsTopSeen, _spsBottomSeen, _audioChunkSeen;
         private DateTime _spsTopUtc, _spsBottomUtc, _audioStartUtc;
         private long _audioSkipBytes;
         private AudioRecordingTap? _audio;
@@ -101,7 +104,6 @@ namespace RGDSCapture.Services
             {
                 try
                 {
-                    _audioStartUtc = DateTime.UtcNow;
                     _audio = new AudioRecordingTap(audioDeviceIndex.Value);
                     _audio.DataAvailable += OnAudio;
                 }
@@ -174,6 +176,15 @@ namespace RGDSCapture.Services
                 switch (_phase)
                 {
                     case Phase.Arming:
+                        if (!_audioChunkSeen)
+                        {
+                            _audioChunkSeen = true;
+                            // The first batch arrives when its capture finishes;
+                            // back-date to its first sample so device startup
+                            // latency isn't mistaken for recorded audio.
+                            _audioStartUtc = DateTime.UtcNow
+                                .AddSeconds(-(double)pcm.Length / AudioBytesPerSecond);
+                        }
                         _preAudio.Add(pcm);
                         break;
                     case Phase.Streaming:
@@ -236,9 +247,6 @@ namespace RGDSCapture.Services
                 double bottomOffset = (_spsBottomUtc - baseUtc).TotalSeconds;
 
                 hasAudio = _audio != null;
-                // Video offsets are applied via the setts bitstream filter in
-                // the output args (-itsoffset would be overridden by setts);
-                // only the audio input uses -itsoffset.
                 var inputs = new List<MuxInput>
                 {
                     new(VideoInputArgs, 0),
@@ -248,6 +256,7 @@ namespace RGDSCapture.Services
                 double audioOffset = 0;
                 if (hasAudio)
                 {
+                    if (!_audioChunkSeen) _audioStartUtc = DateTime.UtcNow;
                     if (_audioStartUtc <= baseUtc)
                     {
                         _audioSkipBytes = (long)((baseUtc - _audioStartUtc).TotalSeconds * AudioBytesPerSecond);
@@ -260,15 +269,26 @@ namespace RGDSCapture.Services
                     inputs.Add(new MuxInput(AudioInputArgs, audioOffset));
                 }
 
+                // setpts assigns frame-index CFR timestamps (ignoring the
+                // demuxer's, which can be poisoned by SPS VUI timing); the
+                // later-starting screen is shifted by whole frames so content
+                // aligns, and framesync holds its first frame during the
+                // brief lead-in.
+                int shiftFrames = (int)Math.Round(Math.Max(topOffset, bottomOffset) * 30);
+                string topPts = shiftFrames > 0 && topOffset > bottomOffset
+                    ? $"(N+{shiftFrames})/(30*TB)" : "N/(30*TB)";
+                string bottomPts = shiftFrames > 0 && bottomOffset > topOffset
+                    ? $"(N+{shiftFrames})/(30*TB)" : "N/(30*TB)";
+                string graph =
+                    $"[0:v]setpts={topPts}[v0];" +
+                    $"[1:v]setpts={bottomPts}[v1];" +
+                    "[v0][v1]vstack=inputs=2,format=yuv420p[v]";
+
                 string outputArgs =
-                    "-map 0:v:0 -map 1:v:0 " +
+                    $"-filter_complex \"{graph}\" -map \"[v]\" " +
                     (hasAudio ? "-map 2:a:0 " : "") +
-                    "-c:v copy " +
+                    "-c:v libopenh264 -b:v 4M -g 60 " +
                     (hasAudio ? "-c:a aac -b:a 192k " : "") +
-                    FfmpegArgs.CfrSetts(0, topOffset) +
-                    FfmpegArgs.CfrSetts(1, bottomOffset) +
-                    "-metadata:s:v:0 handler_name=\"Top Screen\" " +
-                    "-metadata:s:v:1 handler_name=\"Bottom Screen\" " +
                     "-movflags +faststart";
 
                 try
@@ -295,7 +315,7 @@ namespace RGDSCapture.Services
                 _phase = Phase.Streaming;
             }
 
-            _log($"[RECORD] Combined → {OutputFile} (top + bottom{(hasAudio ? " + audio" : "")})", false);
+            _log($"[RECORD] Combined → {OutputFile} (stacked top/bottom{(hasAudio ? " + audio" : "")})", false);
         }
 
         // ── Stop / teardown ───────────────────────────────────────────

@@ -53,7 +53,7 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 
 ### Recording & Screenshots
 - Record each screen independently to MP4 (H.264, zero re-encode)
-- **Combined recording** — both screens + Line-In audio in a single MP4 with synced tracks (video copied losslessly, audio AAC)
+- **Combined recording** — both screens stacked into a single video (top over bottom, like the DS) + Line-In audio, in one MP4 that plays anywhere
 - **Instant replay** — the last 15/30/60/120 seconds of both screens **and Line-In audio** are always buffered; press F9 to save them retroactively, no pre-arming needed
 - Files saved to `My Videos\RGDSCapture\` with timestamps
 - Screenshot both screens to PNG with a single button or F12

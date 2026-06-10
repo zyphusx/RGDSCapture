@@ -12,6 +12,17 @@ number with the date, and start a fresh empty **[Unreleased]** section above it.
 
 ## [Unreleased]
 
+### Changed
+- Combined recording now produces a vertically stacked composite — one video
+  track with both screens visible (top over bottom, like the DS) — so the
+  file plays correctly in any player. Previously it wrote two separate video
+  tracks, which most players can't display together. Instant replay still
+  uses separate lossless tracks.
+
+### Fixed
+- Combined recording audio could start out of sync by the audio device's
+  startup latency.
+
 ## [2.1.0] - 2026-06-10
 
 ### Added

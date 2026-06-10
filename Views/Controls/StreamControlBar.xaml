@@ -74,7 +74,7 @@
                     Command="{Binding ToggleCombinedRecordingCommand}"
                     Margin="0,0,4,0"
                     AutomationProperties.Name="Record combined"
-                    ToolTip="Record both screens + Line-In audio to one MP4 with synced tracks"/>
+                    ToolTip="Record both screens (stacked) + Line-In audio to one MP4"/>
             <Button Content="⏪  Replay"
                     Command="{Binding SaveReplayCommand}"
                     AutomationProperties.Name="Save instant replay"
