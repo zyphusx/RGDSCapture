@@ -12,6 +12,8 @@ number with the date, and start a fresh empty **[Unreleased]** section above it.
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-06-10
+
 ### Changed
 - Updated to .NET 10 (LTS, supported through November 2028) — .NET 8 leaves
   support in November 2026. The installer now checks for the .NET 10 Desktop
