@@ -31,10 +31,24 @@ namespace RGDSCapture.ViewModels
         private readonly DispatcherTimer _healthTimer;
         private readonly StreamHealthTracker _topTracker;
         private readonly StreamHealthTracker _bottomTracker;
+        private readonly ReplayBuffer _topReplay = new();
+        private readonly ReplayBuffer _bottomReplay = new();
+        private readonly AudioReplayBuffer _audioReplay = new();
+        private AudioRecordingTap? _replayAudioTap;
+        private CombinedRecordingSession? _combined;
         private CancellationTokenSource? _connectCts;
 
+        // Auto-reconnect: last credentials used this session (memory only)
+        // and the cancellation source for the backoff loop.
+        private (string User, string Pass)? _sessionCreds;
+        private bool _pendingRemember;
+        private CancellationTokenSource? _reconnectCts;
+
+        // Network stats deltas (previous cumulative counters per screen)
+        private (long P, long L, long B) _topStatPrev, _bottomStatPrev;
+
         // ── View-supplied interaction hooks ───────────────────────────
-        public Func<string, (string User, string Pass)?>? PromptCredentials { get; set; }
+        public Func<string, (string User, string Pass, bool Remember)?>? PromptCredentials { get; set; }
         public Func<string, string, bool>? Confirm { get; set; }
         public event Action<ScreenViewModel>? FullscreenRequested;
 
@@ -137,6 +151,44 @@ namespace RGDSCapture.ViewModels
         public bool IsThemeDark => ThemeService.Current == AppTheme.Dark;
         public bool IsThemeLight => ThemeService.Current == AppTheme.Light;
 
+        // ── Combined recording / instant replay ──────────────────────
+        private bool _isCombinedRecording;
+        public bool IsCombinedRecording
+        {
+            get => _isCombinedRecording;
+            private set
+            {
+                if (SetProperty(ref _isCombinedRecording, value))
+                    OnPropertyChanged(nameof(CombinedRecordButtonText));
+            }
+        }
+
+        public string CombinedRecordButtonText =>
+            IsCombinedRecording ? "⏹  Combined" : "⏺  Combined";
+
+        public int ReplaySeconds => Settings.ReplaySeconds;
+        public bool IsReplay15 => Settings.ReplaySeconds == 15;
+        public bool IsReplay30 => Settings.ReplaySeconds == 30;
+        public bool IsReplay60 => Settings.ReplaySeconds == 60;
+        public bool IsReplay120 => Settings.ReplaySeconds == 120;
+
+        // ── Quality preset / stats overlay ────────────────────────────
+        public bool IsQualityLow => CurrentQuality == StreamQuality.Low;
+        public bool IsQualityMedium => CurrentQuality == StreamQuality.Medium;
+        public bool IsQualityHigh => CurrentQuality == StreamQuality.High;
+
+        private StreamQuality CurrentQuality =>
+            Enum.TryParse(Settings.Quality, out StreamQuality q) ? q : StreamQuality.Medium;
+
+        private static int QualityToBps(StreamQuality q) => q switch
+        {
+            StreamQuality.Low => 1_000_000,
+            StreamQuality.High => 4_000_000,
+            _ => 2_000_000
+        };
+
+        public bool IsStatsVisible => Settings.ShowStats;
+
         // ── Commands ──────────────────────────────────────────────────
         public AsyncRelayCommand ConnectCommand { get; }
         public AsyncRelayCommand RestartTopCommand { get; }
@@ -148,6 +200,12 @@ namespace RGDSCapture.ViewModels
         public RelayCommand SetLayoutCommand { get; }
         public RelayCommand SetThemeCommand { get; }
         public RelayCommand FullscreenCommand { get; }
+        public AsyncRelayCommand ToggleCombinedRecordingCommand { get; }
+        public AsyncRelayCommand SaveReplayCommand { get; }
+        public RelayCommand SetReplayLengthCommand { get; }
+        public AsyncRelayCommand SetQualityCommand { get; }
+        public RelayCommand ToggleStatsCommand { get; }
+        public RelayCommand ForgetCredentialsCommand { get; }
 
         // ─────────────────────────────────────────────────────────────
         public MainViewModel(SettingsService settingsService)
@@ -168,6 +226,26 @@ namespace RGDSCapture.ViewModels
                 ScreenId.Top, Top.Receiver, RestartStreamCoreAsync, AppendLog);
             _bottomTracker = new StreamHealthTracker(
                 ScreenId.Bottom, Bottom.Receiver, RestartStreamCoreAsync, AppendLog);
+
+            // Replay buffers stay armed whenever the receivers run — no
+            // pre-arming needed, which is the whole point of instant replay.
+            _topReplay.CapacitySeconds = s.ReplaySeconds;
+            _bottomReplay.CapacitySeconds = s.ReplaySeconds;
+            _audioReplay.CapacitySeconds = s.ReplaySeconds;
+            Top.Receiver.NalUnitReceived += _topReplay.OnNal;
+            Bottom.Receiver.NalUnitReceived += _bottomReplay.OnNal;
+
+            _ssh.VideoBitrateBps = QualityToBps(CurrentQuality);
+
+            // Re-arm the replay audio tap if the input device changes mid-session.
+            Audio.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(AudioViewModel.SelectedInput) && IsConnected)
+                {
+                    _audioReplay.Clear();
+                    StartReplayAudioTap();
+                }
+            };
 
             _ssh.StatusChanged += (msg, err) => AppendLog(msg, err);
             _ssh.ConnectionLost += OnConnectionLost;
@@ -207,6 +285,17 @@ namespace RGDSCapture.ViewModels
             {
                 if (p is ScreenViewModel screen) FullscreenRequested?.Invoke(screen);
             });
+            ToggleCombinedRecordingCommand = new AsyncRelayCommand(
+                ToggleCombinedRecordingAsync, () => IsConnected);
+            SaveReplayCommand = new AsyncRelayCommand(SaveReplayAsync, () => IsConnected);
+            SetReplayLengthCommand = new RelayCommand(SetReplayLength);
+            SetQualityCommand = new AsyncRelayCommand(SetQualityAsync);
+            ToggleStatsCommand = new RelayCommand(ToggleStats);
+            ForgetCredentialsCommand = new RelayCommand(() =>
+            {
+                _sessionCreds = null;
+                ForgetSavedCredentials(silent: false);
+            });
 
             PropertyChanged += (_, e) =>
             {
@@ -222,6 +311,8 @@ namespace RGDSCapture.ViewModels
             ShutdownCommand.RaiseCanExecuteChanged();
             RebootCommand.RaiseCanExecuteChanged();
             ScreenshotCommand.RaiseCanExecuteChanged();
+            ToggleCombinedRecordingCommand.RaiseCanExecuteChanged();
+            SaveReplayCommand.RaiseCanExecuteChanged();
         }
 
         // ─────────────────────────────────────────────────────────────
@@ -239,6 +330,8 @@ namespace RGDSCapture.ViewModels
                 return;
             }
 
+            CancelAutoReconnect();
+
             string ip = DeviceIp.Trim();
             if (string.IsNullOrEmpty(ip))
             {
@@ -251,8 +344,33 @@ namespace RGDSCapture.ViewModels
                 return;
             }
 
-            var creds = PromptCredentials?.Invoke(Settings.SshUsername);
-            if (creds == null) return;
+            // Credentials, in preference order: DPAPI-saved → this session's
+            // last-used → prompt the user.
+            string user, pass;
+            bool usedSaved = false;
+            _pendingRemember = false;
+
+            string? savedPass =
+                Settings.RememberCredentials && !string.IsNullOrEmpty(Settings.ProtectedPassword)
+                    ? CredentialStore.Unprotect(Settings.ProtectedPassword!)
+                    : null;
+
+            if (savedPass != null)
+            {
+                user = Settings.SshUsername;
+                pass = savedPass;
+                usedSaved = true;
+            }
+            else if (_sessionCreds != null)
+            {
+                (user, pass) = _sessionCreds.Value;
+            }
+            else
+            {
+                var creds = PromptCredentials?.Invoke(Settings.SshUsername);
+                if (creds == null) return;
+                (user, pass, _pendingRemember) = creds.Value;
+            }
 
             string localIp = GetLocalIpAddress();
             if (localIp == "127.0.0.1")
@@ -261,30 +379,47 @@ namespace RGDSCapture.ViewModels
                 return;
             }
 
+            bool ok = await ConnectCoreAsync(ip, port, user, pass, localIp, isReconnect: false);
+
+            if (!ok && usedSaved && _ssh.LastFailureWasAuth)
+            {
+                ForgetSavedCredentials(silent: true);
+                _sessionCreds = null;
+                AppendLog("Saved credentials were rejected and have been cleared — click Connect to enter new ones.", true);
+            }
+        }
+
+        /// <summary>Shared by manual connect and the auto-reconnect loop.</summary>
+        private async Task<bool> ConnectCoreAsync(
+            string ip, int port, string user, string pass, string localIp, bool isReconnect)
+        {
             Connection = ConnectionState.Connecting;
-            _topTracker.Reset();
-            _bottomTracker.Reset();
-            Top.Health = StreamHealth.Waiting;
-            Bottom.Health = StreamHealth.Waiting;
+
+            if (!isReconnect)
+            {
+                _topTracker.Reset();
+                _bottomTracker.Reset();
+                Top.Health = StreamHealth.Waiting;
+                Bottom.Health = StreamHealth.Waiting;
+            }
 
             try
             {
-                StartReceivers();
+                StartReceivers();   // idempotent — already-running receivers are kept
             }
             catch (Exception ex)
             {
                 AppendLog($"Receiver init failed: {ex.Message}", true);
                 StopReceivers();
                 Connection = ConnectionState.Disconnected;
-                return;
+                return false;
             }
 
             _connectCts = new CancellationTokenSource();
             bool ok;
             try
             {
-                ok = await _ssh.ConnectAsync(
-                    ip, port, creds.Value.User, creds.Value.Pass, localIp, _connectCts.Token);
+                ok = await _ssh.ConnectAsync(ip, port, user, pass, localIp, _connectCts.Token);
             }
             catch (Exception ex)
             {
@@ -292,38 +427,148 @@ namespace RGDSCapture.ViewModels
                 ok = false;
             }
 
-            if (ok)
+            if (!ok)
             {
-                Connection = ConnectionState.Connected;
-                _healthTimer.Start();
-
-                Settings.DeviceIp = ip;
-                Settings.SshPort = port;
-                Settings.SshUsername = creds.Value.User;
-                _settingsService.Save();
-
-                AppendLog($"Connected to {ip}. Video via RTP. Audio: connect 3.5mm and click ▶ Audio.");
-                if (!Log.IsOpen) Log.IsOpen = true;
+                if (isReconnect)
+                {
+                    // Keep receivers alive between retries — the device may
+                    // still be streaming even though the SSH link dropped.
+                    Connection = ConnectionState.Lost;
+                }
+                else
+                {
+                    StopReceivers();
+                    Connection = ConnectionState.Disconnected;
+                }
+                return false;
             }
-            else
+
+            Connection = ConnectionState.Connected;
+            _sessionCreds = (user, pass);
+            _healthTimer.Start();
+
+            if (isReconnect)
             {
-                StopReceivers();
-                Connection = ConnectionState.Disconnected;
+                // The connect sequence restarted the device pipelines, so give
+                // the trackers a grace window before freeze detection resumes.
+                _topTracker.NotifyManualRestart();
+                _bottomTracker.NotifyManualRestart();
             }
+
+            Settings.DeviceIp = ip;
+            Settings.SshPort = port;
+            Settings.SshUsername = user;
+            if (_pendingRemember)
+            {
+                _pendingRemember = false;
+                string? cipher = CredentialStore.Protect(pass);
+                if (cipher != null)
+                {
+                    Settings.RememberCredentials = true;
+                    Settings.ProtectedPassword = cipher;
+                    AppendLog("Credentials saved for this PC (DPAPI-encrypted).");
+                }
+                else
+                {
+                    AppendLog("Could not encrypt credentials — not saved.", true);
+                }
+            }
+            _settingsService.Save();
+
+            StartReplayAudioTap();
+
+            AppendLog($"Connected to {ip}. Video via RTP. Audio: connect 3.5mm and click ▶ Audio.");
+            if (!Log.IsOpen) Log.IsOpen = true;
+            return true;
+        }
+
+        // ── Auto-reconnect with backoff ───────────────────────────────
+        private void StartAutoReconnect()
+        {
+            if (_sessionCreds == null) return;
+            CancelAutoReconnect();
+            var cts = new CancellationTokenSource();
+            _reconnectCts = cts;
+            _ = RunAutoReconnectAsync(cts.Token);
+        }
+
+        private async Task RunAutoReconnectAsync(CancellationToken ct)
+        {
+            int[] delaysSec = { 3, 6, 12, 24, 30 };
+            for (int attempt = 0; attempt < delaysSec.Length; attempt++)
+            {
+                AppendLog($"[SSH] Reconnecting in {delaysSec[attempt]}s (attempt {attempt + 1}/{delaysSec.Length})...");
+                try
+                {
+                    await Task.Delay(delaysSec[attempt] * 1000, ct);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+                if (ct.IsCancellationRequested || Connection == ConnectionState.Connected) return;
+
+                var creds = _sessionCreds;
+                if (creds == null) return;
+                if (!int.TryParse(SshPortText.Trim(), out int port)) return;
+
+                string localIp = GetLocalIpAddress();
+                if (localIp == "127.0.0.1") continue;
+
+                bool ok = await ConnectCoreAsync(
+                    DeviceIp.Trim(), port, creds.Value.User, creds.Value.Pass, localIp,
+                    isReconnect: true);
+                if (ok)
+                {
+                    AppendLog("[SSH] Reconnected.");
+                    return;
+                }
+                if (ct.IsCancellationRequested) return;
+                if (_ssh.LastFailureWasAuth)
+                {
+                    ForgetSavedCredentials(silent: true);
+                    _sessionCreds = null;
+                    AppendLog("[SSH] Credentials rejected during reconnect — stopped retrying.", true);
+                    return;
+                }
+            }
+            AppendLog("[SSH] Auto-reconnect failed — click Reconnect to try again.", true);
+        }
+
+        private void CancelAutoReconnect()
+        {
+            _reconnectCts?.Cancel();
+            _reconnectCts?.Dispose();
+            _reconnectCts = null;
+        }
+
+        private void ForgetSavedCredentials(bool silent)
+        {
+            Settings.RememberCredentials = false;
+            Settings.ProtectedPassword = null;
+            _settingsService.Save();
+            if (!silent) AppendLog("Saved credentials cleared.");
         }
 
         public async Task DisconnectAsync()
         {
+            CancelAutoReconnect();
             _connectCts?.Cancel();
             _connectCts?.Dispose();
             _connectCts = null;
 
+            StopReplayAudioTap();
+            _audioReplay.Clear();
+
             _healthTimer.Stop();
+            await StopCombinedRecordingAsync();
             await Top.StopRecordingAsync();
             await Bottom.StopRecordingAsync();
             StopReceivers();
             await _ssh.DisconnectAsync();
 
+            _topReplay.Clear();
+            _bottomReplay.Clear();
             _topTracker.Reset();
             _bottomTracker.Reset();
             Top.Health = StreamHealth.Waiting;
@@ -348,6 +593,7 @@ namespace RGDSCapture.ViewModels
                 Connection = ConnectionState.Lost;
                 Top.Health = StreamHealth.Frozen;
                 Bottom.Health = StreamHealth.Frozen;
+                StartAutoReconnect();
             });
         }
 
@@ -382,6 +628,9 @@ namespace RGDSCapture.ViewModels
                 ? $"{Top.Receiver.CurrentFps:F0} fps" : string.Empty;
             Bottom.FpsText = Bottom.Health == StreamHealth.Live
                 ? $"{Bottom.Receiver.CurrentFps:F0} fps" : string.Empty;
+
+            UpdateStats(Top, ref _topStatPrev);
+            UpdateStats(Bottom, ref _bottomStatPrev);
         }
 
         private Task RestartStreamCoreAsync(ScreenId screen)
@@ -403,6 +652,182 @@ namespace RGDSCapture.ViewModels
             _bottomTracker.NotifyManualRestart();
             await RestartStreamCoreAsync(ScreenId.Top);
             await RestartStreamCoreAsync(ScreenId.Bottom);
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // COMBINED RECORDING (both screens + audio, one MP4)
+        // ─────────────────────────────────────────────────────────────
+        private async Task ToggleCombinedRecordingAsync()
+        {
+            if (_combined != null)
+            {
+                await StopCombinedRecordingAsync();
+                return;
+            }
+
+            var session = CombinedRecordingService.Start(
+                Top.Receiver, Bottom.Receiver,
+                Audio.SelectedInput?.Index, AppendLog);
+            if (session == null) return;
+
+            session.Failed += OnCombinedRecordingFailed;
+            _combined = session;
+            IsCombinedRecording = true;
+        }
+
+        private async Task StopCombinedRecordingAsync()
+        {
+            var session = _combined;
+            _combined = null;
+            if (session != null)
+            {
+                session.Failed -= OnCombinedRecordingFailed;
+                await session.StopAsync();
+                session.Dispose();
+            }
+            IsCombinedRecording = false;
+        }
+
+        private void OnCombinedRecordingFailed()
+        {
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke(async () =>
+            {
+                if (_combined == null) return;
+                AppendLog("[RECORD] Combined recording stopped unexpectedly.", true);
+                var session = _combined;
+                _combined = null;
+                IsCombinedRecording = false;
+                session.Failed -= OnCombinedRecordingFailed;
+                await Task.Run(session.Dispose);
+            });
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // INSTANT REPLAY
+        // ─────────────────────────────────────────────────────────────
+        private async Task SaveReplayAsync()
+        {
+            if (!IsConnected) return;
+            await ReplayService.SaveAsync(
+                _topReplay, _bottomReplay, _audioReplay, Settings.ReplaySeconds, AppendLog);
+        }
+
+        /// <summary>
+        /// Keeps an independent Line-In capture running while connected so
+        /// instant replays include audio. Failure degrades to video-only.
+        /// </summary>
+        private void StartReplayAudioTap()
+        {
+            StopReplayAudioTap();
+
+            var device = Audio.SelectedInput;
+            if (device == null)
+            {
+                AppendLog("[REPLAY] No audio input device — replays will be video-only.");
+                return;
+            }
+
+            try
+            {
+                _replayAudioTap = new AudioRecordingTap(device.Index);
+                _replayAudioTap.DataAvailable += _audioReplay.OnPcm;
+            }
+            catch (Exception ex)
+            {
+                _replayAudioTap = null;
+                AppendLog($"[REPLAY] Audio capture unavailable ({ex.Message}) — replays will be video-only.", true);
+            }
+        }
+
+        private void StopReplayAudioTap()
+        {
+            if (_replayAudioTap == null) return;
+            _replayAudioTap.DataAvailable -= _audioReplay.OnPcm;
+            _replayAudioTap.Dispose();
+            _replayAudioTap = null;
+        }
+
+        private void SetReplayLength(object? parameter)
+        {
+            if (!int.TryParse(parameter?.ToString(), out int seconds)) return;
+
+            Settings.ReplaySeconds = seconds;
+            _topReplay.CapacitySeconds = seconds;
+            _bottomReplay.CapacitySeconds = seconds;
+            _audioReplay.CapacitySeconds = seconds;
+            _settingsService.Save();
+
+            OnPropertyChanged(nameof(ReplaySeconds));
+            OnPropertyChanged(nameof(IsReplay15));
+            OnPropertyChanged(nameof(IsReplay30));
+            OnPropertyChanged(nameof(IsReplay60));
+            OnPropertyChanged(nameof(IsReplay120));
+            AppendLog($"[REPLAY] Buffer length set to {seconds} seconds.");
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // QUALITY PRESET / STATS OVERLAY
+        // ─────────────────────────────────────────────────────────────
+        private async Task SetQualityAsync(object? parameter)
+        {
+            if (!Enum.TryParse(parameter?.ToString(), out StreamQuality quality)) return;
+            if (quality == CurrentQuality) return;
+
+            Settings.Quality = quality.ToString();
+            _ssh.VideoBitrateBps = QualityToBps(quality);
+            _settingsService.Save();
+
+            OnPropertyChanged(nameof(IsQualityLow));
+            OnPropertyChanged(nameof(IsQualityMedium));
+            OnPropertyChanged(nameof(IsQualityHigh));
+
+            double mbps = QualityToBps(quality) / 1_000_000.0;
+            if (IsConnected)
+            {
+                AppendLog($"[QUALITY] {quality} ({mbps:F0} Mbps per screen) — restarting streams...");
+                await ManualRestartAllAsync();
+            }
+            else
+            {
+                AppendLog($"[QUALITY] {quality} ({mbps:F0} Mbps per screen) — takes effect on next connect.");
+            }
+        }
+
+        private void ToggleStats()
+        {
+            Settings.ShowStats = !Settings.ShowStats;
+            _settingsService.Save();
+            OnPropertyChanged(nameof(IsStatsVisible));
+            if (!Settings.ShowStats)
+            {
+                Top.StatsText = string.Empty;
+                Bottom.StatsText = string.Empty;
+            }
+        }
+
+        private void UpdateStats(ScreenViewModel screen, ref (long P, long L, long B) prev)
+        {
+            var (packets, lost, bytes) = screen.Receiver.GetStats();
+            long dp = packets - prev.P;
+            long dl = lost - prev.L;
+            long db = bytes - prev.B;
+            prev = (packets, lost, bytes);
+
+            if (!Settings.ShowStats)
+            {
+                if (screen.StatsText.Length != 0) screen.StatsText = string.Empty;
+                return;
+            }
+
+            if (dp + dl <= 0)
+            {
+                screen.StatsText = "no data";
+                return;
+            }
+
+            double lossPct = 100.0 * dl / (dp + dl);
+            double mbps = db * 8 / 1_000_000.0;
+            screen.StatsText = $"{mbps:F1} Mbps · {lossPct:F1}% loss";
         }
 
         // ─────────────────────────────────────────────────────────────
@@ -463,11 +888,14 @@ namespace RGDSCapture.ViewModels
 
         public async Task ShutdownAsync()
         {
+            CancelAutoReconnect();
             _connectCts?.Cancel();
             _healthTimer.Stop();
             _renderTimer.Stop();
             Timer.Shutdown();
+            StopReplayAudioTap();
 
+            await StopCombinedRecordingAsync();
             await Top.StopRecordingAsync();
             await Bottom.StopRecordingAsync();
             Audio.Stop();

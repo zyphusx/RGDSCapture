@@ -82,6 +82,14 @@ namespace RGDSCapture.ViewModels
             set => SetProperty(ref _fpsText, value);
         }
 
+        /// <summary>Network stats overlay line; empty hides the overlay.</summary>
+        private string _statsText = string.Empty;
+        public string StatsText
+        {
+            get => _statsText;
+            set => SetProperty(ref _statsText, value);
+        }
+
         // ── Recording ─────────────────────────────────────────────────
         private RecordingSession? _session;
 

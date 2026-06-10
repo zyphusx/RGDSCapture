@@ -19,6 +19,7 @@
         <KeyBinding Key="F6" Command="{Binding RestartTopCommand}"/>
         <KeyBinding Key="F7" Command="{Binding RestartBottomCommand}"/>
         <KeyBinding Key="F8" Command="{Binding Log.ToggleCommand}"/>
+        <KeyBinding Key="F9" Command="{Binding SaveReplayCommand}"/>
         <KeyBinding Key="F12" Command="{Binding ScreenshotCommand}"/>
     </Window.InputBindings>
 
@@ -36,6 +37,8 @@
                 <MenuItem Header="_Disconnect"
                           Command="{Binding ConnectCommand}"
                           IsEnabled="{Binding IsConnected}"/>
+                <MenuItem Header="_Forget Saved Credentials"
+                          Command="{Binding ForgetCredentialsCommand}"/>
                 <Separator/>
                 <MenuItem Header="_Screenshot"
                           Command="{Binding ScreenshotCommand}"
@@ -57,12 +60,51 @@
                           Command="{Binding RestartAllCommand}"
                           InputGestureText="F5"/>
                 <Separator/>
+                <MenuItem Header="_Quality">
+                    <MenuItem Header="Low (1 Mbps per screen)"
+                              Command="{Binding SetQualityCommand}"
+                              CommandParameter="Low"
+                              IsChecked="{Binding IsQualityLow, Mode=OneWay}"/>
+                    <MenuItem Header="Medium (2 Mbps per screen)"
+                              Command="{Binding SetQualityCommand}"
+                              CommandParameter="Medium"
+                              IsChecked="{Binding IsQualityMedium, Mode=OneWay}"/>
+                    <MenuItem Header="High (4 Mbps per screen)"
+                              Command="{Binding SetQualityCommand}"
+                              CommandParameter="High"
+                              IsChecked="{Binding IsQualityHigh, Mode=OneWay}"/>
+                </MenuItem>
+                <Separator/>
                 <MenuItem Header="Record Top to MP4"
                           Command="{Binding Top.ToggleRecordingCommand}"
                           IsEnabled="{Binding IsConnected}"/>
                 <MenuItem Header="Record Bottom to MP4"
                           Command="{Binding Bottom.ToggleRecordingCommand}"
                           IsEnabled="{Binding IsConnected}"/>
+                <MenuItem Header="Record Combined (Screens + Audio)"
+                          Command="{Binding ToggleCombinedRecordingCommand}"/>
+                <Separator/>
+                <MenuItem Header="Save Instant Replay"
+                          Command="{Binding SaveReplayCommand}"
+                          InputGestureText="F9"/>
+                <MenuItem Header="Instant Replay Length">
+                    <MenuItem Header="15 seconds"
+                              Command="{Binding SetReplayLengthCommand}"
+                              CommandParameter="15"
+                              IsChecked="{Binding IsReplay15, Mode=OneWay}"/>
+                    <MenuItem Header="30 seconds"
+                              Command="{Binding SetReplayLengthCommand}"
+                              CommandParameter="30"
+                              IsChecked="{Binding IsReplay30, Mode=OneWay}"/>
+                    <MenuItem Header="60 seconds"
+                              Command="{Binding SetReplayLengthCommand}"
+                              CommandParameter="60"
+                              IsChecked="{Binding IsReplay60, Mode=OneWay}"/>
+                    <MenuItem Header="120 seconds"
+                              Command="{Binding SetReplayLengthCommand}"
+                              CommandParameter="120"
+                              IsChecked="{Binding IsReplay120, Mode=OneWay}"/>
+                </MenuItem>
             </MenuItem>
 
             <MenuItem Header="_Console">
@@ -103,6 +145,9 @@
                               IsChecked="{Binding IsThemeLight, Mode=OneWay}"/>
                 </MenuItem>
                 <Separator/>
+                <MenuItem Header="Show Stream _Stats"
+                          Command="{Binding ToggleStatsCommand}"
+                          IsChecked="{Binding IsStatsVisible, Mode=OneWay}"/>
                 <MenuItem Header="Toggle Event _Log"
                           Command="{Binding Log.ToggleCommand}"
                           InputGestureText="F8"/>
@@ -147,7 +192,7 @@
                            Foreground="{DynamicResource TextDisabled}"
                            FontSize="11"
                            VerticalAlignment="Center"
-                           Text="F2/F3 Fullscreen  ·  F5 Restart All  ·  F6 Top  ·  F7 Bottom  ·  F8 Log  ·  F12 Screenshot  ·  Space Timer"/>
+                           Text="F2/F3 Fullscreen  ·  F5–F7 Restart  ·  F8 Log  ·  F9 Replay  ·  F12 Screenshot  ·  Space Timer"/>
             </DockPanel>
         </Border>
 

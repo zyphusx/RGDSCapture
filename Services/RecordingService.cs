@@ -81,13 +81,16 @@ namespace RGDSCapture.Services
             // -f h264: raw Annex-B elementary stream on stdin.
             // -framerate 30 matches the device pipeline's videorate cap.
             // -c:v copy: remux only — the device already encoded H.264.
+            // setts forces exact 30 fps CFR timestamps even if the encoder
+            // wrote misleading SPS VUI timing (which overrides -framerate).
             var psi = new ProcessStartInfo
             {
                 FileName = AppPaths.FfmpegExe,
                 Arguments =
                     "-hide_banner -loglevel error " +
                     "-fflags +genpts -framerate 30 -f h264 -i pipe:0 " +
-                    $"-c:v copy -movflags +faststart -y \"{outFile}\"",
+                    "-c:v copy " + FfmpegArgs.CfrSetts(0, 0) +
+                    $"-movflags +faststart -y \"{outFile}\"",
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 RedirectStandardInput = true,

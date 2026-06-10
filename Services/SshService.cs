@@ -20,6 +20,12 @@ namespace RGDSCapture.Services
 
         public bool IsConnected => _client?.IsConnected ?? false;
 
+        /// <summary>True when the last failed ConnectAsync was an authentication rejection.</summary>
+        public bool LastFailureWasAuth { get; private set; }
+
+        /// <summary>Encoder bitrate per screen, substituted into the pipeline template.</summary>
+        public int VideoBitrateBps { get; set; } = 2_000_000;
+
         private SshClient? _client;
         private string _hostIp = string.Empty;
         private readonly SemaphoreSlim _commandGate = new(1, 1);
@@ -31,12 +37,14 @@ namespace RGDSCapture.Services
         // a lost packet self-heals quickly. config-interval=-1 re-sends
         // SPS/PPS with every keyframe so the decoder (and the recorder)
         // can re-sync mid-stream.
+        // {BPS} is the quality preset bitrate; GOP stays fixed at 10 because
+        // recovery and recording logic depend on the ~333 ms keyframe cadence.
         private const string GstTop =
             "nohup gst-launch-1.0 -e " +
             "kmssrc plane-id=98 ! " +
             "videoconvert ! " +
             "videorate ! video/x-raw,framerate=30/1 ! " +
-            "mpph264enc rc-mode=vbr bps=2000000 gop=10 ! " +
+            "mpph264enc rc-mode=vbr bps={BPS} gop=10 ! " +
             "h264parse config-interval=-1 ! " +
             "rtph264pay mtu=1200 pt=96 config-interval=-1 ! " +
             "udpsink host={HOST} port=5000 sync=false buffer-size=2097152 " +
@@ -47,11 +55,16 @@ namespace RGDSCapture.Services
             "kmssrc plane-id=58 ! " +
             "videoconvert ! " +
             "videorate ! video/x-raw,framerate=30/1 ! " +
-            "mpph264enc rc-mode=vbr bps=2000000 gop=10 ! " +
+            "mpph264enc rc-mode=vbr bps={BPS} gop=10 ! " +
             "h264parse config-interval=-1 ! " +
             "rtph264pay mtu=1200 pt=96 config-interval=-1 ! " +
             "udpsink host={HOST} port=5001 sync=false buffer-size=2097152 " +
             "> /tmp/gst_bottom.log 2>&1 &";
+
+        private string BuildPipeline(ScreenId screen, string hostIp) =>
+            (screen == ScreenId.Top ? GstTop : GstBottom)
+                .Replace("{HOST}", hostIp)
+                .Replace("{BPS}", VideoBitrateBps.ToString());
 
         // ─────────────────────────────────────────────────────────────
         public async Task<bool> ConnectAsync(
@@ -60,6 +73,7 @@ namespace RGDSCapture.Services
         {
             _hostIp = hostIp;
             _intentionalDisconnect = false;
+            LastFailureWasAuth = false;
             Interlocked.Exchange(ref _lostRaised, 0);
 
             try
@@ -102,12 +116,12 @@ namespace RGDSCapture.Services
                 await RunCommandAsync("pkill -f gst-launch-1.0; sleep 0.5", ct);
 
                 RaiseStatus("Starting top screen stream (port 5000)...", false);
-                await RunCommandAsync(GstTop.Replace("{HOST}", hostIp), ct);
+                await RunCommandAsync(BuildPipeline(ScreenId.Top, hostIp), ct);
                 await Task.Delay(500, ct);
                 StreamStarted?.Invoke(ScreenId.Top);
 
                 RaiseStatus("Starting bottom screen stream (port 5001)...", false);
-                await RunCommandAsync(GstBottom.Replace("{HOST}", hostIp), ct);
+                await RunCommandAsync(BuildPipeline(ScreenId.Bottom, hostIp), ct);
                 await Task.Delay(500, ct);
                 StreamStarted?.Invoke(ScreenId.Bottom);
 
@@ -117,6 +131,13 @@ namespace RGDSCapture.Services
             catch (OperationCanceledException)
             {
                 RaiseStatus("Connection cancelled.", true);
+                CleanupClient();
+                return false;
+            }
+            catch (Renci.SshNet.Common.SshAuthenticationException ex)
+            {
+                LastFailureWasAuth = true;
+                RaiseStatus($"Authentication failed: {ex.Message}", true);
                 CleanupClient();
                 return false;
             }
@@ -134,8 +155,7 @@ namespace RGDSCapture.Services
             if (!IsConnected) return;
 
             string logFile = screen == ScreenId.Top ? "gst_top.log" : "gst_bottom.log";
-            string startCmd = (screen == ScreenId.Top ? GstTop : GstBottom)
-                .Replace("{HOST}", _hostIp);
+            string startCmd = BuildPipeline(screen, _hostIp);
             string label = screen == ScreenId.Top ? "Top" : "Bottom";
 
             RaiseStatus($"Restarting {label} stream...", false);
@@ -214,9 +234,32 @@ namespace RGDSCapture.Services
             {
                 return await Task.Run(() =>
                 {
-                    using var cmd = client.CreateCommand(command);
-                    cmd.CommandTimeout = TimeSpan.FromSeconds(8);
-                    return cmd.Execute();
+                    Renci.SshNet.SshCommand? cmd = null;
+                    bool completed = false;
+                    try
+                    {
+                        cmd = client.CreateCommand(command);
+                        cmd.CommandTimeout = TimeSpan.FromSeconds(8);
+                        string result = cmd.Execute();
+                        completed = true;
+                        return result;
+                    }
+                    catch (Exception ex)
+                    {
+                        RaiseStatus($"[SSH] Command failed: {ex.Message}", true);
+                        return string.Empty;
+                    }
+                    finally
+                    {
+                        // Only dispose commands that finished. Disposing one
+                        // that is still executing (timeout, dropped link)
+                        // races SSH.NET's socket thread against the disposed
+                        // object; leaking it to the GC is the safe option.
+                        if (completed)
+                        {
+                            try { cmd?.Dispose(); } catch { }
+                        }
+                    }
                 }, ct);
             }
             finally

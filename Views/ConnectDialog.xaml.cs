@@ -6,11 +6,13 @@ namespace RGDSCapture.Views
     {
         public string Username { get; private set; } = string.Empty;
         public string Password { get; private set; } = string.Empty;
+        public bool Remember { get; private set; }
 
-        public ConnectDialog(string defaultUsername)
+        public ConnectDialog(string defaultUsername, bool defaultRemember = false)
         {
             InitializeComponent();
             TxtUsername.Text = defaultUsername;
+            ChkRemember.IsChecked = defaultRemember;
             Loaded += (_, _) => TxtPassword.Focus();
         }
 
@@ -25,6 +27,7 @@ namespace RGDSCapture.Views
 
             Username = TxtUsername.Text.Trim();
             Password = TxtPassword.Password;
+            Remember = ChkRemember.IsChecked == true;
             DialogResult = true;
         }
     }

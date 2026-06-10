@@ -35,10 +35,12 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 
 ### Video
 - Dual-screen H.264 video at up to 30 fps per screen
+- Quality presets: Low (1 Mbps), Medium (2 Mbps), High (4 Mbps) per screen — switch live from the Streams menu
 - Four layout modes: Vertical Stack, Side by Side, Top Only, Bottom Only
-- Live FPS counter per screen
+- Live FPS counter per screen, plus an optional bitrate / packet-loss stats overlay
 - Stream health badges: **● LIVE** / **● FROZEN** / **● RECOVERING** / **○ WAITING**
 - Auto-recovery: frozen streams automatically restart (up to 3 attempts)
+- Auto-reconnect: if the SSH link drops, the app reconnects by itself with backoff
 - Manual restart per screen or all at once
 - Error concealment — damaged macroblocks are interpolated rather than shown as corruption
 
@@ -51,6 +53,8 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 
 ### Recording & Screenshots
 - Record each screen independently to MP4 (H.264, zero re-encode)
+- **Combined recording** — both screens + Line-In audio in a single MP4 with synced tracks (video copied losslessly, audio AAC)
+- **Instant replay** — the last 15/30/60/120 seconds of both screens **and Line-In audio** are always buffered; press F9 to save them retroactively, no pre-arming needed
 - Files saved to `My Videos\RGDSCapture\` with timestamps
 - Screenshot both screens to PNG with a single button or F12
 - Files saved to `My Pictures\RGDSCapture\`
@@ -67,6 +71,7 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 - Exit confirmation if streams are running
 
 ### App
+- Optional "remember credentials" — the SSH password is encrypted with Windows DPAPI, so connecting is one click
 - Dark and Light themes, persisted between sessions
 - Event log panel with timestamped entries
 - Keyboard shortcuts (see below)
@@ -83,6 +88,7 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 | F6    | Restart top stream           |
 | F7    | Restart bottom stream        |
 | F8    | Toggle event log             |
+| F9    | Save instant replay          |
 | F12   | Screenshot both screens      |
 | Space | Start / pause speedrun timer |
 

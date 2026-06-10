@@ -67,6 +67,17 @@ namespace RGDSCapture.Services
         private long _fpsFrameCount;
         private DateTime _fpsWindowStart = DateTime.UtcNow;
 
+        // Network stats (written on the receive thread, read from the UI)
+        private long _statPackets;
+        private long _statLostPackets;
+        private long _statBytes;
+
+        /// <summary>Cumulative packet/loss/byte counters since Start().</summary>
+        public (long Packets, long Lost, long Bytes) GetStats() => (
+            Interlocked.Read(ref _statPackets),
+            Interlocked.Read(ref _statLostPackets),
+            Interlocked.Read(ref _statBytes));
+
         private const int MaxConsecutiveSendErrors = 3;
         private int _sendErrorCount;
 
@@ -88,6 +99,9 @@ namespace RGDSCapture.Services
             _haveLastSeq = false;
             _fuaActive = false;
             _sendErrorCount = 0;
+            Interlocked.Exchange(ref _statPackets, 0);
+            Interlocked.Exchange(ref _statLostPackets, 0);
+            Interlocked.Exchange(ref _statBytes, 0);
 
             _cts = new CancellationTokenSource();
             IsRunning = true;
@@ -152,15 +166,28 @@ namespace RGDSCapture.Services
         {
             if (data.Length < 12) return;
 
+            Interlocked.Increment(ref _statPackets);
+            Interlocked.Add(ref _statBytes, data.Length);
+
             int cc = data[0] & 0x0F;
             bool hasExt = (data[0] & 0x10) != 0;
             int headerLen = 12 + cc * 4;
 
             ushort seq = (ushort)((data[2] << 8) | data[3]);
-            if (_haveLastSeq && seq != unchecked((ushort)(_lastSeq + 1)))
+            if (_haveLastSeq)
             {
-                // Packet loss or reorder: any in-flight fragment is now corrupt.
-                _fuaActive = false;
+                int delta = unchecked((ushort)(seq - _lastSeq));
+                if (delta != 1)
+                {
+                    // Packet loss or reorder: any in-flight fragment is now corrupt.
+                    _fuaActive = false;
+
+                    // Small forward gaps are genuine loss; huge jumps are a
+                    // sequence reset (device pipeline restart), not loss.
+                    int lost = delta - 1;
+                    if (lost > 0 && lost < 200)
+                        Interlocked.Add(ref _statLostPackets, lost);
+                }
             }
             _lastSeq = seq;
             _haveLastSeq = true;

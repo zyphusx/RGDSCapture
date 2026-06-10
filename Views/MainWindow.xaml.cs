@@ -39,11 +39,14 @@ namespace RGDSCapture.Views
         }
 
         // ── Credential dialog ─────────────────────────────────────
-        private (string User, string Pass)? ShowCredentialDialog(string defaultUsername)
+        private (string User, string Pass, bool Remember)? ShowCredentialDialog(string defaultUsername)
         {
-            var dialog = new ConnectDialog(defaultUsername) { Owner = this };
+            var dialog = new ConnectDialog(defaultUsername, _vm.Settings.RememberCredentials)
+            {
+                Owner = this
+            };
             return dialog.ShowDialog() == true
-                ? (dialog.Username, dialog.Password)
+                ? (dialog.Username, dialog.Password, dialog.Remember)
                 : null;
         }
 
@@ -133,11 +136,20 @@ namespace RGDSCapture.Views
             if (_shutdownStarted) return;
             _shutdownStarted = true;
 
+            // Get off the Closing call stack first: if teardown completes
+            // synchronously, calling Close() from inside the Closing event
+            // throws InvalidOperationException.
+            await Task.Yield();
+
             _fullscreen?.Close();
             await _vm.ShutdownAsync();
 
             _shutdownComplete = true;
-            Close();
+            // Shutdown, not Close(): WPF pumps messages during a close, so
+            // this continuation can run while the original close is still in
+            // flight — Close() would throw "while a Window is closing".
+            // Shutdown closes windows ignoring the cancel handshake.
+            Application.Current.Shutdown();
         }
     }
 }

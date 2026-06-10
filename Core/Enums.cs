@@ -40,4 +40,12 @@ namespace RGDSCapture.Core
         Frozen,
         Recovering
     }
+
+    /// <summary>Encoder bitrate preset for the device's GStreamer pipelines.</summary>
+    public enum StreamQuality
+    {
+        Low,      // 1 Mbps per screen — congested WiFi
+        Medium,   // 2 Mbps per screen — default
+        High      // 4 Mbps per screen — strong network
+    }
 }

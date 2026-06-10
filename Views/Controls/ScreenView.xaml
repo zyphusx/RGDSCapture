@@ -28,24 +28,47 @@
                 </Image.InputBindings>
             </Image>
 
-            <!-- Health badge + FPS, top-left -->
-            <StackPanel Orientation="Horizontal"
+            <!-- Health badge + FPS + optional network stats, top-left -->
+            <StackPanel Orientation="Vertical"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Top"
                         Margin="10,8">
-                <Ellipse Width="8" Height="8"
-                         Fill="{Binding BadgeBrush}"
-                         VerticalAlignment="Center"
-                         Margin="0,0,5,0"/>
-                <TextBlock Text="{Binding BadgeText}"
-                           Foreground="{Binding BadgeBrush}"
-                           FontSize="11" FontWeight="SemiBold"
-                           VerticalAlignment="Center"/>
-                <TextBlock Text="{Binding FpsText}"
-                           Foreground="{DynamicResource TextSecondary}"
-                           FontSize="11"
-                           VerticalAlignment="Center"
-                           Margin="8,0,0,0"/>
+                <StackPanel Orientation="Horizontal">
+                    <Ellipse Width="8" Height="8"
+                             Fill="{Binding BadgeBrush}"
+                             VerticalAlignment="Center"
+                             Margin="0,0,5,0"/>
+                    <TextBlock Text="{Binding BadgeText}"
+                               Foreground="{Binding BadgeBrush}"
+                               FontSize="11" FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding FpsText}"
+                               Foreground="{DynamicResource TextSecondary}"
+                               FontSize="11"
+                               VerticalAlignment="Center"
+                               Margin="8,0,0,0"/>
+                </StackPanel>
+
+                <Border CornerRadius="3"
+                        Background="#66000000"
+                        Padding="6,2"
+                        Margin="0,5,0,0"
+                        HorizontalAlignment="Left">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding StatsText}" Value="">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Text="{Binding StatsText}"
+                               Foreground="#DDFFFFFF"
+                               FontSize="11"
+                               FontFamily="Cascadia Code, Consolas, monospace"
+                               AutomationProperties.Name="Network stats"/>
+                </Border>
             </StackPanel>
 
             <!-- Fullscreen button, top-right -->

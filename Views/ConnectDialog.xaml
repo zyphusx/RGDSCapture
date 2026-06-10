@@ -29,7 +29,12 @@
         <TextBlock Text="Password"
                    Foreground="{DynamicResource TextSecondary}"
                    FontSize="12" Margin="0,0,0,4"/>
-        <PasswordBox x:Name="TxtPassword" Margin="0,0,0,20"/>
+        <PasswordBox x:Name="TxtPassword" Margin="0,0,0,14"/>
+
+        <CheckBox x:Name="ChkRemember"
+                  Content="Remember credentials on this PC"
+                  Margin="0,0,0,20"
+                  ToolTip="The password is encrypted with Windows DPAPI and can only be read by your Windows account on this machine"/>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="Cancel"

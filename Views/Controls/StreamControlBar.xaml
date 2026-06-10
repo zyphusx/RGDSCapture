@@ -22,6 +22,15 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
+        <Style x:Key="RecordCombinedButton" TargetType="Button"
+               BasedOn="{StaticResource {x:Type Button}}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsCombinedRecording}" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource RecordingBg}"/>
+                    <Setter Property="Foreground" Value="#FFFFFF"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
 
     <Border Style="{StaticResource ToolbarSurface}">
@@ -57,8 +66,19 @@
                     Content="{Binding Bottom.RecordButtonText}"
                     Command="{Binding Bottom.ToggleRecordingCommand}"
                     IsEnabled="{Binding IsConnected}"
+                    Margin="0,0,4,0"
                     AutomationProperties.Name="Record bottom screen"
                     ToolTip="Record bottom screen to MP4 (no re-encoding)"/>
+            <Button Style="{StaticResource RecordCombinedButton}"
+                    Content="{Binding CombinedRecordButtonText}"
+                    Command="{Binding ToggleCombinedRecordingCommand}"
+                    Margin="0,0,4,0"
+                    AutomationProperties.Name="Record combined"
+                    ToolTip="Record both screens + Line-In audio to one MP4 with synced tracks"/>
+            <Button Content="⏪  Replay"
+                    Command="{Binding SaveReplayCommand}"
+                    AutomationProperties.Name="Save instant replay"
+                    ToolTip="Save the last moments of both screens to MP4  (F9)"/>
 
             <Border Style="{StaticResource ToolbarSeparator}"/>
 
