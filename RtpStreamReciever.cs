@@ -25,7 +25,7 @@ namespace RGDSCapture
         public bool IsFrozen =>
             IsRunning &&
             LastFrameTime != DateTime.MinValue &&
-            (DateTime.Now - LastFrameTime).TotalSeconds >= FreezeThresholdSeconds;
+            (DateTime.UtcNow - LastFrameTime).TotalSeconds >= FreezeThresholdSeconds;
 
         public double FreezeThresholdSeconds { get; set; } = 5.0;
 

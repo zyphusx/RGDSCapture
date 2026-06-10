@@ -113,15 +113,17 @@ namespace RGDSCapture
         {
             if (!IsConnected) return;
 
-            int    port     = stream == StreamType.TopScreen ? 5000 : 5001;
+            string logFile  = stream == StreamType.TopScreen ? "gst_top.log" : "gst_bottom.log";
             string startCmd = stream == StreamType.TopScreen
                 ? GST_TOP.Replace("{HOST}", _windowsIp)
                 : GST_BOTTOM.Replace("{HOST}", _windowsIp);
             string label    = stream == StreamType.TopScreen ? "Top" : "Bottom";
 
             RaiseStatus($"Restarting {label} stream...", false);
-            RunCommand("pkill -f gst-launch-1.0");
-            await Task.Delay(800, ct);
+            // Kill only the process whose command line references this stream's log file,
+            // leaving the other stream running.
+            RunCommand($"pkill -f {logFile}");
+            await Task.Delay(600, ct);
             RunCommand(startCmd);
             await Task.Delay(500, ct);
             StreamStarted?.Invoke(stream);

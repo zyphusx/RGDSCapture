@@ -359,54 +359,50 @@ namespace RGDSCapture
         {
             if (!_isConnected || _ssh == null || !_ssh.IsConnected) return;
 
-            // Check top screen
+            // ── Top screen ────────────────────────────────────────────
             if (_topReceiver != null && _topReceiver.IsFrozen)
             {
                 if (!_topRecovering && _topRetries < MaxAutoRetries)
                 {
                     _topRecovering = true;
                     _topRetries++;
-                    AppendLog($"[FREEZE] Top screen frozen — auto-recovery attempt {_topRetries}/{MaxAutoRetries}", isError: true);
+                    AppendLog($"[FREEZE] Top frozen — recovery attempt {_topRetries}/{MaxAutoRetries}", isError: true);
                     _ = AutoRecoverStream(StreamType.TopScreen);
                 }
-                else if (_topRetries >= MaxAutoRetries)
-                {
-                    AppendLog($"[FREEZE] Top screen frozen — max retries reached", isError: true);
-                }
+                // No log spam once max retries are exhausted — the FROZEN badge is enough.
             }
-            else if (_topReceiver != null && _topReceiver.IsRunning && !_topReceiver.IsFrozen)
+            else if (_topReceiver != null && !_topReceiver.IsFrozen)
             {
-                // Stream recovered
                 if (_topRecovering)
                 {
                     _topRecovering = false;
-                    AppendLog($"[FREEZE] Top screen recovered", isError: false);
+                    AppendLog("[FREEZE] Top screen recovered.");
                 }
+                // Reset retry counter so future freezes get a fresh set of attempts.
+                if (_topRetries > 0 && _topReceiver.IsRunning)
+                    _topRetries = 0;
             }
 
-            // Check bottom screen
+            // ── Bottom screen ─────────────────────────────────────────
             if (_bottomReceiver != null && _bottomReceiver.IsFrozen)
             {
                 if (!_bottomRecovering && _bottomRetries < MaxAutoRetries)
                 {
                     _bottomRecovering = true;
                     _bottomRetries++;
-                    AppendLog($"[FREEZE] Bottom screen frozen — auto-recovery attempt {_bottomRetries}/{MaxAutoRetries}", isError: true);
+                    AppendLog($"[FREEZE] Bottom frozen — recovery attempt {_bottomRetries}/{MaxAutoRetries}", isError: true);
                     _ = AutoRecoverStream(StreamType.BottomScreen);
                 }
-                else if (_bottomRetries >= MaxAutoRetries)
-                {
-                    AppendLog($"[FREEZE] Bottom screen frozen — max retries reached", isError: true);
-                }
             }
-            else if (_bottomReceiver != null && _bottomReceiver.IsRunning && !_bottomReceiver.IsFrozen)
+            else if (_bottomReceiver != null && !_bottomReceiver.IsFrozen)
             {
-                // Stream recovered
                 if (_bottomRecovering)
                 {
                     _bottomRecovering = false;
-                    AppendLog($"[FREEZE] Bottom screen recovered", isError: false);
+                    AppendLog("[FREEZE] Bottom screen recovered.");
                 }
+                if (_bottomRetries > 0 && _bottomReceiver.IsRunning)
+                    _bottomRetries = 0;
             }
         }
 
