@@ -1,0 +1,174 @@
+<Window x:Class="RGDSCapture.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:RGDSCapture.Views.Controls"
+        Title="RGDSCapture"
+        Height="820" Width="1060"
+        MinHeight="620" MinWidth="780"
+        Background="{DynamicResource WindowBg}"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+        FontSize="13"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
+
+    <Window.InputBindings>
+        <KeyBinding Key="F2" Command="{Binding FullscreenCommand}" CommandParameter="{Binding Top}"/>
+        <KeyBinding Key="F3" Command="{Binding FullscreenCommand}" CommandParameter="{Binding Bottom}"/>
+        <KeyBinding Key="F5" Command="{Binding RestartAllCommand}"/>
+        <KeyBinding Key="F6" Command="{Binding RestartTopCommand}"/>
+        <KeyBinding Key="F7" Command="{Binding RestartBottomCommand}"/>
+        <KeyBinding Key="F8" Command="{Binding Log.ToggleCommand}"/>
+        <KeyBinding Key="F12" Command="{Binding ScreenshotCommand}"/>
+    </Window.InputBindings>
+
+    <DockPanel>
+
+        <!-- ── Menu bar ─────────────────────────────────────────── -->
+        <Menu DockPanel.Dock="Top"
+              BorderBrush="{DynamicResource MenuBorder}"
+              BorderThickness="0,0,0,1">
+
+            <MenuItem Header="_File">
+                <MenuItem Header="_Connect"
+                          Command="{Binding ConnectCommand}"
+                          IsEnabled="{Binding IsDisconnected}"/>
+                <MenuItem Header="_Disconnect"
+                          Command="{Binding ConnectCommand}"
+                          IsEnabled="{Binding IsConnected}"/>
+                <Separator/>
+                <MenuItem Header="_Screenshot"
+                          Command="{Binding ScreenshotCommand}"
+                          InputGestureText="F12"/>
+                <Separator/>
+                <MenuItem Header="E_xit"
+                          Click="MnuExit_Click"
+                          InputGestureText="Alt+F4"/>
+            </MenuItem>
+
+            <MenuItem Header="_Streams">
+                <MenuItem Header="Restart _Top Screen"
+                          Command="{Binding RestartTopCommand}"
+                          InputGestureText="F6"/>
+                <MenuItem Header="Restart _Bottom Screen"
+                          Command="{Binding RestartBottomCommand}"
+                          InputGestureText="F7"/>
+                <MenuItem Header="Restart _All"
+                          Command="{Binding RestartAllCommand}"
+                          InputGestureText="F5"/>
+                <Separator/>
+                <MenuItem Header="Record Top to MP4"
+                          Command="{Binding Top.ToggleRecordingCommand}"
+                          IsEnabled="{Binding IsConnected}"/>
+                <MenuItem Header="Record Bottom to MP4"
+                          Command="{Binding Bottom.ToggleRecordingCommand}"
+                          IsEnabled="{Binding IsConnected}"/>
+            </MenuItem>
+
+            <MenuItem Header="_Console">
+                <MenuItem Header="_Shutdown Console"
+                          Command="{Binding ShutdownCommand}"/>
+                <MenuItem Header="_Reboot Console"
+                          Command="{Binding RebootCommand}"/>
+            </MenuItem>
+
+            <MenuItem Header="_View">
+                <MenuItem Header="_Layout">
+                    <MenuItem Header="_Vertical Stack"
+                              Command="{Binding SetLayoutCommand}"
+                              CommandParameter="VerticalStack"
+                              IsChecked="{Binding IsLayoutVertical, Mode=OneWay}"/>
+                    <MenuItem Header="_Side by Side"
+                              Command="{Binding SetLayoutCommand}"
+                              CommandParameter="SideBySide"
+                              IsChecked="{Binding IsLayoutSideBySide, Mode=OneWay}"/>
+                    <MenuItem Header="Top _Only"
+                              Command="{Binding SetLayoutCommand}"
+                              CommandParameter="TopOnly"
+                              IsChecked="{Binding IsLayoutTopOnly, Mode=OneWay}"/>
+                    <MenuItem Header="_Bottom Only"
+                              Command="{Binding SetLayoutCommand}"
+                              CommandParameter="BottomOnly"
+                              IsChecked="{Binding IsLayoutBottomOnly, Mode=OneWay}"/>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="_Theme">
+                    <MenuItem Header="_Dark"
+                              Command="{Binding SetThemeCommand}"
+                              CommandParameter="Dark"
+                              IsChecked="{Binding IsThemeDark, Mode=OneWay}"/>
+                    <MenuItem Header="_Light"
+                              Command="{Binding SetThemeCommand}"
+                              CommandParameter="Light"
+                              IsChecked="{Binding IsThemeLight, Mode=OneWay}"/>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Toggle Event _Log"
+                          Command="{Binding Log.ToggleCommand}"
+                          InputGestureText="F8"/>
+            </MenuItem>
+
+        </Menu>
+
+        <!-- ── Toolbars ─────────────────────────────────────────── -->
+        <controls:ConnectionBar DockPanel.Dock="Top"/>
+        <controls:StreamControlBar DockPanel.Dock="Top"/>
+        <controls:AudioTimerBar DockPanel.Dock="Top"/>
+
+        <!-- ── Status bar ───────────────────────────────────────── -->
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource StatusBarBg}"
+                BorderBrush="{DynamicResource StatusBarBorder}"
+                BorderThickness="0,1,0,0"
+                Padding="14,5">
+            <DockPanel LastChildFill="False">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Ellipse Width="8" Height="8"
+                             Fill="{Binding StatusDotBrush}"
+                             VerticalAlignment="Center"
+                             Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding StatusMessage}" FontSize="12">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground"
+                                        Value="{DynamicResource StatusFg}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding StatusIsError}" Value="True">
+                                        <Setter Property="Foreground"
+                                                Value="{DynamicResource StatusErrorFg}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+
+                <TextBlock DockPanel.Dock="Right"
+                           Foreground="{DynamicResource TextDisabled}"
+                           FontSize="11"
+                           VerticalAlignment="Center"
+                           Text="F2/F3 Fullscreen  ·  F5 Restart All  ·  F6 Top  ·  F7 Bottom  ·  F8 Log  ·  F12 Screenshot  ·  Space Timer"/>
+            </DockPanel>
+        </Border>
+
+        <!-- ── Video area + log drawer overlay ─────────────────── -->
+        <Grid ClipToBounds="True">
+            <Grid x:Name="VideoGrid" Background="{DynamicResource VideoAreaBg}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <controls:ScreenView x:Name="TopView" DataContext="{Binding Top}"/>
+                <controls:ScreenView x:Name="BottomView" DataContext="{Binding Bottom}"/>
+            </Grid>
+
+            <controls:LogDrawer/>
+        </Grid>
+
+    </DockPanel>
+</Window>

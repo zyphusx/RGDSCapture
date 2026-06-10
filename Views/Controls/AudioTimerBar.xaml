@@ -1,0 +1,129 @@
+<UserControl x:Class="RGDSCapture.Views.Controls.AudioTimerBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- DataContext: MainViewModel -->
+    <UserControl.Resources>
+        <Style x:Key="AudioToggleButton" TargetType="Button"
+               BasedOn="{StaticResource {x:Type Button}}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Audio.IsRunning}" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource RecordingBg}"/>
+                    <Setter Property="Foreground" Value="#FFFFFF"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Border Style="{StaticResource ToolbarSurface}">
+        <WrapPanel VerticalAlignment="Center">
+
+            <TextBlock Text="🔊" FontSize="15"
+                       Foreground="{DynamicResource TextSecondary}"
+                       VerticalAlignment="Center" Margin="0,0,6,0"/>
+
+            <ComboBox Width="210" Height="32"
+                      ItemsSource="{Binding Audio.InputDevices}"
+                      SelectedItem="{Binding Audio.SelectedInput}"
+                      AutomationProperties.Name="Audio input device"
+                      ToolTip="Select Line-In / audio input device"/>
+
+            <TextBlock Text="→" Style="{StaticResource SectionLabel}"/>
+
+            <ComboBox Width="190" Height="32"
+                      ItemsSource="{Binding Audio.OutputDevices}"
+                      SelectedItem="{Binding Audio.SelectedOutput}"
+                      AutomationProperties.Name="Audio output device"
+                      ToolTip="Select audio output"/>
+
+            <Button Style="{StaticResource AudioToggleButton}"
+                    Content="{Binding Audio.ToggleText}"
+                    Command="{Binding Audio.ToggleCommand}"
+                    Margin="8,0,0,0"
+                    AutomationProperties.Name="Start or stop audio passthrough"
+                    ToolTip="Start / stop Line-In audio passthrough"/>
+
+            <TextBlock Text="Vol" Style="{StaticResource SectionLabel}" Margin="10,0,4,0"/>
+            <Slider Width="84"
+                    Minimum="0" Maximum="1"
+                    Value="{Binding Audio.Volume}"
+                    VerticalAlignment="Center"
+                    AutomationProperties.Name="Volume"
+                    ToolTip="Output volume"/>
+            <TextBlock Text="{Binding Audio.VolumeLabel}"
+                       Foreground="{DynamicResource TextSecondary}"
+                       VerticalAlignment="Center" Width="34"
+                       FontSize="12" Margin="4,0,0,0"/>
+
+            <!-- VU meters: vertical fill, bottom-anchored -->
+            <Border Width="7" Height="22"
+                    Background="{DynamicResource VuBg}"
+                    BorderBrush="{DynamicResource VuBorder}"
+                    BorderThickness="1" CornerRadius="2"
+                    Margin="8,0,3,0"
+                    ToolTip="Left channel level"
+                    AutomationProperties.Name="Left channel level">
+                <Rectangle Fill="{Binding Audio.VuBrush}"
+                           VerticalAlignment="Bottom"
+                           Height="20"
+                           RadiusX="1" RadiusY="1"
+                           RenderTransformOrigin="0.5,1">
+                    <Rectangle.RenderTransform>
+                        <ScaleTransform ScaleY="{Binding Audio.LeftLevel}"/>
+                    </Rectangle.RenderTransform>
+                </Rectangle>
+            </Border>
+            <Border Width="7" Height="22"
+                    Background="{DynamicResource VuBg}"
+                    BorderBrush="{DynamicResource VuBorder}"
+                    BorderThickness="1" CornerRadius="2"
+                    Margin="0,0,10,0"
+                    ToolTip="Right channel level"
+                    AutomationProperties.Name="Right channel level">
+                <Rectangle Fill="{Binding Audio.VuBrush}"
+                           VerticalAlignment="Bottom"
+                           Height="20"
+                           RadiusX="1" RadiusY="1"
+                           RenderTransformOrigin="0.5,1">
+                    <Rectangle.RenderTransform>
+                        <ScaleTransform ScaleY="{Binding Audio.RightLevel}"/>
+                    </Rectangle.RenderTransform>
+                </Rectangle>
+            </Border>
+
+            <Border Style="{StaticResource ToolbarSeparator}" Margin="0,0,10,0"/>
+
+            <!-- Speedrun timer -->
+            <TextBlock Text="⏱" FontSize="15"
+                       Foreground="{DynamicResource TextSecondary}"
+                       VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <Border Background="{DynamicResource TimerBg}"
+                    BorderBrush="{DynamicResource TimerBorder}"
+                    BorderThickness="1" CornerRadius="6"
+                    Padding="12,4" Margin="0,0,6,0">
+                <TextBlock Text="{Binding Timer.Display}"
+                           Foreground="{DynamicResource TimerFg}"
+                           FontFamily="Cascadia Code, Consolas, monospace"
+                           FontSize="18" FontWeight="SemiBold"
+                           VerticalAlignment="Center"
+                           AutomationProperties.Name="Speedrun timer"/>
+            </Border>
+
+            <Button Content="{Binding Timer.StartPauseText}"
+                    Command="{Binding Timer.StartPauseCommand}"
+                    Margin="0,0,4,0"
+                    AutomationProperties.Name="Start or pause timer"
+                    ToolTip="Start / pause timer  (Space)"/>
+            <Button Content="⚑  Lap"
+                    Command="{Binding Timer.LapCommand}"
+                    Margin="0,0,4,0"
+                    AutomationProperties.Name="Record lap"
+                    ToolTip="Record lap split to log"/>
+            <Button Content="✕  Reset"
+                    Command="{Binding Timer.ResetCommand}"
+                    AutomationProperties.Name="Reset timer"
+                    ToolTip="Reset timer to zero"/>
+
+        </WrapPanel>
+    </Border>
+</UserControl>

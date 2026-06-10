@@ -1,39 +1,39 @@
 {
     "version": "2.0.0",
     "tasks": [
-       {
-    "label": "build",
-    "type": "process",
-    "command": "dotnet",
-    "args": [
-        "build",
-        "${workspaceFolder}\\RGDSCapture.csproj",
-        "-c",
-        "Release"
-    ],
-    "problemMatcher": "$msCompile"
-},
         {
-    "label": "publish",
-    "type": "process",
-    "command": "dotnet",
-    "args": [
-        "publish",
-        "${workspaceFolder}\\RGDSCapture.csproj",
-        "-c",
-        "Release"
-    ],
-    "problemMatcher": "$msCompile"
-},
+            "label": "build",
+            "type": "process",
+            "command": "dotnet",
+            "args": [
+                "build",
+                "${workspaceFolder}\\RGDSCapture.csproj",
+                "-c",
+                "Release"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "publish",
+            "type": "process",
+            "command": "dotnet",
+            "args": [
+                "publish",
+                "${workspaceFolder}\\RGDSCapture.csproj",
+                "-c",
+                "Release"
+            ],
+            "problemMatcher": "$msCompile"
+        },
         {
             "label": "watch",
-            "command": "dotnet",
             "type": "process",
+            "command": "dotnet",
             "args": [
                 "watch",
                 "run",
                 "--project",
-                "../Users/josha/AppData/Roaming/Code/User/workspaceStorage/84ec5397c755324168b63fb7f2f9cbf3/ms-dotnettools.csdevkit/RGDSCapture.sln"
+                "${workspaceFolder}\\RGDSCapture.csproj"
             ],
             "problemMatcher": "$msCompile"
         }

@@ -77,9 +77,12 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 
 | Key   | Action                       |
 |-------|------------------------------|
+| F2    | Fullscreen top screen        |
+| F3    | Fullscreen bottom screen     |
 | F5    | Restart all streams          |
 | F6    | Restart top stream           |
 | F7    | Restart bottom stream        |
+| F8    | Toggle event log             |
 | F12   | Screenshot both screens      |
 | Space | Start / pause speedrun timer |
 

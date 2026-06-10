@@ -1,0 +1,112 @@
+<UserControl x:Class="RGDSCapture.Views.Controls.LogDrawer"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- DataContext: MainViewModel. Slides in from the right edge. -->
+    <Border Width="280"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Stretch"
+            Background="{DynamicResource PanelBg}"
+            BorderBrush="{DynamicResource PanelBorder}"
+            BorderThickness="1,0,0,0"
+            Panel.ZIndex="10"
+            AutomationProperties.Name="Event log drawer">
+        <Border.RenderTransform>
+            <TranslateTransform X="280"/>
+        </Border.RenderTransform>
+        <Border.Style>
+            <Style TargetType="Border">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Log.IsOpen}" Value="True">
+                        <DataTrigger.EnterActions>
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation
+                                        Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                        To="0" Duration="0:0:0.2">
+                                        <DoubleAnimation.EasingFunction>
+                                            <CubicEase EasingMode="EaseOut"/>
+                                        </DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </DataTrigger.EnterActions>
+                        <DataTrigger.ExitActions>
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation
+                                        Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                        To="280" Duration="0:0:0.2">
+                                        <DoubleAnimation.EasingFunction>
+                                            <CubicEase EasingMode="EaseIn"/>
+                                        </DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </DataTrigger.ExitActions>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </Border.Style>
+
+        <DockPanel>
+            <Border DockPanel.Dock="Top"
+                    Background="{DynamicResource HeaderBg}"
+                    BorderBrush="{DynamicResource PanelBorder}"
+                    BorderThickness="0,0,0,1"
+                    Padding="12,8">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right"
+                            Content="✕"
+                            Padding="8,4"
+                            Command="{Binding Log.ToggleCommand}"
+                            AutomationProperties.Name="Close log"
+                            ToolTip="Close log  (F8)"/>
+                    <TextBlock Text="Event Log"
+                               Foreground="{DynamicResource TextSecondary}"
+                               FontSize="13" FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+                </DockPanel>
+            </Border>
+
+            <Button DockPanel.Dock="Bottom"
+                    Content="Clear Log"
+                    Margin="8"
+                    Command="{Binding Log.ClearCommand}"
+                    AutomationProperties.Name="Clear event log"/>
+
+            <ScrollViewer x:Name="LogScroll"
+                          Background="{DynamicResource LogBg}"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Padding="10,6">
+                <ItemsControl ItemsSource="{Binding Log.Entries}"
+                              AutomationProperties.Name="Event log output">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock TextWrapping="Wrap"
+                                       FontFamily="Cascadia Code, Consolas, monospace"
+                                       FontSize="11"
+                                       Margin="0,1">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground"
+                                                Value="{DynamicResource LogFg}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsError}" Value="True">
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource LogErrorFg}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                                <Run Text="{Binding Timestamp, Mode=OneWay}"
+                                     Foreground="{DynamicResource LogTimestampFg}"/><Run Text="  "/><Run Text="{Binding Message, Mode=OneWay}"/>
+                            </TextBlock>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+    </Border>
+</UserControl>

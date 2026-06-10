@@ -4,185 +4,83 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Project Does
 
-**RGDSCapture** is a software capture card for the Anbernic RG Dual Screen handheld gaming console. It runs on Windows and:
-- Connects to the RG DS device over SSH
-- Receives both screen feeds as H.264-encoded video via RTP/UDP at 30 fps each
-- Monitors audio from the device's headphone jack via a 3.5mm cable connected to the PC's Line-In
-- Supports multiple layout modes, recording, screenshots, and a speedrun timer overlay
-- Includes auto-recovery for frozen streams and real-time FPS monitoring
+**RGDSCapture** is a software capture card for the Anbernic RG Dual Screen handheld. It is a WPF (.NET 8) Windows app that:
+- Connects to the RG DS over SSH and starts GStreamer H.264 pipelines on the device
+- Receives both screens as RTP/UDP streams (ports **5000** top, **5001** bottom) and decodes them with FFmpeg
+- Passes audio through from the PC's Line-In jack (physical 3.5mm cable — audio never touches the network)
+- Records each screen to MP4 with zero re-encoding, takes screenshots, and provides a speedrun timer
 
-## Project Structure
-
-The project is a **WPF (.NET 8 / C#)** desktop application with unsafe code enabled.
-
-### Core Files
-
-| File | Purpose |
-|------|---------|
-| `MainWindow.xaml.cs` | Main UI orchestrator; manages all state (connection, streams, recording, audio, timer, logs, fullscreen) |
-| `RtpStreamReceiver.cs` | Receives H.264-over-RTP on a UDP port, reassembles FU-A NAL units, decodes via FFmpeg.AutoGen, fires FrameReady events with BGRA pixel buffers; tracks FPS and freeze state |
-| `AudioMonitor.cs` | Real-time Line-In passthrough using NAudio; 48 kHz 16-bit stereo PCM with drift-corrected ring buffer; exposes L/R VU meter levels |
-| `SshManager.cs` | SSH client wrapper; connects to device and manages GStreamer pipeline lifecycle (start/stop/restart both screens) |
-| `ThemeManager.cs` | Persistence layer for dark/light theme selection |
-| `FullScreenOverlay.cs` | Dedicated overlay window for fullscreen playback |
-| `FFmpegBinariesHelper.cs` | FFmpeg binary registration and path resolution |
-| `ConnectDialog.xaml.cs` | SSH connection dialog (IP, port, username, password) |
-
-### Supporting Files
-
-- `App.xaml` / `App.xaml.cs` – Application entry point and initialization
-- `MainWindow.xaml` – Main UI layout
-- `Themes/*.xaml` – Dark/light theme resource dictionaries
-- `RGDSCapture.csproj` – NuGet dependencies and build configuration
-
-## Build & Development Commands
-
-### Restore, Build, Run
+## Build & Run
 
 ```powershell
-# Restore NuGet packages
 dotnet restore
-
-# Build Release configuration
 dotnet build -c Release
-
-# Build Debug configuration
-dotnet build -c Debug
-
-# Run the application
-dotnet run --project RGDSCapture
-
-# Run with debugger (VS Code)
-# Press F5 (or use Debug → Start Debugging)
+dotnet run --project RGDSCapture.csproj
+dotnet publish -c Release        # output consumed by RGDSCaptureSetup.iss (Inno Setup)
 ```
 
-### Common Workflows
+There are no automated tests; verification is manual. A useful smoke test: launch the built exe, confirm it stays alive, and check `%APPDATA%\RGDSCapture\crash.log` does not appear.
 
-**Running in the debugger:**
-```powershell
-# Set breakpoints in VS Code, then press F5
-# (pre-configured in .vscode/launch.json)
+## Architecture (MVVM, no external MVVM package)
+
+```
+Core/         Enums (ScreenId, LayoutMode, AppTheme, ConnectionState, StreamHealth),
+              AppPaths, AppSettings + SettingsService (JSON in %APPDATA%\RGDSCapture)
+Services/     All backend logic — no UI dependencies except ThemeService/ScreenshotService
+ViewModels/   Mvvm.cs (ObservableObject, RelayCommand, AsyncRelayCommand) + one VM per feature
+Views/        MainWindow (thin shell) + UserControls in Views/Controls + dialogs
+Themes/       Dark.xaml / Light.xaml are COLORS ONLY; Controls.xaml holds ALL control styles
 ```
 
-**Testing a specific component:**
-- No automated tests are present; testing is manual via the app UI
-- Test connections with a local `ssh localhost` to verify SSH.NET behavior
-- Test RTP reception with `ffplay -protocol_whitelist file,udp,rtp udp://<local-ip>:5000` on the PC
+**Composition root** is `App.xaml.cs OnStartup` (no StartupUri): loads settings, applies theme, builds `MainViewModel`, shows `MainWindow`. Crash logging goes to the in-app event log plus `%APPDATA%\RGDSCapture\crash.log`.
 
-**Hot reload during development:**
-```powershell
-dotnet watch run
-```
+### Data flow for video
 
-## Architecture & Key Concepts
+1. `SshService` starts GStreamer pipelines on the device (pipeline strings are constants in that file — they are device-specific, treat as canonical).
+2. `RtpStreamReceiver` (one per screen) owns the UDP port, tracks RTP sequence numbers (drops corrupt FU-A fragments on packet loss), reassembles Annex-B NALs, decodes via FFmpeg.AutoGen into a **reused** BGRA buffer, and raises `FrameReady`.
+3. `ScreenViewModel.OnFrameReady` copies into its own reused pending buffer (decode thread).
+4. A 33 ms `DispatcherTimer` in `MainViewModel` calls `RenderPendingFrame()` which writes into a `WriteableBitmap` bound to the views. Zero allocation at steady state.
 
-### Dual Stream Processing
+### Recording (important — do not regress this)
 
-The app manages **two independent RTP video streams** (top and bottom screens):
-- Each stream has its own `RtpStreamReceiver` instance listening on ports **5000** (top) and **5001** (bottom)
-- Each receiver independently decodes H.264 NAL units via FFmpeg and fires `FrameReady` events
-- A single `DispatcherTimer` on the main thread polls the most recent frame from each stream and composites them onto the UI
+Recording must **never** open a second socket on the RTP ports — the receiver already owns them. `RecordingService`/`RecordingSession` taps `RtpStreamReceiver.NalUnitReceived` (every reassembled Annex-B NAL, fresh array each) and pipes the elementary stream into `ffmpeg.exe -f h264 -i pipe:0 -c:v copy` for an MP4 remux. It waits for an SPS NAL before writing (the device re-sends SPS/PPS every keyframe via `config-interval=-1`). Output goes to `My Videos\RGDSCapture\`.
 
-### Freeze Detection & Auto-Recovery
+### Stream health / auto-recovery
 
-- `RtpStreamReceiver.IsFrozen` triggers if no frame arrives within `FreezeThresholdSeconds` (5 seconds)
-- MainWindow's `_freezeCheckTimer` polls both streams every ~1 second
-- If frozen, the app automatically restarts the GStreamer pipeline (via SSH) up to **3 retries**
-- After 3 retries, it requires manual intervention (user clicks "Restart")
+`StreamHealthTracker` (one per screen, ticked at 1 Hz by `MainViewModel`) implements: Waiting → Live → Frozen (no frames ≥ 5 s) → auto-restart via SSH (max 3 retries) with a **10-second grace window** after each restart. The grace window is essential — without it all retries burn in seconds because frames can't arrive until the device pipeline respawns. Retries reset once frames flow again. Manual restarts call `NotifyManualRestart()`.
 
-### Audio Pipeline
+### Threading rules
 
-Audio is **not** routed over the network — it comes directly from a 3.5mm cable connected to the PC's Line-In:
-1. **Capture:** NAudio `WaveInEvent` captures at 48 kHz, 16-bit, stereo
-2. **Ring Buffer:** Custom `RingBufferProvider` maintains an ~80 ms buffer with drift correction (drops old data if buffer is too full, inserts silence if too empty)
-3. **Playback:** NAudio `WaveOutEvent` plays back to the selected output device
-4. **Volume:** Applied in-place during capture, before the ring buffer
+- Receive/decode happens on a dedicated long-running task per receiver; UI work happens via `DispatcherTimer`s.
+- `LogViewModel.Append` and `MainViewModel` status updates marshal to the dispatcher themselves — safe to call from any thread.
+- All SSH commands go through `SshService.RunCommandAsync` (serialized by a semaphore, wrapped in `Task.Run`) — **nothing in SshService may block the UI thread**.
+- `FrameReady` hands out a reused buffer: handlers must copy synchronously and not keep the reference.
 
-### Fullscreen Overlay
+### Views
 
-- `FullScreenOverlay` is a borderless, topmost overlay window
-- When activated, it renders the selected screen (or both stacked/side-by-side) in fullscreen
-- Falls back to a `WriteableBitmap` if the selected screen hasn't received a frame yet
-
-### Recording
-
-- Top and bottom screens are recorded independently using `ffmpeg.exe` subprocesses
-- Each subprocess reads H.264 packets directly from the UDP stream (via a local listening socket) and remuxes into MP4 without re-encoding
-- Files are saved to `My Videos\RGDSCapture\` with ISO 8601 timestamps
-
-### Speedrun Timer
-
-- Built on a `Stopwatch` with manual offset tracking
-- A `DispatcherTimer` updates the timer display every frame
-- Lap splits are logged with timestamps to the event log
+- `MainWindow.xaml` is a thin shell (menu, toolbars as UserControls, status bar, video grid). Its code-behind only handles: credential/confirm dialogs (via delegates the VM exposes), layout grid spans (`ApplyLayout`), fullscreen window creation, the Space shortcut, and async-safe close sequencing.
+- `ScreenView` is the single per-screen control reused for both screens and all four layouts (layouts are just row/column spans on a 2×2 grid).
+- Fullscreen (`FullScreenWindow`) binds to the **same** `WriteableBitmap` as the main view — no extra copies.
+- Keyboard shortcuts are `Window.InputBindings` (F2/F3 fullscreen, F5/F6/F7 restarts, F8 log, F12 screenshot); Space is handled in `PreviewKeyDown` so typing in text boxes isn't hijacked.
 
 ### Theming
 
-- Dark/light theme selection is persisted to disk (likely in `AppData\Local` or similar)
-- Theme is loaded at startup via `ThemeManager.Load()` and applied to the `Application.Current.Resources` dictionary
+`Themes/Dark.xaml` and `Light.xaml` contain only `SolidColorBrush` resources with identical key sets. `Themes/Controls.xaml` contains every control style/template and references colors via `DynamicResource`, so `ThemeService.Apply` (which swaps merged dictionary **index 0** — Controls.xaml is index 1) restyles live. When adding a color, add it to **both** theme files. Menu styling uses role-based `MenuItem` templates (TopLevelHeader / SubmenuHeader / SubmenuItem) — never hardcode menu foregrounds.
+
+## Settings & Paths
+
+`AppSettings` (theme, layout, device IP/port/username, volume, audio device **names**) persists to `%APPDATA%\RGDSCapture\settings.json` — never to the install directory, which is unwritable under Program Files. Audio devices are matched by name on restore because indices shift. Recordings → `My Videos\RGDSCapture`, screenshots → `My Pictures\RGDSCapture` (see `AppPaths`).
+
+## Packaging Constraints
+
+`RGDSCaptureSetup.iss` copies the publish output with wildcards (`*.dll`, `Themes\*.xaml`, the ff*.exe tools). Keep the exe name `RGDSCapture.exe`, keep FFmpeg DLLs/exes as `Content` items in the csproj, and keep theme XAML in `Themes\`. FFmpeg is the LGPL shared build — dynamic linking only; do not switch to static linking or GPL components (license obligation, see DEPENDENCIES.md).
 
 ## Dependencies
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| `FFmpeg.AutoGen` | 6.x | P/Invoke bindings for FFmpeg native libraries (decoding H.264) |
-| `SSH.NET` | 2024.x | SSH client for device control |
-| `NAudio` | 2.x | Audio device enumeration, capture, and playback |
-| `BouncyCastle.Cryptography` | (transitive) | Cryptographic support for SSH.NET |
+| Package | Purpose |
+|---------|---------|
+| `FFmpeg.AutoGen` 6.x | P/Invoke bindings to the shipped FFmpeg 6 DLLs (H.264 decode, swscale) |
+| `SSH.NET` 2024.x | Device control: pipeline start/stop, power commands |
+| `NAudio` 2.x | Line-In capture/playback (48 kHz 16-bit stereo passthrough, drift-corrected ring buffer) |
 
-**FFmpeg native DLLs** (LGPL 2.1, included in repo root):
-- `avcodec-60.dll`, `avformat-60.dll`, `avutil-58.dll`, `swscale-7.dll`, etc.
-- These are copied to the build output directory automatically
-
-## Safety & Concurrency
-
-- **Thread safety:** Frame buffers for each stream are protected by `_topLock` and `_bottomLock` (simple object monitors)
-- **Unsafe code:** `RtpStreamReceiver` uses unsafe pointers for FFmpeg context, codec context, frames, and swscale context; this is required for FFmpeg.AutoGen interop
-- **Cancellation:** Both streaming and audio use `CancellationTokenSource` for clean shutdown
-- **UI updates:** All UI updates happen on the dispatcher thread via `Invoke` or `BeginInvoke`
-
-## Common Patterns
-
-### Adding a New Stream Control
-
-1. Declare new `RtpStreamReceiver?` field
-2. In the Start handler, instantiate and call `.Start()`
-3. Subscribe to `FrameReady` with a lock-protected delegate
-4. In the Render loop, lock and check for pending frames
-5. In the Stop handler, cancel and dispose
-
-### Adding a New Audio Output Device Option
-
-1. Call `AudioMonitor.GetOutputDevices()` to enumerate
-2. Store the selected device index
-3. Call `_audioMonitor.Start(inputIndex, outputIndex)` with the index (use `-1` for system default)
-
-### Adding a New Layout Mode
-
-1. Add an enum value
-2. In the Render handler, adjust the composite rect logic
-3. Update the UI menu to select the new mode
-
-## Testing Notes
-
-- No unit test framework is present; all testing is manual via the UI
-- To manually test stream reception, use `ffplay` with an RTP URL
-- To manually test SSH, use `ssh -v user@device` from PowerShell/cmd
-- To manually test audio, connect a test signal to Line-In and check the VU meters
-
-## Key Files to Read First
-
-1. **RtpStreamReceiver.cs** — Understand the RTP/FFmpeg decoding loop and freeze detection
-2. **MainWindow.xaml.cs** — Understand the overall orchestration and state machine
-3. **AudioMonitor.cs** — Understand the ring buffer and drift correction logic
-4. **SshManager.cs** — Understand the GStreamer pipeline commands and device control
-
-## Recent Work
-
-Per git log:
-- Dark mode XAML fixes
-- Fullscreen streaming improvements
-- FPS counter debugging
-- Recording debug work
-
-Keep an eye on the freeze-detection threshold and auto-recovery logic if working on streaming reliability.
+`AllowUnsafeBlocks` is enabled solely for FFmpeg interop in `RtpStreamReceiver`.

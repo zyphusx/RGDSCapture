@@ -1,0 +1,52 @@
+<UserControl x:Class="RGDSCapture.Views.Controls.ConnectionBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- DataContext: MainViewModel -->
+    <Border Style="{StaticResource ToolbarSurface}">
+        <WrapPanel VerticalAlignment="Center">
+
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,4,0">
+                <TextBlock Text="Device IP" Style="{StaticResource SectionLabel}"
+                           ToolTip="IP address of your RG DS"/>
+                <TextBox Width="148"
+                         Text="{Binding DeviceIp, UpdateSourceTrigger=PropertyChanged}"
+                         IsEnabled="{Binding IsDisconnected}"
+                         AutomationProperties.Name="Device IP Address"
+                         ToolTip="IP address of your RG DS"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                <TextBlock Text="Port" Style="{StaticResource SectionLabel}"
+                           ToolTip="SSH port (usually 22)"/>
+                <TextBox Width="70"
+                         Text="{Binding SshPortText, UpdateSourceTrigger=PropertyChanged}"
+                         IsEnabled="{Binding IsDisconnected}"
+                         AutomationProperties.Name="SSH Port"
+                         ToolTip="SSH port (usually 22)"/>
+            </StackPanel>
+
+            <Button Width="110"
+                    Style="{StaticResource AccentButton}"
+                    Content="{Binding ConnectButtonText}"
+                    Command="{Binding ConnectCommand}"
+                    Margin="0,0,12,0"
+                    AutomationProperties.Name="Connect to device"
+                    ToolTip="SSH into the RG DS and start streams"/>
+
+            <Border Style="{StaticResource ToolbarSeparator}" Margin="0,0,12,0"/>
+
+            <Button Content="📷  Screenshot"
+                    Command="{Binding ScreenshotCommand}"
+                    Margin="0,0,6,0"
+                    AutomationProperties.Name="Take screenshot"
+                    ToolTip="Save PNG of both screens  (F12)"/>
+
+            <Button Content="📋  Log"
+                    Command="{Binding Log.ToggleCommand}"
+                    AutomationProperties.Name="Toggle event log"
+                    ToolTip="Show / hide event log  (F8)"/>
+
+        </WrapPanel>
+    </Border>
+</UserControl>
