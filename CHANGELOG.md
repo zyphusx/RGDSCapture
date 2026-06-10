@@ -13,6 +13,9 @@ number with the date, and start a fresh empty **[Unreleased]** section above it.
 ## [Unreleased]
 
 ### Changed
+- Updated to .NET 10 (LTS, supported through November 2028) — .NET 8 leaves
+  support in November 2026. The installer now checks for the .NET 10 Desktop
+  Runtime.
 - Combined recording now produces a vertically stacked composite — one video
   track with both screens visible (top over bottom, like the DS) — so the
   file plays correctly in any player. Previously it wrote two separate video

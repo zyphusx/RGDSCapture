@@ -8,7 +8,7 @@ Stream, record, and monitor both screens of your RG DS on Windows — no hardwar
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue.svg)]()
-[![.NET 8](https://img.shields.io/badge/.NET-8.0-purple.svg)]()
+[![.NET 10](https://img.shields.io/badge/.NET-10.0-purple.svg)]()
 
 
 </div>
@@ -102,7 +102,7 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 
 ### Windows PC
 - Windows 10 or Windows 11 (64-bit)
-- [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) (x64) — the installer will prompt you if this is missing
+- [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) (x64) — the installer will prompt you if this is missing
 - A hardware Line-In audio jack, or a USB audio adapter with Line-In input
 - A 3.5mm stereo cable (console headphone out → PC Line-In)
 
@@ -119,7 +119,7 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 3. Run the installer and follow the prompts
 4. Launch RGDSCapture from the Start Menu or Desktop
 
-If .NET 8 is not already installed, Windows will prompt you to install it before the app launches. Click the link in the prompt and run the Microsoft installer, then launch RGDSCapture again.
+If .NET 10 is not already installed, Windows will prompt you to install it before the app launches. Click the link in the prompt and run the Microsoft installer, then launch RGDSCapture again.
 
 ---
 
@@ -195,7 +195,7 @@ See [Building from Source](#building-from-source) below.
 - Set the default format to **48000 Hz, 16-bit**
 
 **App won't start — missing runtime**
-- Download and install the [.NET 8 Desktop Runtime (x64)](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+- Download and install the [.NET 10 Desktop Runtime (x64)](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
 
 **SSH connection refused**
 - Confirm SSH is enabled in your device's firmware settings
@@ -209,8 +209,8 @@ See [Building from Source](#building-from-source) below.
 
 | Tool | Version | Download |
 |------|---------|----------|
-| Visual Studio 2022 | 17.8 or later | [visualstudio.microsoft.com](https://visualstudio.microsoft.com/) |
-| .NET 8 SDK | 8.0 or later | [dotnet.microsoft.com](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) |
+| Visual Studio 2022 | 17.14 or later | [visualstudio.microsoft.com](https://visualstudio.microsoft.com/) |
+| .NET 10 SDK | 10.0 or later | [dotnet.microsoft.com](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) |
 | Git | Any recent version | [git-scm.com](https://git-scm.com/) |
 
 During Visual Studio installation, select the **".NET desktop development"** workload.
