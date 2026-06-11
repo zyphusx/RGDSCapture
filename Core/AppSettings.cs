@@ -10,6 +10,18 @@ namespace RGDSCapture.Core
         public string Theme { get; set; } = nameof(AppTheme.Dark);
         public string Layout { get; set; } = nameof(LayoutMode.SideBySide);
 
+        /// <summary>Display rotation in degrees (0, 90, 180, 270) for sideways-held games.</summary>
+        public int Rotation { get; set; }
+
+        /// <summary>Swap which screen takes the top/left/large position.</summary>
+        public bool SwapScreens { get; set; }
+
+        /// <summary>Margin around each screen panel in pixels.</summary>
+        public int ScreenGap { get; set; } = 8;
+
+        /// <summary>Smooth (Fant) video scaling instead of pixel-perfect nearest-neighbor.</summary>
+        public bool SmoothScaling { get; set; }
+
         public string DeviceIp { get; set; } = "192.168.1.100";
         public int SshPort { get; set; } = 22;
         public string SshUsername { get; set; } = "root";

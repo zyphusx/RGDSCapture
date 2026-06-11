@@ -90,6 +90,16 @@ namespace RGDSCapture.ViewModels
             set => SetProperty(ref _statsText, value);
         }
 
+        /// <summary>"● REC mm:ss" indicator while recording; empty hides it.</summary>
+        private string _recText = string.Empty;
+        public string RecText
+        {
+            get => _recText;
+            set => SetProperty(ref _recText, value);
+        }
+
+        public DateTime RecordingStartUtc { get; private set; }
+
         // ── Recording ─────────────────────────────────────────────────
         private RecordingSession? _session;
 
@@ -190,6 +200,8 @@ namespace RGDSCapture.ViewModels
 
             session.Failed += OnRecordingFailed;
             _session = session;
+            RecordingStartUtc = DateTime.UtcNow;
+            RecText = "● REC 00:00";
             IsRecording = true;
         }
 
@@ -204,6 +216,7 @@ namespace RGDSCapture.ViewModels
                 session.Dispose();
             }
             IsRecording = false;
+            RecText = string.Empty;
         }
 
         private void OnRecordingFailed()
@@ -214,6 +227,7 @@ namespace RGDSCapture.ViewModels
                 var session = _session;
                 _session = null;
                 IsRecording = false;
+                RecText = string.Empty;
                 if (session != null)
                 {
                     session.Failed -= OnRecordingFailed;

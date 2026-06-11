@@ -12,6 +12,22 @@ number with the date, and start a fresh empty **[Unreleased]** section above it.
 
 ## [Unreleased]
 
+### Added
+- **Hybrid layout** — one screen large, the other small in the corner
+  (melonDS-style), alongside the existing four layouts.
+- **Screen rotation** (View → Rotation: 0° / 90° / 180° / 270°) for games
+  played with the console held sideways (Brain Age, Hotel Dusk, …).
+- **Swap Screens** — exchange which screen takes the top/left/large position
+  in any layout.
+- **Screen Gap** presets (None / Small / Normal / Wide) for the spacing
+  around each screen.
+- **Video Filter** toggle — Sharp (pixel-perfect, default) or Smooth scaling.
+- **Recording indicator** — a red ● REC badge with elapsed time appears on
+  screens that are being recorded (per-screen or combined).
+- **GIF export (F10)** — save the last 10 seconds of both screens as a
+  shareable animated GIF (stacked, DS-native 256 px wide, ~15 fps), saved to
+  `My Pictures\RGDSCapture`.
+
 ## [2.2.0] - 2026-06-10
 
 ### Changed

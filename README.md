@@ -36,7 +36,9 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 ### Video
 - Dual-screen H.264 video at up to 30 fps per screen
 - Quality presets: Low (1 Mbps), Medium (2 Mbps), High (4 Mbps) per screen — switch live from the Streams menu
-- Four layout modes: Vertical Stack, Side by Side, Top Only, Bottom Only
+- Five layout modes: Vertical Stack, Side by Side, Top Only, Bottom Only, and melonDS-style Hybrid (one large, one small)
+- Screen rotation (90°/180°/270°) for sideways-held games, screen swap, and adjustable screen gap
+- Sharp (pixel-perfect) or Smooth video scaling
 - Live FPS counter per screen, plus an optional bitrate / packet-loss stats overlay
 - Stream health badges: **● LIVE** / **● FROZEN** / **● RECOVERING** / **○ WAITING**
 - Auto-recovery: frozen streams automatically restart (up to 3 attempts)
@@ -55,6 +57,8 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 - Record each screen independently to MP4 (H.264, zero re-encode)
 - **Combined recording** — both screens stacked into a single video (top over bottom, like the DS) + Line-In audio, in one MP4 that plays anywhere
 - **Instant replay** — the last 15/30/60/120 seconds of both screens **and Line-In audio** are always buffered; press F9 to save them retroactively, no pre-arming needed
+- **GIF export** — press F10 to save the last 10 seconds as a shareable animated GIF (both screens stacked)
+- A red ● REC badge with elapsed time shows on any screen being recorded
 - Files saved to `My Videos\RGDSCapture\` with timestamps
 - Screenshot both screens to PNG with a single button or F12
 - Files saved to `My Pictures\RGDSCapture\`
@@ -89,6 +93,7 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 | F7    | Restart bottom stream        |
 | F8    | Toggle event log             |
 | F9    | Save instant replay          |
+| F10   | Save last 10 s as GIF        |
 | F12   | Screenshot both screens      |
 | Space | Start / pause speedrun timer |
 

@@ -2,12 +2,12 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- DataContext: ScreenViewModel -->
+    <!-- DataContext: ScreenViewModel. Outer margin (the screen gap) is set
+         on the UserControl itself by MainWindow.ApplyLayout. -->
     <Border Background="{DynamicResource ScreenBg}"
             BorderBrush="{DynamicResource ScreenBorder}"
             BorderThickness="1"
-            CornerRadius="8"
-            Margin="8">
+            CornerRadius="8">
         <Grid>
             <!-- Placeholder label, covered by video once frames arrive -->
             <TextBlock Text="{Binding DisplayName}"
@@ -18,8 +18,13 @@
 
             <Image Source="{Binding Bitmap}"
                    Stretch="Uniform"
-                   RenderOptions.BitmapScalingMode="NearestNeighbor"
+                   RenderOptions.BitmapScalingMode="{Binding DataContext.ScalingMode,
+                                                     RelativeSource={RelativeSource AncestorType=Window}}"
                    AutomationProperties.Name="{Binding DisplayName}">
+                <Image.LayoutTransform>
+                    <RotateTransform Angle="{Binding DataContext.RotationAngle,
+                                             RelativeSource={RelativeSource AncestorType=Window}}"/>
+                </Image.LayoutTransform>
                 <Image.InputBindings>
                     <MouseBinding MouseAction="LeftClick"
                                   Command="{Binding DataContext.FullscreenCommand,
@@ -70,6 +75,31 @@
                                AutomationProperties.Name="Network stats"/>
                 </Border>
             </StackPanel>
+
+            <!-- Recording indicator + elapsed time, top-right under ⛶ -->
+            <Border CornerRadius="3"
+                    Background="#66000000"
+                    Padding="6,2"
+                    Margin="0,40,6,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Panel.ZIndex="5">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding RecText}" Value="">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <TextBlock Text="{Binding RecText}"
+                           Foreground="#FF5252"
+                           FontSize="11"
+                           FontWeight="Bold"
+                           FontFamily="Cascadia Code, Consolas, monospace"
+                           AutomationProperties.Name="Recording indicator"/>
+            </Border>
 
             <!-- Fullscreen button, top-right -->
             <Button Content="⛶"

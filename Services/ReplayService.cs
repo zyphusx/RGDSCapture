@@ -147,6 +147,89 @@ namespace RGDSCapture.Services
         }
 
         /// <summary>
+        /// Saves the last few seconds of both screens as a shareable animated
+        /// GIF (stacked top over bottom, 15 fps, DS-native 256 px wide).
+        /// Uses ffmpeg's palettegen/paletteuse for high-quality colors.
+        /// </summary>
+        public static async Task<string?> SaveGifAsync(
+            ReplayBuffer top, ReplayBuffer bottom, int seconds,
+            Action<string, bool> log)
+        {
+            if (!File.Exists(AppPaths.FfmpegExe))
+            {
+                log($"[GIF] ffmpeg.exe not found at {AppPaths.FfmpegExe}", true);
+                return null;
+            }
+
+            var topClip = TrimToWindow(top.Snapshot(), seconds);
+            var bottomClip = TrimToWindow(bottom.Snapshot(), seconds);
+
+            if (topClip.Count == 0 || bottomClip.Count == 0)
+            {
+                log("[GIF] Not enough buffered video yet — wait a few seconds after connecting.", true);
+                return null;
+            }
+
+            var baseUtc = topClip[0].TsUtc < bottomClip[0].TsUtc
+                ? topClip[0].TsUtc : bottomClip[0].TsUtc;
+            double topOffset = (topClip[0].TsUtc - baseUtc).TotalSeconds;
+            double bottomOffset = (bottomClip[0].TsUtc - baseUtc).TotalSeconds;
+
+            int shiftFrames = (int)Math.Round(Math.Max(topOffset, bottomOffset) * 30);
+            string topPts = shiftFrames > 0 && topOffset > bottomOffset
+                ? $"(N+{shiftFrames})/(30*TB)" : "N/(30*TB)";
+            string bottomPts = shiftFrames > 0 && bottomOffset > topOffset
+                ? $"(N+{shiftFrames})/(30*TB)" : "N/(30*TB)";
+
+            Directory.CreateDirectory(AppPaths.ScreenshotsDir);
+            string ts = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+            string outFile = Path.Combine(AppPaths.ScreenshotsDir, $"rg_clip_{ts}.gif");
+
+            string graph =
+                $"[0:v]setpts={topPts}[v0];" +
+                $"[1:v]setpts={bottomPts}[v1];" +
+                "[v0][v1]vstack=inputs=2,fps=15,scale=256:-1:flags=lanczos,split[s0][s1];" +
+                "[s0]palettegen=stats_mode=diff[p];" +
+                "[s1][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle[v]";
+
+            string outputArgs = $"-filter_complex \"{graph}\" -map \"[v]\" -f gif";
+
+            try
+            {
+                using var mux = new FfmpegPipeMuxer(
+                    outFile,
+                    new[] { new MuxInput(VideoInputArgs, 0), new MuxInput(VideoInputArgs, 0) },
+                    outputArgs, log);
+
+                var feedTop = Task.Run(() =>
+                {
+                    foreach (var e in topClip) mux.Write(0, e.Nal);
+                });
+                var feedBottom = Task.Run(() =>
+                {
+                    foreach (var e in bottomClip) mux.Write(1, e.Nal);
+                });
+                await Task.WhenAll(feedTop, feedBottom);
+
+                bool ok = await mux.CompleteAsync(timeoutMs: 60_000);
+                if (!ok)
+                {
+                    log("[GIF] Save failed (ffmpeg did not exit cleanly).", true);
+                    return null;
+                }
+
+                long sizeKb = new FileInfo(outFile).Length / 1024;
+                log($"[GIF] Saved ({sizeKb:N0} KB) → {outFile}", false);
+                return outFile;
+            }
+            catch (Exception ex)
+            {
+                log($"[GIF] Save failed: {ex.Message}", true);
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Returns the buffered NALs covering the last <paramref name="seconds"/>,
         /// starting at the first keyframe (SPS) inside the window so the clip
         /// is decodable from its first frame.

@@ -47,6 +47,12 @@ namespace RGDSCapture.ViewModels
         // Network stats deltas (previous cumulative counters per screen)
         private (long P, long L, long B) _topStatPrev, _bottomStatPrev;
 
+        // Recording clock for the combined session's REC indicator
+        private DateTime _combinedStartUtc;
+
+        // GIF clips stay short — they balloon in size beyond ~10 s
+        private const int GifSeconds = 10;
+
         // ── View-supplied interaction hooks ───────────────────────────
         public Func<string, (string User, string Pass, bool Remember)?>? PromptCredentials { get; set; }
         public Func<string, string, bool>? Confirm { get; set; }
@@ -139,6 +145,7 @@ namespace RGDSCapture.ViewModels
                     OnPropertyChanged(nameof(IsLayoutSideBySide));
                     OnPropertyChanged(nameof(IsLayoutTopOnly));
                     OnPropertyChanged(nameof(IsLayoutBottomOnly));
+                    OnPropertyChanged(nameof(IsLayoutHybrid));
                 }
             }
         }
@@ -147,6 +154,28 @@ namespace RGDSCapture.ViewModels
         public bool IsLayoutSideBySide => Layout == LayoutMode.SideBySide;
         public bool IsLayoutTopOnly => Layout == LayoutMode.TopOnly;
         public bool IsLayoutBottomOnly => Layout == LayoutMode.BottomOnly;
+        public bool IsLayoutHybrid => Layout == LayoutMode.Hybrid;
+
+        // ── Display preferences (swap / gap / rotation / filter) ─────
+        public bool IsSwapped => Settings.SwapScreens;
+
+        public int ScreenGap => Settings.ScreenGap;
+        public bool IsGapNone => Settings.ScreenGap == 0;
+        public bool IsGapSmall => Settings.ScreenGap == 4;
+        public bool IsGapNormal => Settings.ScreenGap == 8;
+        public bool IsGapWide => Settings.ScreenGap == 16;
+
+        public double RotationAngle => Settings.Rotation;
+        public bool IsRotation0 => Settings.Rotation == 0;
+        public bool IsRotation90 => Settings.Rotation == 90;
+        public bool IsRotation180 => Settings.Rotation == 180;
+        public bool IsRotation270 => Settings.Rotation == 270;
+
+        public BitmapScalingMode ScalingMode => Settings.SmoothScaling
+            ? BitmapScalingMode.Fant
+            : BitmapScalingMode.NearestNeighbor;
+        public bool IsScalingSharp => !Settings.SmoothScaling;
+        public bool IsScalingSmooth => Settings.SmoothScaling;
 
         public bool IsThemeDark => ThemeService.Current == AppTheme.Dark;
         public bool IsThemeLight => ThemeService.Current == AppTheme.Light;
@@ -206,6 +235,11 @@ namespace RGDSCapture.ViewModels
         public AsyncRelayCommand SetQualityCommand { get; }
         public RelayCommand ToggleStatsCommand { get; }
         public RelayCommand ForgetCredentialsCommand { get; }
+        public RelayCommand ToggleSwapCommand { get; }
+        public RelayCommand SetScreenGapCommand { get; }
+        public RelayCommand SetRotationCommand { get; }
+        public RelayCommand SetScalingCommand { get; }
+        public AsyncRelayCommand SaveGifCommand { get; }
 
         // ─────────────────────────────────────────────────────────────
         public MainViewModel(SettingsService settingsService)
@@ -296,6 +330,11 @@ namespace RGDSCapture.ViewModels
                 _sessionCreds = null;
                 ForgetSavedCredentials(silent: false);
             });
+            ToggleSwapCommand = new RelayCommand(ToggleSwap);
+            SetScreenGapCommand = new RelayCommand(SetScreenGap);
+            SetRotationCommand = new RelayCommand(SetRotation);
+            SetScalingCommand = new RelayCommand(SetScaling);
+            SaveGifCommand = new AsyncRelayCommand(SaveGifClipAsync, () => IsConnected);
 
             PropertyChanged += (_, e) =>
             {
@@ -313,6 +352,7 @@ namespace RGDSCapture.ViewModels
             ScreenshotCommand.RaiseCanExecuteChanged();
             ToggleCombinedRecordingCommand.RaiseCanExecuteChanged();
             SaveReplayCommand.RaiseCanExecuteChanged();
+            SaveGifCommand.RaiseCanExecuteChanged();
         }
 
         // ─────────────────────────────────────────────────────────────
@@ -631,7 +671,26 @@ namespace RGDSCapture.ViewModels
 
             UpdateStats(Top, ref _topStatPrev);
             UpdateStats(Bottom, ref _bottomStatPrev);
+
+            var now = DateTime.UtcNow;
+            UpdateRecIndicator(Top, now);
+            UpdateRecIndicator(Bottom, now);
         }
+
+        private void UpdateRecIndicator(ScreenViewModel screen, DateTime nowUtc)
+        {
+            if (IsCombinedRecording)
+                screen.RecText = "● REC " + FormatElapsed(nowUtc - _combinedStartUtc);
+            else if (screen.IsRecording)
+                screen.RecText = "● REC " + FormatElapsed(nowUtc - screen.RecordingStartUtc);
+            else if (screen.RecText.Length != 0)
+                screen.RecText = string.Empty;
+        }
+
+        private static string FormatElapsed(TimeSpan t) =>
+            t.TotalHours >= 1
+                ? $"{(int)t.TotalHours}:{t.Minutes:D2}:{t.Seconds:D2}"
+                : $"{t.Minutes:D2}:{t.Seconds:D2}";
 
         private Task RestartStreamCoreAsync(ScreenId screen)
             => _ssh.RestartStreamAsync(screen);
@@ -672,6 +731,7 @@ namespace RGDSCapture.ViewModels
 
             session.Failed += OnCombinedRecordingFailed;
             _combined = session;
+            _combinedStartUtc = DateTime.UtcNow;
             IsCombinedRecording = true;
         }
 
@@ -686,6 +746,10 @@ namespace RGDSCapture.ViewModels
                 session.Dispose();
             }
             IsCombinedRecording = false;
+
+            var now = DateTime.UtcNow;
+            UpdateRecIndicator(Top, now);
+            UpdateRecIndicator(Bottom, now);
         }
 
         private void OnCombinedRecordingFailed()
@@ -710,6 +774,14 @@ namespace RGDSCapture.ViewModels
             if (!IsConnected) return;
             await ReplayService.SaveAsync(
                 _topReplay, _bottomReplay, _audioReplay, Settings.ReplaySeconds, AppendLog);
+        }
+
+        private async Task SaveGifClipAsync()
+        {
+            if (!IsConnected) return;
+            await ReplayService.SaveGifAsync(
+                _topReplay, _bottomReplay,
+                Math.Min(GifSeconds, Settings.ReplaySeconds), AppendLog);
         }
 
         /// <summary>
@@ -763,6 +835,50 @@ namespace RGDSCapture.ViewModels
             OnPropertyChanged(nameof(IsReplay60));
             OnPropertyChanged(nameof(IsReplay120));
             AppendLog($"[REPLAY] Buffer length set to {seconds} seconds.");
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // DISPLAY PREFERENCES (swap / gap / rotation / filter)
+        // ─────────────────────────────────────────────────────────────
+        private void ToggleSwap()
+        {
+            Settings.SwapScreens = !Settings.SwapScreens;
+            _settingsService.Save();
+            OnPropertyChanged(nameof(IsSwapped));
+        }
+
+        private void SetScreenGap(object? parameter)
+        {
+            if (!int.TryParse(parameter?.ToString(), out int gap)) return;
+            Settings.ScreenGap = gap;
+            _settingsService.Save();
+            OnPropertyChanged(nameof(ScreenGap));
+            OnPropertyChanged(nameof(IsGapNone));
+            OnPropertyChanged(nameof(IsGapSmall));
+            OnPropertyChanged(nameof(IsGapNormal));
+            OnPropertyChanged(nameof(IsGapWide));
+        }
+
+        private void SetRotation(object? parameter)
+        {
+            if (!int.TryParse(parameter?.ToString(), out int degrees)) return;
+            if (degrees is not (0 or 90 or 180 or 270)) return;
+            Settings.Rotation = degrees;
+            _settingsService.Save();
+            OnPropertyChanged(nameof(RotationAngle));
+            OnPropertyChanged(nameof(IsRotation0));
+            OnPropertyChanged(nameof(IsRotation90));
+            OnPropertyChanged(nameof(IsRotation180));
+            OnPropertyChanged(nameof(IsRotation270));
+        }
+
+        private void SetScaling(object? parameter)
+        {
+            Settings.SmoothScaling = parameter?.ToString() == "Smooth";
+            _settingsService.Save();
+            OnPropertyChanged(nameof(ScalingMode));
+            OnPropertyChanged(nameof(IsScalingSharp));
+            OnPropertyChanged(nameof(IsScalingSmooth));
         }
 
         // ─────────────────────────────────────────────────────────────

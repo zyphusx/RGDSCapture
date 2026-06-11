@@ -13,7 +13,8 @@ namespace RGDSCapture.Core
         VerticalStack,
         SideBySide,
         TopOnly,
-        BottomOnly
+        BottomOnly,
+        Hybrid      // one screen large, the other small in a corner (melonDS-style)
     }
 
     /// <summary>Application color theme.</summary>

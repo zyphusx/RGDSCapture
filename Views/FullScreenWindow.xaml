@@ -20,9 +20,13 @@
 
         <Image Source="{Binding Screen.Bitmap}"
                Stretch="Uniform"
-               RenderOptions.BitmapScalingMode="NearestNeighbor"
+               RenderOptions.BitmapScalingMode="{Binding Main.ScalingMode}"
                HorizontalAlignment="Center"
-               VerticalAlignment="Center"/>
+               VerticalAlignment="Center">
+            <Image.LayoutTransform>
+                <RotateTransform Angle="{Binding Main.RotationAngle}"/>
+            </Image.LayoutTransform>
+        </Image>
 
         <!-- Screen label, top-left -->
         <Border Background="#AA000000"

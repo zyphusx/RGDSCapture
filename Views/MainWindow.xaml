@@ -20,6 +20,7 @@
         <KeyBinding Key="F7" Command="{Binding RestartBottomCommand}"/>
         <KeyBinding Key="F8" Command="{Binding Log.ToggleCommand}"/>
         <KeyBinding Key="F9" Command="{Binding SaveReplayCommand}"/>
+        <KeyBinding Key="F10" Command="{Binding SaveGifCommand}"/>
         <KeyBinding Key="F12" Command="{Binding ScreenshotCommand}"/>
     </Window.InputBindings>
 
@@ -87,6 +88,9 @@
                 <MenuItem Header="Save Instant Replay"
                           Command="{Binding SaveReplayCommand}"
                           InputGestureText="F9"/>
+                <MenuItem Header="Save Replay as GIF (last 10 s)"
+                          Command="{Binding SaveGifCommand}"
+                          InputGestureText="F10"/>
                 <MenuItem Header="Instant Replay Length">
                     <MenuItem Header="15 seconds"
                               Command="{Binding SetReplayLengthCommand}"
@@ -132,6 +136,49 @@
                               Command="{Binding SetLayoutCommand}"
                               CommandParameter="BottomOnly"
                               IsChecked="{Binding IsLayoutBottomOnly, Mode=OneWay}"/>
+                    <MenuItem Header="_Hybrid (one large, one small)"
+                              Command="{Binding SetLayoutCommand}"
+                              CommandParameter="Hybrid"
+                              IsChecked="{Binding IsLayoutHybrid, Mode=OneWay}"/>
+                </MenuItem>
+                <MenuItem Header="S_wap Screens"
+                          Command="{Binding ToggleSwapCommand}"
+                          IsChecked="{Binding IsSwapped, Mode=OneWay}"/>
+                <MenuItem Header="Screen _Gap">
+                    <MenuItem Header="None"
+                              Command="{Binding SetScreenGapCommand}" CommandParameter="0"
+                              IsChecked="{Binding IsGapNone, Mode=OneWay}"/>
+                    <MenuItem Header="Small"
+                              Command="{Binding SetScreenGapCommand}" CommandParameter="4"
+                              IsChecked="{Binding IsGapSmall, Mode=OneWay}"/>
+                    <MenuItem Header="Normal"
+                              Command="{Binding SetScreenGapCommand}" CommandParameter="8"
+                              IsChecked="{Binding IsGapNormal, Mode=OneWay}"/>
+                    <MenuItem Header="Wide"
+                              Command="{Binding SetScreenGapCommand}" CommandParameter="16"
+                              IsChecked="{Binding IsGapWide, Mode=OneWay}"/>
+                </MenuItem>
+                <MenuItem Header="_Rotation">
+                    <MenuItem Header="Normal (0°)"
+                              Command="{Binding SetRotationCommand}" CommandParameter="0"
+                              IsChecked="{Binding IsRotation0, Mode=OneWay}"/>
+                    <MenuItem Header="90° clockwise"
+                              Command="{Binding SetRotationCommand}" CommandParameter="90"
+                              IsChecked="{Binding IsRotation90, Mode=OneWay}"/>
+                    <MenuItem Header="180°"
+                              Command="{Binding SetRotationCommand}" CommandParameter="180"
+                              IsChecked="{Binding IsRotation180, Mode=OneWay}"/>
+                    <MenuItem Header="90° counter-clockwise"
+                              Command="{Binding SetRotationCommand}" CommandParameter="270"
+                              IsChecked="{Binding IsRotation270, Mode=OneWay}"/>
+                </MenuItem>
+                <MenuItem Header="Video _Filter">
+                    <MenuItem Header="Sharp (pixel-perfect)"
+                              Command="{Binding SetScalingCommand}" CommandParameter="Sharp"
+                              IsChecked="{Binding IsScalingSharp, Mode=OneWay}"/>
+                    <MenuItem Header="Smooth"
+                              Command="{Binding SetScalingCommand}" CommandParameter="Smooth"
+                              IsChecked="{Binding IsScalingSmooth, Mode=OneWay}"/>
                 </MenuItem>
                 <Separator/>
                 <MenuItem Header="_Theme">
@@ -192,7 +239,7 @@
                            Foreground="{DynamicResource TextDisabled}"
                            FontSize="11"
                            VerticalAlignment="Center"
-                           Text="F2/F3 Fullscreen  ·  F5–F7 Restart  ·  F8 Log  ·  F9 Replay  ·  F12 Screenshot  ·  Space Timer"/>
+                           Text="F2/F3 Fullscreen  ·  F5–F7 Restart  ·  F8 Log  ·  F9 Replay  ·  F10 GIF  ·  F12 Screenshot  ·  Space Timer"/>
             </DockPanel>
         </Border>
 
@@ -200,12 +247,12 @@
         <Grid ClipToBounds="True">
             <Grid x:Name="VideoGrid" Background="{DynamicResource VideoAreaBg}">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="*"/>
+                    <RowDefinition x:Name="VideoRow0" Height="*"/>
+                    <RowDefinition x:Name="VideoRow1" Height="*"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition x:Name="VideoCol0" Width="*"/>
+                    <ColumnDefinition x:Name="VideoCol1" Width="*"/>
                 </Grid.ColumnDefinitions>
 
                 <controls:ScreenView x:Name="TopView" DataContext="{Binding Top}"/>
