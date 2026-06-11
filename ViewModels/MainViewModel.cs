@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -1053,9 +1055,21 @@ namespace RGDSCapture.ViewModels
         {
             try
             {
-                using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0);
-                socket.Connect("8.8.8.8", 65530);
-                return (socket.LocalEndPoint as IPEndPoint)?.Address.ToString() ?? "127.0.0.1";
+                // Find the first active, non-loopback IPv4 interface.
+                // This avoids any external network calls.
+                foreach (var iface in NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    if (iface.OperationalStatus != OperationalStatus.Up) continue;
+                    if (iface.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
+
+                    var info = iface.GetIPProperties();
+                    var ipv4 = info.UnicastAddresses
+                        .FirstOrDefault(a => a.Address.AddressFamily == AddressFamily.InterNetwork);
+
+                    if (ipv4 != null) return ipv4.Address.ToString();
+                }
+
+                return "127.0.0.1";
             }
             catch
             {
