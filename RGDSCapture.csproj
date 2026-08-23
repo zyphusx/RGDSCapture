@@ -18,13 +18,13 @@
 
   <ItemGroup>
     <!-- FFmpeg bindings -->
-    <PackageReference Include="FFmpeg.AutoGen" Version="6.*" />
+    <PackageReference Include="FFmpeg.AutoGen" Version="6.1.0.1" />
 
     <!-- SSH -->
-    <PackageReference Include="SSH.NET" Version="2024.*" />
+    <PackageReference Include="SSH.NET" Version="2026.0.0" />
 
     <!-- Audio -->
-    <PackageReference Include="NAudio" Version="2.*" />
+    <PackageReference Include="NAudio" Version="2.3.0" />
   </ItemGroup>
 
   <!-- FFmpeg native DLLs -->

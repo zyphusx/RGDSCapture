@@ -17,6 +17,9 @@ publish/
 # Temporary files
 *.tmp
 
+# Scratch console projects used for one-off device testing (never a real part of the app)
+_harness/
+
 #setup creator file
 RGDSCaptureSetup.iss
 

@@ -119,6 +119,11 @@ namespace RGDSCapture.ViewModels
             get => _deviceType;
             set
             {
+                // UI already disables the picker while connected; this is the
+                // code-level backstop so a mid-connection change (any caller,
+                // not just the picker) can never desync _ssh.DeviceType from
+                // the pipeline actually running on the device.
+                if (!IsDisconnected) return;
                 if (!SetProperty(ref _deviceType, value)) return;
 
                 Settings.DeviceType = value.ToString();
