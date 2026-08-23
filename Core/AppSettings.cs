@@ -26,6 +26,9 @@ namespace RGDSCapture.Core
         public int SshPort { get; set; } = 22;
         public string SshUsername { get; set; } = "root";
 
+        /// <summary>Which Anbernic device to connect to (DeviceType enum name).</summary>
+        public string DeviceType { get; set; } = nameof(Core.DeviceType.RgDualScreen);
+
         /// <summary>Opt-in: SSH password stored DPAPI-encrypted (see CredentialStore).</summary>
         public bool RememberCredentials { get; set; }
         public string? ProtectedPassword { get; set; }
@@ -50,5 +53,9 @@ namespace RGDSCapture.Core
         [JsonIgnore]
         public LayoutMode LayoutValue =>
             System.Enum.TryParse(Layout, out LayoutMode l) ? l : LayoutMode.SideBySide;
+
+        [JsonIgnore]
+        public Core.DeviceType DeviceTypeValue =>
+            System.Enum.TryParse(DeviceType, out Core.DeviceType d) ? d : Core.DeviceType.RgDualScreen;
     }
 }

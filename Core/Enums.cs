@@ -49,4 +49,19 @@ namespace RGDSCapture.Core
         Medium,   // 2 Mbps per screen — default
         High      // 4 Mbps per screen — strong network
     }
+
+    /// <summary>
+    /// Which Anbernic device the app is talking to. Devices differ in screen
+    /// count and in what's available on the remote shell to capture video
+    /// with, so this selects both the capture pipeline (see SshService) and
+    /// how much of the dual-screen UI applies.
+    /// </summary>
+    public enum DeviceType
+    {
+        /// <summary>RG Dual Screen — Anbernic Linux FW 1.0, GStreamer preinstalled, two screens.</summary>
+        RgDualScreen,
+
+        /// <summary>RG353V — stock Buildroot firmware, no GStreamer, one 640x480 screen. Captured via ffmpeg's fbdev input + software x264 (no working hardware encoder path on stock firmware).</summary>
+        Rg353V
+    }
 }

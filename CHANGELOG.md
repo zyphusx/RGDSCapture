@@ -13,6 +13,14 @@ number with the date, and start a fresh empty **[Unreleased]** section above it.
 ## [Unreleased]
 
 ### Added
+- **RG353V device support** — connect to a single-screen Anbernic RG353V
+  (stock firmware) in addition to the RG DS. Pick the device type in the
+  toolbar before connecting. Stock RG353V firmware has no GStreamer, so
+  video is captured via ffmpeg's `fbdev` input and encoded with software
+  x264 instead of the DS's GStreamer/MPP pipeline. Dual-screen-only features
+  (Combined Recording, Instant Replay, GIF export, alternate layouts) are
+  disabled for this device for now — full single-screen recording/screenshot
+  support is in.
 - **Hybrid layout** — one screen large, the other small in the corner
   (melonDS-style), alongside the existing four layouts.
 - **Screen rotation** (View → Rotation: 0° / 90° / 180° / 270°) for games

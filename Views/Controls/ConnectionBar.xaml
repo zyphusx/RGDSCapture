@@ -6,6 +6,20 @@
     <Border Style="{StaticResource ToolbarSurface}">
         <WrapPanel VerticalAlignment="Center">
 
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                <TextBlock Text="Device" Style="{StaticResource SectionLabel}"
+                           ToolTip="Which Anbernic device this is"/>
+                <ComboBox Width="150"
+                          IsEnabled="{Binding IsDisconnected}"
+                          SelectedValuePath="Tag"
+                          SelectedValue="{Binding DeviceType}"
+                          AutomationProperties.Name="Device type"
+                          ToolTip="Which Anbernic device this is">
+                    <ComboBoxItem Content="RG DS (dual-screen)" Tag="RgDualScreen"/>
+                    <ComboBoxItem Content="RG353V (single-screen)" Tag="Rg353V"/>
+                </ComboBox>
+            </StackPanel>
+
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,4,0">
                 <TextBlock Text="Device IP" Style="{StaticResource SectionLabel}"
                            ToolTip="IP address of your RG DS"/>
