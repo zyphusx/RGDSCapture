@@ -81,7 +81,7 @@
                           IsEnabled="{Binding IsConnected}"/>
                 <MenuItem Header="Record Bottom to MP4"
                           Command="{Binding Bottom.ToggleRecordingCommand}"
-                          IsEnabled="{Binding IsConnected}"/>
+                          IsEnabled="{Binding IsConnectedDualScreen}"/>
                 <MenuItem Header="Record Combined (Screens + Audio)"
                           Command="{Binding ToggleCombinedRecordingCommand}"/>
                 <Separator/>
@@ -119,7 +119,7 @@
             </MenuItem>
 
             <MenuItem Header="_View">
-                <MenuItem Header="_Layout">
+                <MenuItem Header="_Layout" IsEnabled="{Binding IsDualScreenDevice}">
                     <MenuItem Header="_Vertical Stack"
                               Command="{Binding SetLayoutCommand}"
                               CommandParameter="VerticalStack"
@@ -143,8 +143,9 @@
                 </MenuItem>
                 <MenuItem Header="S_wap Screens"
                           Command="{Binding ToggleSwapCommand}"
+                          IsEnabled="{Binding IsDualScreenDevice}"
                           IsChecked="{Binding IsSwapped, Mode=OneWay}"/>
-                <MenuItem Header="Screen _Gap">
+                <MenuItem Header="Screen _Gap" IsEnabled="{Binding IsDualScreenDevice}">
                     <MenuItem Header="None"
                               Command="{Binding SetScreenGapCommand}" CommandParameter="0"
                               IsChecked="{Binding IsGapNone, Mode=OneWay}"/>

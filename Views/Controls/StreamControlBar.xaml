@@ -65,7 +65,7 @@
             <Button Style="{StaticResource RecordBottomButton}"
                     Content="{Binding Bottom.RecordButtonText}"
                     Command="{Binding Bottom.ToggleRecordingCommand}"
-                    IsEnabled="{Binding IsConnected}"
+                    IsEnabled="{Binding IsConnectedDualScreen}"
                     Margin="0,0,4,0"
                     AutomationProperties.Name="Record bottom screen"
                     ToolTip="Record bottom screen to MP4 (no re-encoding)"/>

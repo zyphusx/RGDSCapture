@@ -82,6 +82,7 @@ namespace RGDSCapture.ViewModels
                     OnPropertyChanged(nameof(IsDisconnected));
                     OnPropertyChanged(nameof(ConnectButtonText));
                     OnPropertyChanged(nameof(StatusDotBrush));
+                    OnPropertyChanged(nameof(IsConnectedDualScreen));
                 }
             }
         }
@@ -110,6 +111,38 @@ namespace RGDSCapture.ViewModels
             get => _deviceIp;
             set => SetProperty(ref _deviceIp, value);
         }
+
+        // ── Device type ───────────────────────────────────────────────
+        private DeviceType _deviceType;
+        public DeviceType DeviceType
+        {
+            get => _deviceType;
+            set
+            {
+                if (!SetProperty(ref _deviceType, value)) return;
+
+                Settings.DeviceType = value.ToString();
+                _ssh.DeviceType = value;
+                OnPropertyChanged(nameof(IsSingleScreenDevice));
+                OnPropertyChanged(nameof(IsDualScreenDevice));
+                OnPropertyChanged(nameof(IsConnectedDualScreen));
+
+                // The single-screen UI has no side-by-side/hybrid/stack — pin
+                // it to Top Only so the existing layout code (which already
+                // collapses Bottom and expands Top to fill the grid) applies.
+                if (IsSingleScreenDevice) Layout = LayoutMode.TopOnly;
+
+                RefreshCommandStates();
+            }
+        }
+
+        /// <summary>True for devices with one screen (RG353V) — hides/disables the dual-screen-only UI.</summary>
+        public bool IsSingleScreenDevice => DeviceType == DeviceType.Rg353V;
+        public bool IsDualScreenDevice => !IsSingleScreenDevice;
+
+        /// <summary>Connected AND has a second screen — gates Bottom-specific controls that (unlike the
+        /// commands they sit next to) have no CanExecute of their own to disable them automatically.</summary>
+        public bool IsConnectedDualScreen => IsConnected && !IsSingleScreenDevice;
 
         private string _sshPortText;
         public string SshPortText
@@ -252,6 +285,7 @@ namespace RGDSCapture.ViewModels
             _deviceIp = s.DeviceIp;
             _sshPortText = s.SshPort.ToString();
             _layout = s.LayoutValue;
+            _deviceType = s.DeviceTypeValue;
 
             Top = new ScreenViewModel(ScreenId.Top, 5000, AppendLog);
             Bottom = new ScreenViewModel(ScreenId.Bottom, 5001, AppendLog);
@@ -272,6 +306,7 @@ namespace RGDSCapture.ViewModels
             Bottom.Receiver.NalUnitReceived += _bottomReplay.OnNal;
 
             _ssh.VideoBitrateBps = QualityToBps(CurrentQuality);
+            _ssh.DeviceType = _deviceType;
 
             // Re-arm the replay audio tap if the input device changes mid-session.
             Audio.PropertyChanged += (_, e) =>
@@ -306,7 +341,7 @@ namespace RGDSCapture.ViewModels
             RestartTopCommand = new AsyncRelayCommand(
                 () => ManualRestartAsync(ScreenId.Top), () => IsConnected);
             RestartBottomCommand = new AsyncRelayCommand(
-                () => ManualRestartAsync(ScreenId.Bottom), () => IsConnected);
+                () => ManualRestartAsync(ScreenId.Bottom), () => IsConnected && !IsSingleScreenDevice);
             RestartAllCommand = new AsyncRelayCommand(
                 ManualRestartAllAsync, () => IsConnected);
             ShutdownCommand = new AsyncRelayCommand(ShutdownConsoleAsync, () => IsConnected);
@@ -314,7 +349,10 @@ namespace RGDSCapture.ViewModels
             ScreenshotCommand = new RelayCommand(TakeScreenshot, () => IsConnected);
             SetLayoutCommand = new RelayCommand(p =>
             {
-                if (Enum.TryParse(p?.ToString(), out LayoutMode mode)) Layout = mode;
+                if (!Enum.TryParse(p?.ToString(), out LayoutMode mode)) return;
+                // Single-screen devices only ever show Top — no other layout applies.
+                if (IsSingleScreenDevice && mode != LayoutMode.TopOnly) return;
+                Layout = mode;
             });
             SetThemeCommand = new RelayCommand(ApplyTheme);
             FullscreenCommand = new RelayCommand(p =>
@@ -322,8 +360,8 @@ namespace RGDSCapture.ViewModels
                 if (p is ScreenViewModel screen) FullscreenRequested?.Invoke(screen);
             });
             ToggleCombinedRecordingCommand = new AsyncRelayCommand(
-                ToggleCombinedRecordingAsync, () => IsConnected);
-            SaveReplayCommand = new AsyncRelayCommand(SaveReplayAsync, () => IsConnected);
+                ToggleCombinedRecordingAsync, () => IsConnected && !IsSingleScreenDevice);
+            SaveReplayCommand = new AsyncRelayCommand(SaveReplayAsync, () => IsConnected && !IsSingleScreenDevice);
             SetReplayLengthCommand = new RelayCommand(SetReplayLength);
             SetQualityCommand = new AsyncRelayCommand(SetQualityAsync);
             ToggleStatsCommand = new RelayCommand(ToggleStats);
@@ -336,7 +374,7 @@ namespace RGDSCapture.ViewModels
             SetScreenGapCommand = new RelayCommand(SetScreenGap);
             SetRotationCommand = new RelayCommand(SetRotation);
             SetScalingCommand = new RelayCommand(SetScaling);
-            SaveGifCommand = new AsyncRelayCommand(SaveGifClipAsync, () => IsConnected);
+            SaveGifCommand = new AsyncRelayCommand(SaveGifClipAsync, () => IsConnected && !IsSingleScreenDevice);
 
             PropertyChanged += (_, e) =>
             {
@@ -642,6 +680,13 @@ namespace RGDSCapture.ViewModels
         private void StartReceivers()
         {
             Top.Receiver.Start();
+            if (IsSingleScreenDevice)
+            {
+                _renderTimer.Start();
+                AppendLog("UDP receiver open on port 5000. Waiting for frames...");
+                return;
+            }
+
             Bottom.Receiver.Start();
             _renderTimer.Start();
             AppendLog("UDP receivers open on ports 5000 / 5001. Waiting for frames...");
