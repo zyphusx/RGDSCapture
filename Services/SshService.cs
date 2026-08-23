@@ -75,10 +75,23 @@ namespace RGDSCapture.Services
         // with headroom, so that's the supported path here — do not swap this
         // for h264_v4l2m2m without new evidence the kernel driver was fixed.
         // Single screen → one port (5000), matching Top in the dual-screen UI.
+        // -threads 1 (on both the fbdev input and the encoder) is load-bearing,
+        // not a perf tweak: with -tune zerolatency on this quad-core SoC, x264
+        // auto-enables slice-based threading, which splits EVERY frame into
+        // ~4 H.264 slices. Our RTP receiver decodes each reassembled NAL as
+        // its own complete frame — it has no concept of "wait for more slices
+        // before this picture is done" — so a sliced stream comes out on the
+        // Windows side as ~4x too many "frames", each just one quarter of the
+        // real picture, decoded as a fully valid (but visually wrong: green,
+        // blocky) full-height frame. Confirmed against a real device: with
+        // slice-threading enabled, decoded fps ran ~120 against a genuine
+        // ~30fps encode and every frame was solid green; -threads 1 forces
+        // one slice per frame and fixed it outright (fps back to ~30, real
+        // colors). Do not remove this without re-verifying end to end.
         private const string FfmpegRg353V =
-            "nohup ffmpeg -hide_banner -loglevel error -y " +
+            "nohup ffmpeg -hide_banner -loglevel error -y -threads 1 " +
             "-f fbdev -framerate 30 -i /dev/fb0 " +
-            "-c:v libx264 -preset ultrafast -tune zerolatency -pix_fmt yuv420p " +
+            "-c:v libx264 -threads 1 -preset ultrafast -tune zerolatency -pix_fmt yuv420p " +
             "-b:v {BPS} -maxrate {BPS} -bufsize {BPS} -g 10 " +
             "-f rtp rtp://{HOST}:5000?pkt_size=1200 " +
             "> /tmp/ffmpeg_rg353v.log 2>&1 &";
