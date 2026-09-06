@@ -76,8 +76,8 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 
 ### App
 - Optional "remember credentials" — the SSH password is encrypted with Windows DPAPI, so connecting is one click
-- **15 built-in themes** — 12 dark (Midnight, Gengar, Nocturne, Matrix, Ember, Crimson,
-  Cyberpunk, Ocean, Forest, Amber, Sakura, Mono) and 3 light (Daylight, Parchment, Mint),
+- **15 built-in themes** — 12 dark (Midnight, Amethyst, Nocturne, Phosphor, Ember, Crimson,
+  Neon, Ocean, Forest, Amber, Sakura, Mono) and 3 light (Daylight, Parchment, Mint),
   each tinting the whole app rather than just the accent. Persisted between sessions.
 - **Custom accent colour** — pick any RGB value in the theme picker (Ctrl+T) and the
   entire palette is regenerated around it
@@ -138,7 +138,7 @@ If .NET 10 is not already installed, Windows will prompt you to install it befor
 ### Option B — Portable ZIP
 
 1. Go to the [Releases](https://github.com/zyphusx/RGDSCapture/releases) page
-2. Download **`RGDSCapture-v0.1.0.zip`**
+2. Download **`RGDSCapture-v3.0.0-portable.zip`**
 3. Extract to any folder (e.g. `C:\RGDSCapture\`)
 4. Launch `RGDSCapture.exe`
 
@@ -246,7 +246,7 @@ dotnet restore
 
 **3. Build**
 
-In Visual Studio — open `RGDSCapture.sln`, select **Release**, press `Ctrl+Shift+B`.
+In Visual Studio — open the folder (or `RGDSCapture.csproj`), select **Release**, press `Ctrl+Shift+B`.
 
 From the command line:
 ```bash
@@ -259,7 +259,7 @@ The FFmpeg LGPL DLLs are included in the repository and are copied to the output
 ```bash
 dotnet run --project RGDSCapture
 ```
-Or launch `bin\Release\net8.0-windows\RGDSCapture.exe` directly.
+Or launch `bin\Release\net10.0-windows\RGDSCapture.exe` directly.
 
 ---
 

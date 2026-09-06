@@ -38,12 +38,12 @@ namespace RGDSCapture.Core
         {
             // ── Dark ──────────────────────────────────────────────────
             new ThemePreset("midnight",  "Midnight",  true,  "#4C8DFF", 0.22, 222),
-            new ThemePreset("gengar",    "Gengar",    true,  "#A855F7", 0.62, 272),
+            new ThemePreset("amethyst",  "Amethyst",  true,  "#A855F7", 0.62, 272),
             new ThemePreset("nocturne",  "Nocturne",  true,  "#818CF8", 0.42, 245),
-            new ThemePreset("matrix",    "Matrix",    true,  "#34D399", 0.34, 155),
+            new ThemePreset("phosphor",  "Phosphor",  true,  "#34D399", 0.34, 155),
             new ThemePreset("ember",     "Ember",     true,  "#FB923C", 0.38, 24),
             new ThemePreset("crimson",   "Crimson",   true,  "#F43F5E", 0.40, 348),
-            new ThemePreset("cyberpunk", "Cyberpunk", true,  "#F0ABFC", 0.50, 292),
+            new ThemePreset("neon",      "Neon",      true,  "#F0ABFC", 0.50, 292),
             new ThemePreset("ocean",     "Ocean",     true,  "#22D3EE", 0.38, 195),
             new ThemePreset("forest",    "Forest",    true,  "#4ADE80", 0.30, 140),
             new ThemePreset("amber",     "Amber",     true,  "#FBBF24", 0.32, 38),
@@ -60,20 +60,31 @@ namespace RGDSCapture.Core
             All.First(t => t.Id == DefaultId);
 
         /// <summary>
-        /// Resolves a persisted id, tolerating the pre-2.3 "Dark"/"Light"
-        /// values that older settings files still carry.
+        /// Ids that older settings files may still hold, mapped to their
+        /// current equivalents. Without these an upgrading user silently
+        /// loses the theme they chose.
+        /// </summary>
+        private static readonly Dictionary<string, string> LegacyIds =
+            new(System.StringComparer.OrdinalIgnoreCase)
+            {
+                // Through 2.2.0 the theme was a two-value enum, not a preset id.
+                ["Dark"] = DefaultId,
+                ["Light"] = "daylight",
+            };
+
+        /// <summary>
+        /// Resolves a persisted id, mapping any legacy value forward and
+        /// falling back to the default rather than throwing.
         /// </summary>
         public static ThemePreset Resolve(string? id)
         {
             if (string.IsNullOrWhiteSpace(id)) return Default;
 
-            var match = All.FirstOrDefault(
-                t => string.Equals(t.Id, id, System.StringComparison.OrdinalIgnoreCase));
-            if (match != null) return match;
+            if (LegacyIds.TryGetValue(id, out var mapped)) id = mapped;
 
-            return id.Equals("Light", System.StringComparison.OrdinalIgnoreCase)
-                ? All.First(t => t.Id == "daylight")
-                : Default;
+            return All.FirstOrDefault(
+                t => string.Equals(t.Id, id, System.StringComparison.OrdinalIgnoreCase))
+                ?? Default;
         }
     }
 }

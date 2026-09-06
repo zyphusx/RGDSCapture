@@ -12,10 +12,76 @@ number with the date, and start a fresh empty **[Unreleased]** section above it.
 
 ## [Unreleased]
 
+Nothing yet. 3.0.0 is the final feature release — only bug fixes from here.
+
+---
+
+## [3.0.0] - 2026-09-06
+
+The feature-complete release: a rebuilt interface, a generated theme system,
+single-screen device support, and FFmpeg brought up to current. From here the
+project is in maintenance — bug fixes only.
+
+### Added
+- **RG353V device support** — connect to a single-screen Anbernic RG353V
+  (stock firmware) in addition to the RG DS. Pick the device type in the
+  Connection panel before connecting. Stock RG353V firmware has no GStreamer,
+  so video is captured via ffmpeg's `fbdev` input and encoded with software
+  x264 instead of the DS's GStreamer/MPP pipeline. Dual-screen-only features
+  (combined recording, instant replay, GIF export, alternate layouts) are
+  disabled for this device; single-screen recording and screenshots work.
+- **15 built-in themes** with a visual picker (View → Theme Picker…, or
+  **Ctrl+T**). Twelve dark — Midnight, Amethyst, Nocturne, Phosphor, Ember,
+  Crimson, Neon, Ocean, Forest, Amber, Sakura, Mono — and three light:
+  Daylight, Parchment, Mint. A theme tints every surface, not just the accent,
+  so the whole app takes on its colour. Presets also appear under View → Theme
+  and apply instantly with no restart.
+- **Custom accent colour** — the picker's RGB sliders (or a typed `#RRGGBB`)
+  regenerate the entire palette around any colour, on top of whichever preset
+  is active. "Use Preset Accent" returns to the preset's own colour.
+- **Hybrid layout** — one screen large, the other small in the corner
+  (melonDS-style), alongside the existing four layouts.
+- **Screen rotation** (0° / 90° / 180° / 270°) for games played with the
+  console held sideways (Brain Age, Hotel Dusk, …).
+- **Swap Screens** — exchange which screen takes the top/left/large position
+  in any layout.
+- **Screen Gap** presets (None / Small / Normal / Wide).
+- **Video Filter** toggle — Sharp (pixel-perfect, default) or Smooth scaling.
+- **Recording indicator** — a red ● REC badge with elapsed time on any screen
+  being recorded, per-screen or combined.
+- **GIF export (F10)** — the last 10 seconds of both screens as a shareable
+  animated GIF (stacked, DS-native 256 px wide, ~15 fps), saved to
+  `My Pictures\RGDSCapture`.
+
 ### Changed
-- **FFmpeg updated 6.1.3 → 9.0.1**, with `FFmpeg.AutoGen` moved 6.1.0.1 → 9.0.1.1
-  to match. The binding package version tracks the FFmpeg release it was
-  generated against, so the two must move together — a mismatch fails at
+- **Redesigned interface — two-column layout.** The menu bar plus three
+  stacked toolbars (~180 px of chrome above the picture) are gone. Controls
+  now live in two collapsible columns either side of the video: a **device**
+  column on the left (connection, streams, display, console power) and a
+  **capture** column on the right (recording, instant replay, audio, run
+  timer). Video is the hero and fills everything between them.
+  - Collapse either column with **Ctrl+B** / **Ctrl+J**, the title-bar
+    buttons, or View → Show Device/Capture Panel. The state is remembered.
+  - The menu bar moves into a slim custom title bar that also shows the
+    connection dot and the current device and address. Every menu item and
+    every existing keyboard shortcut is unchanged.
+  - Segmented controls replace the nested submenus for quality, layout,
+    rotation, screen gap, scaling and replay length, so the current value is
+    visible without opening a menu.
+  - The event log drawer now overlays only the video stage, so opening it no
+    longer resizes the picture.
+  - Video panels gain rounded corners, glass status chips, and a fullscreen
+    button that appears on hover instead of sitting permanently over the frame.
+- **Themes are generated rather than hand-written.** A theme is three seeds —
+  light/dark ramp, accent, and how strongly the accent hue tints the greys —
+  from which `PaletteBuilder` derives all 101 brushes. Adding a theme is one
+  line in `ThemeCatalog` instead of a 200-line resource dictionary, and it is
+  what makes an arbitrary user-picked accent possible. `Themes/Light.xaml` is
+  gone (generated now); `Themes/Dark.xaml` remains only as the designer and
+  startup fallback, and as the documented key contract.
+- **FFmpeg updated 6.1.3 → 9.0.1**, with `FFmpeg.AutoGen` moved 6.1.0.1 →
+  9.0.1.1 to match. The binding package version tracks the FFmpeg release it
+  was generated against, so the two must move together — a mismatch fails at
   runtime rather than at compile time.
   - Native libraries change soname: `avcodec-60→63`, `avformat-60→63`,
     `avutil-58→61`, `swscale-7→10`, `swresample-4→7`, `avfilter-9→12`,
@@ -24,97 +90,29 @@ number with the date, and start a fresh empty **[Unreleased]** section above it.
   - Still the **LGPL shared** build (`--enable-version3`), so combined
     recording continues to encode with `libopenh264`; `libx264` remains
     unavailable by design.
-  - One code change was required: FFmpeg 8 converted the `SWS_*` scaler
-    macros into a real `SwsFlags` enum, so `ffmpeg.SWS_BILINEAR` became
+  - One code change was required: FFmpeg 8 converted the `SWS_*` scaler macros
+    into a real `SwsFlags` enum, so `ffmpeg.SWS_BILINEAR` became
     `(int)SwsFlags.SWS_BILINEAR`.
-- The `.csproj` now globs the FFmpeg binaries (`av*.dll`, `sw*.dll`, …) instead
-  of listing each filename. The soname major changes on every FFmpeg release,
-  and a stale hand-written list silently ships **no** FFmpeg at all.
+- Settings: `Theme` now stores a theme id and a new `CustomAccent` holds the
+  accent override. Files containing the older `"Dark"` / `"Light"` values are
+  mapped forward automatically, so existing settings keep working.
+- The `.csproj` now globs the FFmpeg binaries (`av*.dll`, `sw*.dll`, …)
+  instead of listing each filename. The soname major changes on every FFmpeg
+  release, and a stale hand-written list silently ships **no** FFmpeg at all.
 
 ### Fixed
 - **Third-party licence text corrected.** The bundled FFmpeg builds are
   configured `--enable-version3` and report "LGPL version 3 or later", but the
   repository shipped the LGPL **2.1** text and `DEPENDENCIES.md` claimed 2.1.
-  Replaced with the LGPL 3.0 text as shipped by the build, and the docs now
-  state the correct licence. This applied to previous releases too.
+  Now ships the LGPL 3.0 text as distributed with the build, and the docs state
+  the correct licence. This applied to previous releases too.
+- Stream health badges no longer render a doubled status dot — the badge text
+  already carries its own `●` / `○` glyph.
+- Replaced button glyphs that rendered as empty boxes on Windows because they
+  resolved to Segoe UI Emoji rather than the UI font.
+- Corrected build documentation that referenced a `RGDSCapture.sln` (this
+  repository has no solution file) and a `net8.0-windows` output directory.
 
-### Added
-- **15 built-in themes** with a visual picker (View → Theme Picker…, or
-  **Ctrl+T**). Twelve dark — Midnight, **Gengar**, Nocturne, Matrix, Ember,
-  Crimson, Cyberpunk, Ocean, Forest, Amber, Sakura, Mono — and three light:
-  Daylight, Parchment, Mint. A theme tints every surface, not just the accent,
-  so the whole app takes on its colour. Presets are also listed under
-  View → Theme, and apply instantly with no restart.
-- **Custom accent colour.** The picker's RGB sliders (or a typed `#RRGGBB`)
-  regenerate the entire palette around any colour you choose, on top of
-  whichever preset is active. "Use Preset Accent" drops back to the
-  preset's own colour.
-- The left panel gains a theme button showing the current theme and accent.
-
-### Changed
-- **Themes are now generated rather than hand-written.** A theme is defined by
-  three seeds — light/dark ramp, accent, and how strongly the accent hue tints
-  the greys — and `PaletteBuilder` derives all 101 brushes from them. Adding a
-  theme is one line in `ThemeCatalog` instead of a 200-line resource
-  dictionary, and it is what makes an arbitrary user-picked accent possible.
-  `Themes/Light.xaml` is gone (now generated); `Themes/Dark.xaml` remains only
-  as the designer/startup fallback and as the documented key contract.
-- Settings: `Theme` now stores a preset id and a new `CustomAccent` holds the
-  accent override. Older files containing `"Dark"`/`"Light"` are mapped
-  forward automatically, so existing settings keep working.
-- **Redesigned interface — two-column layout.** The menu bar plus three
-  stacked toolbars (~180 px of chrome above the picture) are gone. Controls
-  now live in two collapsible columns either side of the video: a **device**
-  column on the left (connection, streams, display, console power) and a
-  **capture** column on the right (recording, instant replay, audio, run
-  timer). Video is the hero and fills everything between them.
-  - Collapse either column with **Ctrl+B** / **Ctrl+J**, the title-bar
-    buttons, or View → Show Device/Capture Panel. The open/closed state is
-    remembered between sessions.
-  - The menu bar moves into a slim custom title bar that also shows the
-    connection dot and the current device and address. Every menu item and
-    every existing keyboard shortcut is unchanged.
-  - Radio-style segmented controls replace the nested submenus for quality,
-    layout, rotation, screen gap, scaling and replay length — the current
-    value is now visible without opening a menu.
-- **Darker, higher-contrast theme.** New surface ramp (`#0E0F12` →
-  `#16181D` → `#1E2127`), a distinct `#4C8DFF` accent in place of the stock
-  Windows blue, and semantic live/record colors. The light theme was rebuilt
-  key-for-key to match.
-- The event log drawer now overlays only the video stage, so opening it no
-  longer resizes the picture.
-- Video panels get rounded corners, glass status chips, and a fullscreen
-  button that appears on hover instead of sitting permanently over the frame.
-
-### Fixed
-- Stream health badges no longer render a doubled status dot (the badge text
-  already carries its own `●`/`○` glyph).
-- Replaced button glyphs that fell back to empty boxes on Windows because
-  they resolved to Segoe UI Emoji rather than the UI font.
-
-### Added
-- **RG353V device support** — connect to a single-screen Anbernic RG353V
-  (stock firmware) in addition to the RG DS. Pick the device type in the
-  Connection panel before connecting. Stock RG353V firmware has no GStreamer, so
-  video is captured via ffmpeg's `fbdev` input and encoded with software
-  x264 instead of the DS's GStreamer/MPP pipeline. Dual-screen-only features
-  (Combined Recording, Instant Replay, GIF export, alternate layouts) are
-  disabled for this device for now — full single-screen recording/screenshot
-  support is in.
-- **Hybrid layout** — one screen large, the other small in the corner
-  (melonDS-style), alongside the existing four layouts.
-- **Screen rotation** (View → Rotation: 0° / 90° / 180° / 270°) for games
-  played with the console held sideways (Brain Age, Hotel Dusk, …).
-- **Swap Screens** — exchange which screen takes the top/left/large position
-  in any layout.
-- **Screen Gap** presets (None / Small / Normal / Wide) for the spacing
-  around each screen.
-- **Video Filter** toggle — Sharp (pixel-perfect, default) or Smooth scaling.
-- **Recording indicator** — a red ● REC badge with elapsed time appears on
-  screens that are being recorded (per-screen or combined).
-- **GIF export (F10)** — save the last 10 seconds of both screens as a
-  shareable animated GIF (stacked, DS-native 256 px wide, ~15 fps), saved to
-  `My Pictures\RGDSCapture`.
 
 ## [2.2.0] - 2026-06-10
 

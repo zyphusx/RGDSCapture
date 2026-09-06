@@ -70,6 +70,6 @@ RGDSCapture is built on the following open-source libraries and tools. Each is i
 ## Notes
 
 - All NuGet packages are restored automatically by `dotnet restore` or by Visual Studio on first build.
-- FFmpeg native DLLs must be placed manually — see the [README](README.md#step-2--add-ffmpeg-binaries) for exact steps.
+- FFmpeg native DLLs are committed to the repository and copied to the output directory by the project file — no manual placement is needed. To upgrade them, replace the `av*` / `sw*` binaries with a newer **LGPL shared** build and bump the `FFmpeg.AutoGen` package to the matching version.
 - Full license texts for FFmpeg (LGPL 3.0) and MIT-licensed packages are in the [THIRDPARTYLICENSES](THIRDPARTYLICENSES/) folder.
 - All trademarks and product names remain the property of their respective owners.
