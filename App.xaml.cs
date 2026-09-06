@@ -27,7 +27,7 @@ namespace RGDSCapture
 
             var settingsService = new SettingsService();
             var settings = settingsService.Load();
-            ThemeService.Apply(settings.ThemeValue);
+            ThemeService.ApplyFrom(settings);
 
             _vm = new MainViewModel(settingsService);
 

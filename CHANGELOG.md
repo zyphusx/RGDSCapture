@@ -12,7 +12,30 @@ number with the date, and start a fresh empty **[Unreleased]** section above it.
 
 ## [Unreleased]
 
+### Added
+- **15 built-in themes** with a visual picker (View → Theme Picker…, or
+  **Ctrl+T**). Twelve dark — Midnight, **Gengar**, Nocturne, Matrix, Ember,
+  Crimson, Cyberpunk, Ocean, Forest, Amber, Sakura, Mono — and three light:
+  Daylight, Parchment, Mint. A theme tints every surface, not just the accent,
+  so the whole app takes on its colour. Presets are also listed under
+  View → Theme, and apply instantly with no restart.
+- **Custom accent colour.** The picker's RGB sliders (or a typed `#RRGGBB`)
+  regenerate the entire palette around any colour you choose, on top of
+  whichever preset is active. "Use Preset Accent" drops back to the
+  preset's own colour.
+- The left panel gains a theme button showing the current theme and accent.
+
 ### Changed
+- **Themes are now generated rather than hand-written.** A theme is defined by
+  three seeds — light/dark ramp, accent, and how strongly the accent hue tints
+  the greys — and `PaletteBuilder` derives all 101 brushes from them. Adding a
+  theme is one line in `ThemeCatalog` instead of a 200-line resource
+  dictionary, and it is what makes an arbitrary user-picked accent possible.
+  `Themes/Light.xaml` is gone (now generated); `Themes/Dark.xaml` remains only
+  as the designer/startup fallback and as the documented key contract.
+- Settings: `Theme` now stores a preset id and a new `CustomAccent` holds the
+  accent override. Older files containing `"Dark"`/`"Light"` are mapped
+  forward automatically, so existing settings keep working.
 - **Redesigned interface — two-column layout.** The menu bar plus three
   stacked toolbars (~180 px of chrome above the picture) are gone. Controls
   now live in two collapsible columns either side of the video: a **device**

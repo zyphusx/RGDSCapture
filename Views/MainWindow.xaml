@@ -44,6 +44,7 @@
         <KeyBinding Key="F12" Command="{Binding ScreenshotCommand}"/>
         <KeyBinding Key="B" Modifiers="Ctrl" Command="{Binding ToggleLeftPanelCommand}"/>
         <KeyBinding Key="J" Modifiers="Ctrl" Command="{Binding ToggleRightPanelCommand}"/>
+        <KeyBinding Key="T" Modifiers="Ctrl" Command="{Binding OpenThemePickerCommand}"/>
     </Window.InputBindings>
 
     <Border x:Name="RootBorder" Background="{DynamicResource BackdropBg}">
@@ -238,16 +239,21 @@
                                               IsChecked="{Binding IsScalingSmooth, Mode=OneWay}"/>
                                 </MenuItem>
                                 <Separator/>
-                                <MenuItem Header="_Theme">
-                                    <MenuItem Header="_Dark"
-                                              Command="{Binding SetThemeCommand}"
-                                              CommandParameter="Dark"
-                                              IsChecked="{Binding IsThemeDark, Mode=OneWay}"/>
-                                    <MenuItem Header="_Light"
-                                              Command="{Binding SetThemeCommand}"
-                                              CommandParameter="Light"
-                                              IsChecked="{Binding IsThemeLight, Mode=OneWay}"/>
+                                <MenuItem Header="_Theme"
+                                          ItemsSource="{Binding Themes}">
+                                    <MenuItem.ItemContainerStyle>
+                                        <Style TargetType="MenuItem"
+                                               BasedOn="{StaticResource {x:Type MenuItem}}">
+                                            <Setter Property="Header" Value="{Binding Name}"/>
+                                            <Setter Property="Command" Value="{Binding ApplyCommand}"/>
+                                            <Setter Property="IsChecked"
+                                                    Value="{Binding IsActive, Mode=OneWay}"/>
+                                        </Style>
+                                    </MenuItem.ItemContainerStyle>
                                 </MenuItem>
+                                <MenuItem Header="Theme _Picker…"
+                                          Command="{Binding OpenThemePickerCommand}"
+                                          InputGestureText="Ctrl+T"/>
                                 <Separator/>
                                 <MenuItem Header="Show _Device Panel"
                                           Command="{Binding ToggleLeftPanelCommand}"

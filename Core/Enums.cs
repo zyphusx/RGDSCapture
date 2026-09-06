@@ -17,13 +17,6 @@ namespace RGDSCapture.Core
         Hybrid      // one screen large, the other small in a corner (melonDS-style)
     }
 
-    /// <summary>Application color theme.</summary>
-    public enum AppTheme
-    {
-        Dark,
-        Light
-    }
-
     /// <summary>Lifecycle of the SSH connection to the device.</summary>
     public enum ConnectionState
     {

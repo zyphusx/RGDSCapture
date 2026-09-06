@@ -43,6 +43,7 @@ namespace RGDSCapture.Views
                 MessageBox.Show(this, message, title,
                     MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
             vm.FullscreenRequested += OpenFullscreen;
+            vm.ThemePickerRequested += OpenThemePicker;
             vm.PropertyChanged += OnVmPropertyChanged;
 
             PreviewKeyDown += OnPreviewKeyDown;
@@ -240,6 +241,24 @@ namespace RGDSCapture.Views
             _fullscreen = new FullScreenWindow(_vm, screen) { Owner = this };
             _fullscreen.Closed += (_, _) => _fullscreen = null;
             _fullscreen.Show();
+        }
+
+        // ── Theme picker ──────────────────────────────────────────
+        private ThemeDialog? _themeDialog;
+
+        private void OpenThemePicker()
+        {
+            // Modeless: presets apply live, so the user wants to see the app
+            // behind the picker change as they click through them.
+            if (_themeDialog != null)
+            {
+                _themeDialog.Activate();
+                return;
+            }
+
+            _themeDialog = new ThemeDialog(_vm) { Owner = this };
+            _themeDialog.Closed += (_, _) => _themeDialog = null;
+            _themeDialog.Show();
         }
 
         // ── Keyboard: Space toggles the speedrun timer ────────────

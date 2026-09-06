@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -59,6 +60,7 @@ namespace RGDSCapture.ViewModels
         public Func<string, (string User, string Pass, bool Remember)?>? PromptCredentials { get; set; }
         public Func<string, string, bool>? Confirm { get; set; }
         public event Action<ScreenViewModel>? FullscreenRequested;
+        public event Action? ThemePickerRequested;
 
         // ── Child view-models ─────────────────────────────────────────
         public ScreenViewModel Top { get; }
@@ -224,8 +226,57 @@ namespace RGDSCapture.ViewModels
         public bool IsScalingSharp => !Settings.SmoothScaling;
         public bool IsScalingSmooth => Settings.SmoothScaling;
 
-        public bool IsThemeDark => ThemeService.Current == AppTheme.Dark;
-        public bool IsThemeLight => ThemeService.Current == AppTheme.Light;
+        // ── Theme ─────────────────────────────────────────────────────
+        /// <summary>Every built-in preset, for the picker and the View menu.</summary>
+        public IReadOnlyList<ThemeChoice> Themes { get; }
+
+        public string ThemeName => ThemeService.Current.Name;
+
+        /// <summary>Accent in force, shown as the picker's current swatch.</summary>
+        public Brush AccentSwatch =>
+            Frozen(new SolidColorBrush(ThemeService.EffectiveAccent));
+
+        public string AccentHex => PaletteBuilder.ToHex(ThemeService.EffectiveAccent);
+
+        public bool HasCustomAccent => ThemeService.CustomAccent.HasValue;
+
+        /// <summary>
+        /// Applies a preset (and optionally an accent override) and persists it.
+        /// Every brush is a DynamicResource, so the UI restyles in place.
+        /// </summary>
+        public void ApplyTheme(ThemePreset preset, Color? accent, bool persist = true)
+        {
+            ThemeService.Apply(preset, accent);
+
+            if (persist)
+            {
+                Settings.Theme = preset.Id;
+                Settings.CustomAccent = accent.HasValue
+                    ? PaletteBuilder.ToHex(accent.Value)
+                    : null;
+                _settingsService.Save();
+            }
+
+            foreach (var choice in Themes) choice.RaiseIsActive();
+            OnPropertyChanged(nameof(ThemeName));
+            OnPropertyChanged(nameof(AccentSwatch));
+            OnPropertyChanged(nameof(AccentHex));
+            OnPropertyChanged(nameof(HasCustomAccent));
+
+            if (persist)
+            {
+                AppendLog(accent.HasValue
+                    ? $"[THEME] {preset.Name} · custom accent {PaletteBuilder.ToHex(accent.Value)}"
+                    : $"[THEME] {preset.Name}");
+            }
+        }
+
+        /// <summary>Menu entry point — applies a preset by id, clearing any accent override.</summary>
+        private void ApplyThemeById(string? id)
+        {
+            if (string.IsNullOrWhiteSpace(id)) return;
+            ApplyTheme(ThemeCatalog.Resolve(id), null);
+        }
 
         // ── Combined recording / instant replay ──────────────────────
         private bool _isCombinedRecording;
@@ -326,6 +377,7 @@ namespace RGDSCapture.ViewModels
         public RelayCommand ScreenshotCommand { get; }
         public RelayCommand SetLayoutCommand { get; }
         public RelayCommand SetThemeCommand { get; }
+        public RelayCommand OpenThemePickerCommand { get; }
         public RelayCommand FullscreenCommand { get; }
         public AsyncRelayCommand ToggleCombinedRecordingCommand { get; }
         public AsyncRelayCommand SaveReplayCommand { get; }
@@ -349,6 +401,15 @@ namespace RGDSCapture.ViewModels
             _sshPortText = s.SshPort.ToString();
             _layout = s.LayoutValue;
             _deviceType = s.DeviceTypeValue;
+
+            // Built once; tiles report "active" by asking ThemeService, so a
+            // theme applied from anywhere keeps every tile in sync.
+            Themes = ThemeCatalog.All
+                .Select(p => new ThemeChoice(
+                    p,
+                    preset => ThemeService.Current.Id == preset.Id,
+                    new RelayCommand(() => ApplyTheme(p, null))))
+                .ToList();
 
             Top = new ScreenViewModel(ScreenId.Top, 5000, AppendLog);
             Bottom = new ScreenViewModel(ScreenId.Bottom, 5001, AppendLog);
@@ -419,7 +480,8 @@ namespace RGDSCapture.ViewModels
                 if (IsSingleScreenDevice && mode != LayoutMode.TopOnly) return;
                 Layout = mode;
             });
-            SetThemeCommand = new RelayCommand(ApplyTheme);
+            SetThemeCommand = new RelayCommand(p => ApplyThemeById(p?.ToString()));
+            OpenThemePickerCommand = new RelayCommand(() => ThemePickerRequested?.Invoke());
             FullscreenCommand = new RelayCommand(p =>
             {
                 if (p is ScreenViewModel screen) FullscreenRequested?.Invoke(screen);
@@ -1097,16 +1159,6 @@ namespace RGDSCapture.ViewModels
             }
         }
 
-        private void ApplyTheme(object? parameter)
-        {
-            if (!Enum.TryParse(parameter?.ToString(), out AppTheme theme)) return;
-            ThemeService.Apply(theme);
-            Settings.Theme = theme.ToString();
-            _settingsService.Save();
-            OnPropertyChanged(nameof(IsThemeDark));
-            OnPropertyChanged(nameof(IsThemeLight));
-            AppendLog($"[THEME] {theme}");
-        }
 
         // ─────────────────────────────────────────────────────────────
         // SHUTDOWN

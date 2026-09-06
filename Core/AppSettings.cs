@@ -7,7 +7,18 @@ namespace RGDSCapture.Core
     /// </summary>
     public sealed class AppSettings
     {
-        public string Theme { get; set; } = nameof(AppTheme.Dark);
+        /// <summary>
+        /// Theme preset id (see <see cref="ThemeCatalog"/>). Older settings
+        /// files hold "Dark"/"Light" here; ThemeCatalog.Resolve maps those.
+        /// </summary>
+        public string Theme { get; set; } = ThemeCatalog.DefaultId;
+
+        /// <summary>
+        /// Optional accent override as #RRGGBB, set by the custom color
+        /// picker. Null means the preset supplies its own accent.
+        /// </summary>
+        public string? CustomAccent { get; set; }
+
         public string Layout { get; set; } = nameof(LayoutMode.SideBySide);
 
         /// <summary>Display rotation in degrees (0, 90, 180, 270) for sideways-held games.</summary>
@@ -52,9 +63,9 @@ namespace RGDSCapture.Core
         /// <summary>Right sidebar column (record / audio / timer) expanded.</summary>
         public bool RightPanelOpen { get; set; } = true;
 
+        /// <summary>Persisted theme id, exposed under the name ThemeService expects.</summary>
         [JsonIgnore]
-        public AppTheme ThemeValue =>
-            System.Enum.TryParse(Theme, out AppTheme t) ? t : AppTheme.Dark;
+        public string ThemeId => Theme;
 
         [JsonIgnore]
         public LayoutMode LayoutValue =>

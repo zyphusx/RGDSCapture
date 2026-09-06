@@ -261,6 +261,31 @@
                         </UniformGrid>
                     </Border>
 
+                    <Button Command="{Binding OpenThemePickerCommand}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left"
+                            FontSize="12" Padding="10,7"
+                            Margin="0,0,0,8"
+                            AutomationProperties.Name="Open theme picker"
+                            ToolTip="Choose a theme preset or a custom accent colour  (Ctrl+T)">
+                        <DockPanel LastChildFill="False" Width="196">
+                            <Ellipse DockPanel.Dock="Left"
+                                     Width="12" Height="12"
+                                     Fill="{Binding AccentSwatch}"
+                                     Stroke="{DynamicResource BorderStrong}"
+                                     StrokeThickness="1"
+                                     VerticalAlignment="Center"
+                                     Margin="0,0,9,0"/>
+                            <TextBlock DockPanel.Dock="Left"
+                                       Text="{Binding ThemeName}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock DockPanel.Dock="Right"
+                                       Text="›"
+                                       Foreground="{DynamicResource TextTertiary}"
+                                       VerticalAlignment="Center"/>
+                        </DockPanel>
+                    </Button>
+
                     <UniformGrid Rows="1" Columns="2">
                         <ToggleButton Style="{StaticResource ToggleChip}"
                                       Content="Stats"

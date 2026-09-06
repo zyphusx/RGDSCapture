@@ -76,7 +76,11 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 
 ### App
 - Optional "remember credentials" — the SSH password is encrypted with Windows DPAPI, so connecting is one click
-- Dark and Light themes, persisted between sessions
+- **15 built-in themes** — 12 dark (Midnight, Gengar, Nocturne, Matrix, Ember, Crimson,
+  Cyberpunk, Ocean, Forest, Amber, Sakura, Mono) and 3 light (Daylight, Parchment, Mint),
+  each tinting the whole app rather than just the accent. Persisted between sessions.
+- **Custom accent colour** — pick any RGB value in the theme picker (Ctrl+T) and the
+  entire palette is regenerated around it
 - Event log panel with timestamped entries
 - Keyboard shortcuts (see below)
 
@@ -96,6 +100,9 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 | F10   | Save last 10 s as GIF        |
 | F12   | Screenshot both screens      |
 | Space | Start / pause speedrun timer |
+| Ctrl+B | Show / hide the device panel |
+| Ctrl+J | Show / hide the capture panel |
+| Ctrl+T | Open the theme picker        |
 
 ---
 
