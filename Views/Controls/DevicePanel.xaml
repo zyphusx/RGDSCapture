@@ -271,7 +271,7 @@
                         <DockPanel LastChildFill="False" Width="196">
                             <Ellipse DockPanel.Dock="Left"
                                      Width="12" Height="12"
-                                     Fill="{Binding AccentSwatch}"
+                                     Fill="{DynamicResource AccentGradient}"
                                      Stroke="{DynamicResource BorderStrong}"
                                      StrokeThickness="1"
                                      VerticalAlignment="Center"

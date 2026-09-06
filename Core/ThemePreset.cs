@@ -21,13 +21,29 @@ namespace RGDSCapture.Core
     /// Optional surface hue in degrees, when the greys should lean somewhere
     /// other than the accent — e.g. a magenta accent over cool blue surfaces.
     /// </param>
+    /// <param name="Group">Which section of the theme picker this appears under.</param>
+    /// <param name="Stripes">
+    /// Optional flag colours, outermost first. Purely decorative: they drive
+    /// the picker tile and the accent dot, never anything that has text on it —
+    /// a six-stripe gradient behind a label cannot hold a contrast ratio.
+    /// </param>
     public sealed record ThemePreset(
         string Id,
         string Name,
         bool IsDark,
         string Accent,
         double TintStrength,
-        double? TintHue = null);
+        double? TintHue = null,
+        string Group = ThemeGroups.Dark,
+        string[]? Stripes = null);
+
+    /// <summary>Section headings in the theme picker.</summary>
+    public static class ThemeGroups
+    {
+        public const string Dark = "Dark";
+        public const string Light = "Light";
+        public const string Pride = "Pride";
+    }
 
     /// <summary>The built-in theme catalog.</summary>
     public static class ThemeCatalog
@@ -51,9 +67,38 @@ namespace RGDSCapture.Core
             new ThemePreset("mono",      "Mono",      true,  "#D4D4D8", 0.00),
 
             // ── Light ─────────────────────────────────────────────────
-            new ThemePreset("daylight",  "Daylight",  false, "#2563EB", 0.18, 222),
-            new ThemePreset("parchment", "Parchment", false, "#B45309", 0.34, 36),
-            new ThemePreset("mint",      "Mint",      false, "#0D9488", 0.26, 172),
+            new ThemePreset("daylight",  "Daylight",  false, "#2563EB", 0.18, 222, ThemeGroups.Light),
+            new ThemePreset("parchment", "Parchment", false, "#B45309", 0.34, 36,  ThemeGroups.Light),
+            new ThemePreset("mint",      "Mint",      false, "#0D9488", 0.26, 172, ThemeGroups.Light),
+
+            // ── Pride ─────────────────────────────────────────────────
+            // Each accent is taken from its flag, lifted in lightness where
+            // the flag colour would be too dark to read as UI accent on a
+            // dark surface. Stripes are the flags' real colours.
+            new ThemePreset("pride", "Rainbow", true, "#A24BD8", 0.40, 285, ThemeGroups.Pride,
+                new[] { "#E40303", "#FF8C00", "#FFED00", "#008026", "#24408E", "#732982" }),
+
+            new ThemePreset("progress", "Progress", true, "#74D7EE", 0.34, 194, ThemeGroups.Pride,
+                new[] { "#E40303", "#FF8C00", "#FFED00", "#008026", "#24408E", "#732982",
+                        "#FFFFFF", "#FFAFC8", "#74D7EE", "#613915", "#000000" }),
+
+            new ThemePreset("trans", "Trans", true, "#5BCEFA", 0.36, 197, ThemeGroups.Pride,
+                new[] { "#5BCEFA", "#F5A9B8", "#FFFFFF", "#F5A9B8", "#5BCEFA" }),
+
+            new ThemePreset("bisexual", "Bisexual", true, "#E8408F", 0.44, 322, ThemeGroups.Pride,
+                new[] { "#D60270", "#D60270", "#9B4F96", "#0038A8", "#0038A8" }),
+
+            new ThemePreset("pansexual", "Pansexual", true, "#21B1FF", 0.40, 203, ThemeGroups.Pride,
+                new[] { "#FF218C", "#FFD800", "#21B1FF" }),
+
+            new ThemePreset("lesbian", "Lesbian", true, "#E4649B", 0.42, 335, ThemeGroups.Pride,
+                new[] { "#D52D00", "#FF9A56", "#FFFFFF", "#D362A4", "#A30262" }),
+
+            new ThemePreset("nonbinary", "Non-binary", true, "#9C59D1", 0.46, 272, ThemeGroups.Pride,
+                new[] { "#FCF434", "#FFFFFF", "#9C59D1", "#2C2C2C" }),
+
+            new ThemePreset("asexual", "Asexual", true, "#A855C7", 0.30, 288, ThemeGroups.Pride,
+                new[] { "#000000", "#A3A3A3", "#FFFFFF", "#800080" }),
         };
 
         public static ThemePreset Default =>

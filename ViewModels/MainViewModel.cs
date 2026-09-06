@@ -230,6 +230,15 @@ namespace RGDSCapture.ViewModels
         /// <summary>Every built-in preset, for the picker and the View menu.</summary>
         public IReadOnlyList<ThemeChoice> Themes { get; }
 
+        // The picker shows these as separate sections; the View menu still
+        // lists Themes in full.
+        public IEnumerable<ThemeChoice> DarkThemes =>
+            Themes.Where(t => t.Preset.Group == ThemeGroups.Dark);
+        public IEnumerable<ThemeChoice> LightThemes =>
+            Themes.Where(t => t.Preset.Group == ThemeGroups.Light);
+        public IEnumerable<ThemeChoice> PrideThemes =>
+            Themes.Where(t => t.Preset.Group == ThemeGroups.Pride);
+
         public string ThemeName => ThemeService.Current.Name;
 
         /// <summary>Accent in force, shown as the picker's current swatch.</summary>

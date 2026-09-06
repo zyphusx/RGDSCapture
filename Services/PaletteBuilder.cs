@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using RGDSCapture.Core;
 
 namespace RGDSCapture.Services
@@ -32,9 +33,92 @@ namespace RGDSCapture.Services
                 : preset.TintHue ?? accentH;
             double tint = Clamp01(preset.TintStrength);
 
-            return preset.IsDark
+            var dict = preset.IsDark
                 ? BuildDark(accent, accentH, accentS, accentL, tintHue, tint)
                 : BuildLight(accent, accentH, accentS, accentL, tintHue, tint);
+
+            // Accent outline treatment, applied to every theme. A pride preset
+            // runs its whole flag around the stroke; anything else uses a
+            // dimmed version of its own accent, so the look is the same and
+            // only the colour source differs.
+            //
+            //   AccentGradient   — strokes that were already accent-coloured
+            //   AccentOutline    — strokes that were previously neutral (cards)
+            //   AccentGlowEffect — soft outer glow, static chrome only
+            var stripes = StripeBrush(preset.Stripes);
+
+            // Dimmed rather than the raw accent: this lands on every sidebar
+            // card at once, and full-strength accent on eight borders shouts.
+            Color outline = preset.IsDark
+                ? FromHsl(accentH, accentS * 0.75, 0.34)
+                : FromHsl(accentH, accentS * 0.55, 0.72);
+
+            dict["AccentGradient"] = stripes ?? dict["AccentBg"];
+            dict["AccentOutline"] = stripes ?? FrozenBrush(outline);
+            dict["AccentGlowEffect"] = Glow(accent);
+
+            // Selected-segment fill. This one sits BEHIND a label, so a pride
+            // theme gets its flag at low opacity rather than full strength —
+            // the surface underneath still carries the contrast, and the
+            // stripes read as a tint over it.
+            dict["AccentSelBg"] = StripeBrush(preset.Stripes, preset.IsDark ? 0.38 : 0.22)
+                                  ?? dict["SegmentSelBg"];
+
+            return dict;
+        }
+
+        private static Brush FrozenBrush(Color c)
+        {
+            var b = new SolidColorBrush(c);
+            b.Freeze();
+            return b;
+        }
+
+        /// <summary>
+        /// Soft outer glow in the flag's accent. Frozen, and only ever applied
+        /// to static chrome — never to anything wrapping the video surface,
+        /// where an effect would be re-rasterised on every decoded frame.
+        /// </summary>
+        private static Effect Glow(Color accent)
+        {
+            var glow = new DropShadowEffect
+            {
+                Color = accent,
+                BlurRadius = 14,
+                ShadowDepth = 0,
+                Opacity = 0.55,
+                RenderingBias = RenderingBias.Performance
+            };
+            glow.Freeze();
+            return glow;
+        }
+
+        /// <summary>
+        /// Hard-edged vertical bands from a flag's colours, or null when the
+        /// preset has none. Hard stops rather than a blend so the flag stays
+        /// recognisable at the size of a swatch.
+        /// </summary>
+        public static Brush? StripeBrush(string[]? stripes, double opacity = 1.0)
+        {
+            if (stripes == null || stripes.Length == 0) return null;
+
+            var brush = new LinearGradientBrush
+            {
+                StartPoint = new System.Windows.Point(0, 0),
+                EndPoint = new System.Windows.Point(0, 1),
+                Opacity = opacity
+            };
+
+            double band = 1.0 / stripes.Length;
+            for (int i = 0; i < stripes.Length; i++)
+            {
+                var c = ParseHex(stripes[i]);
+                brush.GradientStops.Add(new GradientStop(c, i * band));
+                brush.GradientStops.Add(new GradientStop(c, (i + 1) * band));
+            }
+
+            brush.Freeze();
+            return brush;
         }
 
         // ── Dark ramp ─────────────────────────────────────────────────

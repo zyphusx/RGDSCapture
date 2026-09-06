@@ -77,10 +77,18 @@
     </Style>
 
     <!-- Accent: the one primary action on screen -->
+    <!--
+        The fill stays a flat colour on purpose. A pride theme's stripes run
+        across the border instead: text over a six-colour gradient cannot hold
+        a contrast ratio (white on the rainbow's yellow band fails outright),
+        whereas a 2px outline carries the whole flag safely.
+    -->
     <Style x:Key="AccentButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
         <Setter Property="Background" Value="{DynamicResource AccentBg}"/>
         <Setter Property="Foreground" Value="{DynamicResource AccentFg}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource AccentBg}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentGradient}"/>
+        <Setter Property="BorderThickness" Value="2"/>
+        <Setter Property="Effect" Value="{DynamicResource AccentGlowEffect}"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Padding" Value="14,8"/>
         <Setter Property="Template">
@@ -98,21 +106,21 @@
                                           RecognizesAccessKey="True"/>
                     </Border>
                     <ControlTemplate.Triggers>
+                        <!-- Only the fill reacts. Leaving BorderBrush alone
+                             keeps a pride theme's stripes on the outline
+                             through hover and press. -->
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Root" Property="Background"
-                                    Value="{DynamicResource AccentHover}"/>
-                            <Setter TargetName="Root" Property="BorderBrush"
                                     Value="{DynamicResource AccentHover}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="Root" Property="Background"
                                     Value="{DynamicResource AccentPress}"/>
-                            <Setter TargetName="Root" Property="BorderBrush"
-                                    Value="{DynamicResource AccentPress}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.4"/>
                             <Setter Property="Cursor" Value="Arrow"/>
+                            <Setter Property="Effect" Value="{x:Null}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -358,9 +366,11 @@
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Root" Property="Background"
-                                    Value="{DynamicResource SegmentSelBg}"/>
+                                    Value="{DynamicResource AccentSelBg}"/>
                             <Setter TargetName="Root" Property="BorderBrush"
-                                    Value="{DynamicResource SegmentSelBorder}"/>
+                                    Value="{DynamicResource AccentGradient}"/>
+                            <Setter Property="Effect"
+                                    Value="{DynamicResource AccentGlowEffect}"/>
                             <Setter Property="Foreground"
                                     Value="{DynamicResource SegmentSelFg}"/>
                             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -419,9 +429,11 @@
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Root" Property="Background"
-                                    Value="{DynamicResource AccentMuted}"/>
+                                    Value="{DynamicResource AccentSelBg}"/>
                             <Setter TargetName="Root" Property="BorderBrush"
-                                    Value="{DynamicResource SegmentSelBorder}"/>
+                                    Value="{DynamicResource AccentGradient}"/>
+                            <Setter Property="Effect"
+                                    Value="{DynamicResource AccentGlowEffect}"/>
                             <Setter Property="Foreground"
                                     Value="{DynamicResource AccentSubtleFg}"/>
                             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -1102,7 +1114,7 @@
     <!-- One grouped block inside a column -->
     <Style x:Key="SidebarCard" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBg}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentOutline}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="8"/>
         <Setter Property="Padding" Value="12"/>

@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using RGDSCapture.Services;
@@ -109,6 +110,18 @@ namespace RGDSCapture.Views
         {
             _vm.ApplyTheme(ThemeService.Current, null);
             LoadAccent(ThemeService.EffectiveAccent);
+        }
+
+        /// <summary>
+        /// The theme shelves scroll sideways, but the wheel drives vertical
+        /// scrolling by default — which does nothing here — so remap it.
+        /// </summary>
+        private void Shelf_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (sender is not ScrollViewer shelf) return;
+
+            shelf.ScrollToHorizontalOffset(shelf.HorizontalOffset - e.Delta);
+            e.Handled = true;
         }
 
         private void BtnClose_Click(object sender, RoutedEventArgs e) => Close();

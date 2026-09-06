@@ -12,7 +12,32 @@ number with the date, and start a fresh empty **[Unreleased]** section above it.
 
 ## [Unreleased]
 
-Nothing yet. 3.0.0 is the final feature release — only bug fixes from here.
+Nothing yet.
+
+---
+
+## [3.1.0] - 2026-09-06
+
+### Added
+- **Eight pride themes** — Rainbow, Progress, Trans, Bisexual, Pansexual,
+  Lesbian, Non-binary and Asexual, in their own section of the theme picker.
+  Each carries its flag's real colours, which run around the app's card
+  outlines, the primary button, and the fill and border of whatever segment
+  is selected.
+  - Fills stay flat and only *strokes* and low-opacity tints take the full
+    gradient. Text over a six-colour gradient cannot hold a contrast ratio —
+    white on the rainbow's yellow band fails outright — so the flag goes
+    where it cannot hurt legibility.
+
+### Changed
+- **Every theme now draws its accent as a glowing outline** on sidebar cards,
+  the primary button and the selected segment, not just a flat fill. Plain
+  themes use a dimmed version of their own accent; pride themes use their
+  flag. The glow is confined to static chrome and never wraps the video
+  surface, where an effect would be re-rasterised on every decoded frame.
+- The theme picker's groups are horizontal shelves rather than a wrapping
+  grid, so twenty-three themes no longer make the dialog taller than the
+  screen. The mouse wheel scrolls a shelf sideways.
 
 ---
 

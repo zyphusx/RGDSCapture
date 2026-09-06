@@ -25,6 +25,134 @@
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
         </Style>
+
+        <ItemsPanelTemplate x:Key="TileRow">
+            <StackPanel Orientation="Horizontal"/>
+        </ItemsPanelTemplate>
+
+        <!-- One shelf per group. Horizontal, so twenty-three themes cannot
+             push the dialog taller than the screen; the wheel is remapped to
+             scroll sideways in code-behind. -->
+        <Style x:Key="TileShelf" TargetType="ScrollViewer">
+            <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Disabled"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+            <Setter Property="Focusable" Value="False"/>
+        </Style>
+
+        <!--
+            Shared by every section. The preview is either a miniature of the
+            app's surfaces, or — for a pride theme — the flag itself, so the
+            tile is recognisable rather than just "a purple one".
+        -->
+        <DataTemplate x:Key="ThemeTileTemplate">
+            <Button Style="{StaticResource ThemeTile}"
+                    Command="{Binding ApplyCommand}"
+                    ToolTip="{Binding Name}"
+                    AutomationProperties.Name="{Binding Name}">
+                <StackPanel>
+                    <Grid Height="52">
+                        <!-- Plain theme: surface ground, raised bar, accent dot -->
+                        <Border Background="{Binding SurfaceSwatch}"
+                                CornerRadius="6,6,0,0">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasStripes}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <Grid Margin="8">
+                                <Border Background="{Binding RaisedSwatch}"
+                                        CornerRadius="3" Height="8"
+                                        VerticalAlignment="Top"
+                                        HorizontalAlignment="Stretch"/>
+                                <Ellipse Fill="{Binding AccentSwatch}"
+                                         Width="16" Height="16"
+                                         HorizontalAlignment="Left"
+                                         VerticalAlignment="Bottom"/>
+                                <Border Background="{Binding TextSwatch}"
+                                        CornerRadius="2" Height="5" Width="42"
+                                        Opacity="0.55"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Pride theme: the flag -->
+                        <Border Background="{Binding StripeSwatch}"
+                                CornerRadius="6,6,0,0">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasStripes}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </Grid>
+
+                    <Border CornerRadius="0,0,6,6" Padding="8,6">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background"
+                                        Value="{DynamicResource SurfaceRaisedBg}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                        <Setter Property="Background"
+                                                Value="{DynamicResource AccentMuted}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <DockPanel LastChildFill="False">
+                            <TextBlock DockPanel.Dock="Left"
+                                       Text="{Binding Name}"
+                                       FontSize="12"
+                                       TextTrimming="CharacterEllipsis"
+                                       VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground"
+                                                Value="{DynamicResource TextSecondary}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource AccentSubtleFg}"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock DockPanel.Dock="Right"
+                                       Text="✓"
+                                       FontSize="12"
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0,0,0"
+                                       Foreground="{DynamicResource AccentSubtleFg}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DockPanel>
+                    </Border>
+                </StackPanel>
+            </Button>
+        </DataTemplate>
     </Window.Resources>
 
     <Border Background="{DynamicResource SurfaceBg}"
@@ -58,104 +186,26 @@
                 </DockPanel>
             </Border>
 
-            <TextBlock Text="PRESETS" Style="{StaticResource SectionHeader}"/>
-            <ItemsControl ItemsSource="{Binding Themes}" Margin="0,0,-8,4">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel Orientation="Horizontal"/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Button Style="{StaticResource ThemeTile}"
-                                Command="{Binding ApplyCommand}"
-                                ToolTip="{Binding Name}"
-                                AutomationProperties.Name="{Binding Name}">
-                            <Button.InputBindings>
-                                <MouseBinding MouseAction="LeftDoubleClick"
-                                              Command="{Binding ApplyCommand}"/>
-                            </Button.InputBindings>
-                            <StackPanel>
-                                <!-- Miniature: surface ground, raised bar, accent dot -->
-                                <Border Background="{Binding SurfaceSwatch}"
-                                        CornerRadius="6,6,0,0"
-                                        Height="52">
-                                    <Grid Margin="8">
-                                        <Border Background="{Binding RaisedSwatch}"
-                                                CornerRadius="3"
-                                                Height="8"
-                                                VerticalAlignment="Top"
-                                                HorizontalAlignment="Stretch"/>
-                                        <Ellipse Fill="{Binding AccentSwatch}"
-                                                 Width="16" Height="16"
-                                                 HorizontalAlignment="Left"
-                                                 VerticalAlignment="Bottom"/>
-                                        <Border Background="{Binding TextSwatch}"
-                                                CornerRadius="2"
-                                                Height="5" Width="42"
-                                                Opacity="0.55"
-                                                HorizontalAlignment="Right"
-                                                VerticalAlignment="Bottom"/>
-                                    </Grid>
-                                </Border>
+            <TextBlock Text="DARK" Style="{StaticResource SectionHeader}"/>
+            <ScrollViewer Style="{StaticResource TileShelf}" PreviewMouseWheel="Shelf_MouseWheel">
+                <ItemsControl ItemsSource="{Binding DarkThemes}"
+                              ItemsPanel="{StaticResource TileRow}"
+                              ItemTemplate="{StaticResource ThemeTileTemplate}"/>
+            </ScrollViewer>
 
-                                <Border CornerRadius="0,0,6,6" Padding="8,6">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Setter Property="Background"
-                                                    Value="{DynamicResource SurfaceRaisedBg}"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                                    <Setter Property="Background"
-                                                            Value="{DynamicResource AccentMuted}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <DockPanel LastChildFill="False">
-                                        <TextBlock DockPanel.Dock="Left"
-                                                   Text="{Binding Name}"
-                                                   FontSize="12"
-                                                   VerticalAlignment="Center">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Foreground"
-                                                            Value="{DynamicResource TextSecondary}"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                                            <Setter Property="Foreground"
-                                                                    Value="{DynamicResource AccentSubtleFg}"/>
-                                                            <Setter Property="FontWeight" Value="SemiBold"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                        <TextBlock DockPanel.Dock="Right"
-                                                   Text="✓"
-                                                   FontSize="12"
-                                                   FontWeight="Bold"
-                                                   VerticalAlignment="Center"
-                                                   Margin="8,0,0,0"
-                                                   Foreground="{DynamicResource AccentSubtleFg}">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                                            <Setter Property="Visibility" Value="Visible"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                    </DockPanel>
-                                </Border>
-                            </StackPanel>
-                        </Button>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+            <TextBlock Text="LIGHT" Style="{StaticResource SectionHeader}" Margin="0,8,0,10"/>
+            <ScrollViewer Style="{StaticResource TileShelf}" PreviewMouseWheel="Shelf_MouseWheel">
+                <ItemsControl ItemsSource="{Binding LightThemes}"
+                              ItemsPanel="{StaticResource TileRow}"
+                              ItemTemplate="{StaticResource ThemeTileTemplate}"/>
+            </ScrollViewer>
+
+            <TextBlock Text="PRIDE" Style="{StaticResource SectionHeader}" Margin="0,8,0,10"/>
+            <ScrollViewer Style="{StaticResource TileShelf}" PreviewMouseWheel="Shelf_MouseWheel">
+                <ItemsControl ItemsSource="{Binding PrideThemes}"
+                              ItemsPanel="{StaticResource TileRow}"
+                              ItemTemplate="{StaticResource ThemeTileTemplate}"/>
+            </ScrollViewer>
 
             <Border Style="{StaticResource CardDivider}" Margin="0,12"/>
 

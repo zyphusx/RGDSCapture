@@ -19,6 +19,9 @@ namespace RGDSCapture.ViewModels
             _isActive = isActive;
             ApplyCommand = apply;
 
+            StripeSwatch = PaletteBuilder.StripeBrush(preset.Stripes);
+            HasStripes = StripeSwatch != null;
+
             var accent = PaletteBuilder.ParseHex(preset.Accent);
             var (h, s, _) = PaletteBuilder.ToHsl(accent);
             double tintHue = preset.TintHue ?? h;
@@ -50,6 +53,10 @@ namespace RGDSCapture.ViewModels
         public Brush SurfaceSwatch { get; }
         public Brush RaisedSwatch { get; }
         public Brush TextSwatch { get; }
+
+        /// <summary>The flag's stripes, or null for a plain theme.</summary>
+        public Brush? StripeSwatch { get; }
+        public bool HasStripes { get; }
 
         public RelayCommand ApplyCommand { get; }
 

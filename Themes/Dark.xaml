@@ -50,6 +50,18 @@
     <SolidColorBrush x:Key="AccentFg"          Color="#0B1020"/>
     <SolidColorBrush x:Key="AccentMuted"       Color="#1C2A44"/>
     <SolidColorBrush x:Key="AccentSubtleFg"    Color="#8FB8FF"/>
+    <!-- Accent outline treatment. Every theme gets a dimmed-accent outline and
+         a matching glow; pride themes swap the flat brushes for their flag's
+         stripes at runtime. -->
+    <SolidColorBrush x:Key="AccentGradient"    Color="#4C8DFF"/>
+    <SolidColorBrush x:Key="AccentOutline"     Color="#164798"/>
+    <SolidColorBrush x:Key="AccentSelBg"       Color="#2E3A52"/>
+    <DropShadowEffect x:Key="AccentGlowEffect"
+                      Color="#4C8DFF"
+                      BlurRadius="14"
+                      ShadowDepth="0"
+                      Opacity="0.55"
+                      RenderingBias="Performance"/>
 
     <!-- ── Semantic status ─────────────────────────────────────── -->
     <SolidColorBrush x:Key="LiveFg"            Color="#34D399"/>

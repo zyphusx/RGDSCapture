@@ -76,9 +76,16 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 
 ### App
 - Optional "remember credentials" — the SSH password is encrypted with Windows DPAPI, so connecting is one click
-- **15 built-in themes** — 12 dark (Midnight, Amethyst, Nocturne, Phosphor, Ember, Crimson,
-  Neon, Ocean, Forest, Amber, Sakura, Mono) and 3 light (Daylight, Parchment, Mint),
-  each tinting the whole app rather than just the accent. Persisted between sessions.
+- **23 built-in themes**, each tinting the whole app rather than just the accent,
+  and persisted between sessions:
+  - **Dark** — Midnight, Amethyst, Nocturne, Phosphor, Ember, Crimson, Neon,
+    Ocean, Forest, Amber, Sakura, Mono
+  - **Light** — Daylight, Parchment, Mint
+  - **Pride** — Rainbow, Progress, Trans, Bisexual, Pansexual, Lesbian,
+    Non-binary, Asexual. These run their flag's colours around the app's
+    outlines, selections and glow
+- Every theme draws its accent as a **glowing outline** on cards, the primary
+  button and the selected segment
 - **Custom accent colour** — pick any RGB value in the theme picker (Ctrl+T) and the
   entire palette is regenerated around it
 - Event log panel with timestamped entries
@@ -138,7 +145,7 @@ If .NET 10 is not already installed, Windows will prompt you to install it befor
 ### Option B — Portable ZIP
 
 1. Go to the [Releases](https://github.com/zyphusx/RGDSCapture/releases) page
-2. Download **`RGDSCapture-v3.0.0-portable.zip`**
+2. Download **`RGDSCapture-v3.1.0-portable.zip`**
 3. Extract to any folder (e.g. `C:\RGDSCapture\`)
 4. Launch `RGDSCapture.exe`
 
