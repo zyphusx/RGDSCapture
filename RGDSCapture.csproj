@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -10,15 +10,15 @@
     <UseWPF>true</UseWPF>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
-    <AssemblyVersion>2.2.0.0</AssemblyVersion>
-    <FileVersion>2.2.0.0</FileVersion>
+    <AssemblyVersion>2.3.0.0</AssemblyVersion>
+    <FileVersion>2.3.0.0</FileVersion>
 
     <ApplicationIcon>Resources\icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <!-- FFmpeg bindings -->
-    <PackageReference Include="FFmpeg.AutoGen" Version="6.1.0.1" />
+    <PackageReference Include="FFmpeg.AutoGen" Version="9.0.1.1" />
 
     <!-- SSH -->
     <PackageReference Include="SSH.NET" Version="2026.0.0" />
@@ -27,67 +27,16 @@
     <PackageReference Include="NAudio" Version="2.3.0" />
   </ItemGroup>
 
-  <!-- FFmpeg native DLLs -->
+  <!-- FFmpeg native DLLs and tools.
+       Globbed rather than listed by name: the soname major changes with
+       every FFmpeg release (avcodec-60 -> 63, swscale-7 -> 10, ...), so a
+       hand-written list silently ships nothing after an upgrade. -->
   <ItemGroup>
-    <Content Include="avcodec-60.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-
-    <Content Include="avdevice-60.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-
-    <Content Include="avfilter-9.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-
-    <Content Include="avformat-60.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-
-    <Content Include="avutil-58.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-
-    <Content Include="postproc-57.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-
-    <Content Include="swresample-4.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-
-    <Content Include="swscale-7.dll">
+    <Content Include="av*.dll;sw*.dll;postproc-*.dll;ffmpeg.exe;ffplay.exe;ffprobe.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
-
-  <!-- FFmpeg executables -->
-  <ItemGroup>
-    <Content Include="ffmpeg.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-
-    <Content Include="ffplay.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-
-    <Content Include="ffprobe.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-  </ItemGroup>
-
   <!-- Themes -->
   <ItemGroup>
     <Content Include="Themes\*.xaml">

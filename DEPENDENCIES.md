@@ -10,9 +10,10 @@ RGDSCapture is built on the following open-source libraries and tools. Each is i
 |---|---|
 | **Purpose** | H.264 video decoding, MP4 remuxing for recording |
 | **Website** | https://ffmpeg.org |
-| **License** | LGPL 2.1 (shared/dynamic build) |
-| **Used as** | Native DLLs (`avcodec`, `avformat`, `avutil`, etc.) |
-| **Notes** | Must be placed manually in the application directory. Use the **shared** build so the LGPL terms are satisfied by dynamic linking. See README for download instructions. |
+| **Version** | 9.0.x (currently `n9.0.1`, avcodec 63 / avutil 61 / swscale 10) |
+| **License** | LGPL 3.0 or later — the builds are configured `--enable-version3`, so the applicable text is LGPL **3.0**, not 2.1 |
+| **Used as** | Native DLLs (`avcodec`, `avformat`, `avutil`, etc.) plus `ffmpeg.exe` for remuxing |
+| **Notes** | Must be the **LGPL shared** build: dynamic linking is what satisfies the LGPL, and the GPL builds would be incompatible with this project's MIT licence. Note that LGPL builds exclude `libx264` and `libpostproc` (both GPL) — combined recording therefore encodes with **libopenh264**. Binaries come from [BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds) (`ffmpeg-nX.Y-latest-win64-lgpl-shared-X.Y.zip`). |
 
 ---
 
@@ -24,7 +25,7 @@ RGDSCapture is built on the following open-source libraries and tools. Each is i
 | **Repository** | https://github.com/Ruslan-B/FFmpeg.AutoGen |
 | **License** | MIT |
 | **NuGet** | `FFmpeg.AutoGen` |
-| **Version** | 6.x |
+| **Version** | 9.x — **must match the native FFmpeg major**. The package version tracks the FFmpeg release it was generated from, so `9.0.1.x` binds FFmpeg 9.0.1. Upgrading the DLLs without the package (or vice versa) fails at runtime, not at compile time. |
 
 ---
 
@@ -70,5 +71,5 @@ RGDSCapture is built on the following open-source libraries and tools. Each is i
 
 - All NuGet packages are restored automatically by `dotnet restore` or by Visual Studio on first build.
 - FFmpeg native DLLs must be placed manually — see the [README](README.md#step-2--add-ffmpeg-binaries) for exact steps.
-- Full license texts for FFmpeg (LGPL) and MIT-licensed packages are in the [THIRDPARTYLICENSES](THIRDPARTYLICENSES/) folder.
+- Full license texts for FFmpeg (LGPL 3.0) and MIT-licensed packages are in the [THIRDPARTYLICENSES](THIRDPARTYLICENSES/) folder.
 - All trademarks and product names remain the property of their respective owners.

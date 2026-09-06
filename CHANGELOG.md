@@ -12,6 +12,32 @@ number with the date, and start a fresh empty **[Unreleased]** section above it.
 
 ## [Unreleased]
 
+### Changed
+- **FFmpeg updated 6.1.3 → 9.0.1**, with `FFmpeg.AutoGen` moved 6.1.0.1 → 9.0.1.1
+  to match. The binding package version tracks the FFmpeg release it was
+  generated against, so the two must move together — a mismatch fails at
+  runtime rather than at compile time.
+  - Native libraries change soname: `avcodec-60→63`, `avformat-60→63`,
+    `avutil-58→61`, `swscale-7→10`, `swresample-4→7`, `avfilter-9→12`,
+    `avdevice-60→63`. `libpostproc` is dropped — it is GPL-only and was never
+    used by this app.
+  - Still the **LGPL shared** build (`--enable-version3`), so combined
+    recording continues to encode with `libopenh264`; `libx264` remains
+    unavailable by design.
+  - One code change was required: FFmpeg 8 converted the `SWS_*` scaler
+    macros into a real `SwsFlags` enum, so `ffmpeg.SWS_BILINEAR` became
+    `(int)SwsFlags.SWS_BILINEAR`.
+- The `.csproj` now globs the FFmpeg binaries (`av*.dll`, `sw*.dll`, …) instead
+  of listing each filename. The soname major changes on every FFmpeg release,
+  and a stale hand-written list silently ships **no** FFmpeg at all.
+
+### Fixed
+- **Third-party licence text corrected.** The bundled FFmpeg builds are
+  configured `--enable-version3` and report "LGPL version 3 or later", but the
+  repository shipped the LGPL **2.1** text and `DEPENDENCIES.md` claimed 2.1.
+  Replaced with the LGPL 3.0 text as shipped by the build, and the docs now
+  state the correct licence. This applied to previous releases too.
+
 ### Added
 - **15 built-in themes** with a visual picker (View → Theme Picker…, or
   **Ctrl+T**). Twelve dark — Midnight, **Gengar**, Nocturne, Matrix, Ember,

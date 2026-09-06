@@ -326,7 +326,9 @@ namespace RGDSCapture.Services
                         _swsCtx,
                         w, h, (AVPixelFormat)_frame->format,
                         w, h, AVPixelFormat.AV_PIX_FMT_BGRA,
-                        ffmpeg.SWS_BILINEAR, null, null, null);
+                        // FFmpeg 8 turned the SWS_* macros into a real enum,
+                        // so this is no longer a bare constant on ffmpeg.
+                        (int)SwsFlags.SWS_BILINEAR, null, null, null);
 
                     if (w != _bgraWidth || h != _bgraHeight)
                     {
