@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Input;
 
 namespace RGDSCapture.Views
 {
@@ -14,6 +15,12 @@ namespace RGDSCapture.Views
             TxtUsername.Text = defaultUsername;
             ChkRemember.IsChecked = defaultRemember;
             Loaded += (_, _) => TxtPassword.Focus();
+
+            // The window is borderless, so the header stands in for a title bar.
+            DragHandle.MouseLeftButtonDown += (_, e) =>
+            {
+                if (e.ButtonState == MouseButtonState.Pressed) DragMove();
+            };
         }
 
         private void BtnConnect_Click(object sender, RoutedEventArgs e)

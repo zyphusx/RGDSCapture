@@ -33,7 +33,7 @@ namespace RGDSCapture.ViewModels
             }
         }
 
-        public string StartPauseText => IsRunning ? "⏸  Pause" : "▶  Start";
+        public string StartPauseText => IsRunning ? "▮▮  Pause" : "▶  Start";
 
         public RelayCommand StartPauseCommand { get; }
         public RelayCommand LapCommand { get; }

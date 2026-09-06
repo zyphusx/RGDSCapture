@@ -46,6 +46,12 @@ namespace RGDSCapture.Core
         /// <summary>Instant-replay window length in seconds.</summary>
         public int ReplaySeconds { get; set; } = 30;
 
+        /// <summary>Left sidebar column (device / streams / display) expanded.</summary>
+        public bool LeftPanelOpen { get; set; } = true;
+
+        /// <summary>Right sidebar column (record / audio / timer) expanded.</summary>
+        public bool RightPanelOpen { get; set; } = true;
+
         [JsonIgnore]
         public AppTheme ThemeValue =>
             System.Enum.TryParse(Theme, out AppTheme t) ? t : AppTheme.Dark;

@@ -55,7 +55,7 @@ namespace RGDSCapture.ViewModels
             }
         }
 
-        public string ToggleText => IsRunning ? "⏹  Audio" : "▶  Audio";
+        public string ToggleText => IsRunning ? "■  Audio" : "▶  Audio";
 
         private double _volume;
         public double Volume

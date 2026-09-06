@@ -1,20 +1,58 @@
 <UserControl x:Class="RGDSCapture.Views.Controls.ScreenView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:core="clr-namespace:RGDSCapture.Core">
 
     <!-- DataContext: ScreenViewModel. Outer margin (the screen gap) is set
          on the UserControl itself by MainWindow.ApplyLayout. -->
-    <Border Background="{DynamicResource ScreenBg}"
-            BorderBrush="{DynamicResource ScreenBorder}"
+
+    <UserControl.Resources>
+        <!-- Glass pill shared by every overlay chip -->
+        <Style x:Key="GlassChip" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource ScreenGlassBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ScreenGlassBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="8,4"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Border x:Name="Root"
+            Background="{DynamicResource ScreenBg}"
             BorderThickness="1"
-            CornerRadius="8">
+            CornerRadius="10"
+            ClipToBounds="True">
+        <Border.Style>
+            <Style TargetType="Border">
+                <Setter Property="BorderBrush" Value="{DynamicResource ScreenBorder}"/>
+                <Style.Triggers>
+                    <!-- A live screen gets a subtly warmer edge -->
+                    <DataTrigger Binding="{Binding Health}"
+                                 Value="{x:Static core:StreamHealth.Live}">
+                        <Setter Property="BorderBrush"
+                                Value="{DynamicResource ScreenBorderLive}"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </Border.Style>
+
         <Grid>
-            <!-- Placeholder label, covered by video once frames arrive -->
-            <TextBlock Text="{Binding DisplayName}"
-                       Foreground="{DynamicResource ScreenLabelFg}"
-                       FontSize="18" FontWeight="SemiBold"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"/>
+            <!-- Placeholder, covered by video once frames arrive -->
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        IsHitTestVisible="False">
+                <TextBlock Text="{Binding DisplayName}"
+                           Foreground="{DynamicResource ScreenLabelFg}"
+                           FontSize="15"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="no signal"
+                           Foreground="{DynamicResource ScreenLabelFg}"
+                           FontSize="11"
+                           Opacity="0.75"
+                           Margin="0,4,0,0"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
 
             <Image Source="{Binding Bitmap}"
                    Stretch="Uniform"
@@ -33,34 +71,32 @@
                 </Image.InputBindings>
             </Image>
 
-            <!-- Health badge + FPS + optional network stats, top-left -->
-            <StackPanel Orientation="Vertical"
-                        HorizontalAlignment="Left"
+            <!-- Health + FPS + optional network stats, top-left -->
+            <StackPanel HorizontalAlignment="Left"
                         VerticalAlignment="Top"
-                        Margin="10,8">
-                <StackPanel Orientation="Horizontal">
-                    <Ellipse Width="8" Height="8"
-                             Fill="{Binding BadgeBrush}"
-                             VerticalAlignment="Center"
-                             Margin="0,0,5,0"/>
-                    <TextBlock Text="{Binding BadgeText}"
-                               Foreground="{Binding BadgeBrush}"
-                               FontSize="11" FontWeight="SemiBold"
-                               VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding FpsText}"
-                               Foreground="{DynamicResource TextSecondary}"
-                               FontSize="11"
-                               VerticalAlignment="Center"
-                               Margin="8,0,0,0"/>
-                </StackPanel>
+                        Margin="10,10"
+                        IsHitTestVisible="False">
 
-                <Border CornerRadius="3"
-                        Background="#66000000"
-                        Padding="6,2"
-                        Margin="0,5,0,0"
-                        HorizontalAlignment="Left">
+                <Border Style="{StaticResource GlassChip}" HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal">
+                        <!-- BadgeText already carries its own ●/○ glyph -->
+                        <TextBlock Text="{Binding BadgeText}"
+                                   Foreground="{Binding BadgeBrush}"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding FpsText}"
+                                   Foreground="#C8FFFFFF"
+                                   FontSize="11"
+                                   VerticalAlignment="Center"
+                                   Margin="8,0,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border HorizontalAlignment="Left"
+                        Margin="0,6,0,0">
                     <Border.Style>
-                        <Style TargetType="Border">
+                        <Style TargetType="Border" BasedOn="{StaticResource GlassChip}">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding StatsText}" Value="">
                                     <Setter Property="Visibility" Value="Collapsed"/>
@@ -76,16 +112,14 @@
                 </Border>
             </StackPanel>
 
-            <!-- Recording indicator + elapsed time, top-right under ⛶ -->
-            <Border CornerRadius="3"
-                    Background="#66000000"
-                    Padding="6,2"
-                    Margin="0,40,6,0"
+            <!-- Recording indicator, top-right beneath the fullscreen button -->
+            <Border Margin="0,46,10,0"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"
-                    Panel.ZIndex="5">
+                    Panel.ZIndex="5"
+                    IsHitTestVisible="False">
                 <Border.Style>
-                    <Style TargetType="Border">
+                    <Style TargetType="Border" BasedOn="{StaticResource GlassChip}">
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding RecText}" Value="">
                                 <Setter Property="Visibility" Value="Collapsed"/>
@@ -94,24 +128,34 @@
                     </Style>
                 </Border.Style>
                 <TextBlock Text="{Binding RecText}"
-                           Foreground="#FF5252"
+                           Foreground="{DynamicResource DangerFgSolid}"
                            FontSize="11"
                            FontWeight="Bold"
                            FontFamily="Cascadia Code, Consolas, monospace"
                            AutomationProperties.Name="Recording indicator"/>
             </Border>
 
-            <!-- Fullscreen button, top-right -->
+            <!-- Fullscreen button — dimmed until the screen is hovered -->
             <Button Content="⛶"
-                    Style="{StaticResource OverlayButton}"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"
-                    Margin="0,6,6,0"
+                    Margin="0,10,10,0"
                     Panel.ZIndex="5"
                     Command="{Binding DataContext.FullscreenCommand,
                               RelativeSource={RelativeSource AncestorType=Window}}"
                     CommandParameter="{Binding}"
                     AutomationProperties.Name="Full screen">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource OverlayButton}">
+                        <Setter Property="Opacity" Value="0"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsMouseOver,
+                                                   ElementName=Root}" Value="True">
+                                <Setter Property="Opacity" Value="1"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
                 <Button.ToolTip>
                     <TextBlock>
                         <Run Text="Full screen —"/>

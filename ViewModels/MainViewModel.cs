@@ -83,6 +83,7 @@ namespace RGDSCapture.ViewModels
                     OnPropertyChanged(nameof(ConnectButtonText));
                     OnPropertyChanged(nameof(StatusDotBrush));
                     OnPropertyChanged(nameof(IsConnectedDualScreen));
+                    OnPropertyChanged(nameof(ConnectionLabel));
                 }
             }
         }
@@ -109,7 +110,11 @@ namespace RGDSCapture.ViewModels
         public string DeviceIp
         {
             get => _deviceIp;
-            set => SetProperty(ref _deviceIp, value);
+            set
+            {
+                if (SetProperty(ref _deviceIp, value))
+                    OnPropertyChanged(nameof(DeviceSummary));
+            }
         }
 
         // ── Device type ───────────────────────────────────────────────
@@ -131,6 +136,8 @@ namespace RGDSCapture.ViewModels
                 OnPropertyChanged(nameof(IsSingleScreenDevice));
                 OnPropertyChanged(nameof(IsDualScreenDevice));
                 OnPropertyChanged(nameof(IsConnectedDualScreen));
+                OnPropertyChanged(nameof(DeviceTypeLabel));
+                OnPropertyChanged(nameof(DeviceSummary));
 
                 // The single-screen UI has no side-by-side/hybrid/stack — pin
                 // it to Top Only so the existing layout code (which already
@@ -233,7 +240,7 @@ namespace RGDSCapture.ViewModels
         }
 
         public string CombinedRecordButtonText =>
-            IsCombinedRecording ? "⏹  Combined" : "⏺  Combined";
+            IsCombinedRecording ? "■  Combined" : "●  Combined";
 
         public int ReplaySeconds => Settings.ReplaySeconds;
         public bool IsReplay15 => Settings.ReplaySeconds == 15;
@@ -258,7 +265,58 @@ namespace RGDSCapture.ViewModels
 
         public bool IsStatsVisible => Settings.ShowStats;
 
+        // ── Sidebar columns ───────────────────────────────────────────
+        // Which of the two control columns are expanded. Persisted so the
+        // window comes back the way it was left.
+        public bool IsLeftPanelOpen
+        {
+            get => Settings.LeftPanelOpen;
+            private set
+            {
+                if (Settings.LeftPanelOpen == value) return;
+                Settings.LeftPanelOpen = value;
+                _settingsService.Save();
+                OnPropertyChanged();
+            }
+        }
+
+        public bool IsRightPanelOpen
+        {
+            get => Settings.RightPanelOpen;
+            private set
+            {
+                if (Settings.RightPanelOpen == value) return;
+                Settings.RightPanelOpen = value;
+                _settingsService.Save();
+                OnPropertyChanged();
+            }
+        }
+
+        // ── Title-bar readouts ────────────────────────────────────────
+        public string DeviceTypeLabel =>
+            DeviceType == DeviceType.Rg353V ? "RG353V" : "RG DS";
+
+        /// <summary>"RG DS · 192.168.1.42" for the title bar.</summary>
+        public string DeviceSummary
+        {
+            get
+            {
+                string ip = DeviceIp?.Trim() ?? string.Empty;
+                return ip.Length == 0 ? DeviceTypeLabel : $"{DeviceTypeLabel} · {ip}";
+            }
+        }
+
+        public string ConnectionLabel => Connection switch
+        {
+            ConnectionState.Connecting => "Connecting",
+            ConnectionState.Connected => "Connected",
+            ConnectionState.Lost => "Connection lost",
+            _ => "Offline"
+        };
+
         // ── Commands ──────────────────────────────────────────────────
+        public RelayCommand ToggleLeftPanelCommand { get; }
+        public RelayCommand ToggleRightPanelCommand { get; }
         public AsyncRelayCommand ConnectCommand { get; }
         public AsyncRelayCommand RestartTopCommand { get; }
         public AsyncRelayCommand RestartBottomCommand { get; }
@@ -342,6 +400,8 @@ namespace RGDSCapture.ViewModels
             };
             _healthTimer.Tick += (_, _) => HealthTick();
 
+            ToggleLeftPanelCommand = new RelayCommand(() => IsLeftPanelOpen = !IsLeftPanelOpen);
+            ToggleRightPanelCommand = new RelayCommand(() => IsRightPanelOpen = !IsRightPanelOpen);
             ConnectCommand = new AsyncRelayCommand(ToggleConnectAsync);
             RestartTopCommand = new AsyncRelayCommand(
                 () => ManualRestartAsync(ScreenId.Top), () => IsConnected);

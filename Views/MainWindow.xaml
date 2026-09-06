@@ -1,16 +1,36 @@
 <Window x:Class="RGDSCapture.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:controls="clr-namespace:RGDSCapture.Views.Controls"
         Title="RGDSCapture"
-        Height="820" Width="1060"
-        MinHeight="620" MinWidth="780"
-        Background="{DynamicResource WindowBg}"
+        Height="860" Width="1320"
+        MinHeight="620" MinWidth="900"
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        Background="{DynamicResource BackdropBg}"
         WindowStartupLocation="CenterScreen"
         FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
         FontSize="13"
+        UseLayoutRounding="True"
         TextOptions.TextFormattingMode="Display"
         TextOptions.TextRenderingMode="ClearType">
+
+    <!--
+        Custom chrome. CaptionHeight matches the title bar row so native
+        drag / double-click-maximize / Aero snap keep working; every
+        interactive child in that band opts back in to hit testing with
+        WindowChrome.IsHitTestVisibleInChrome. Maximize is constrained to
+        the monitor work area in code-behind (WM_GETMINMAXINFO), which a
+        WindowStyle=None window otherwise gets wrong and covers the taskbar.
+    -->
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="38"
+                            ResizeBorderThickness="6"
+                            CornerRadius="0"
+                            GlassFrameThickness="0"
+                            UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
 
     <Window.InputBindings>
         <KeyBinding Key="F2" Command="{Binding FullscreenCommand}" CommandParameter="{Binding Top}"/>
@@ -22,246 +42,468 @@
         <KeyBinding Key="F9" Command="{Binding SaveReplayCommand}"/>
         <KeyBinding Key="F10" Command="{Binding SaveGifCommand}"/>
         <KeyBinding Key="F12" Command="{Binding ScreenshotCommand}"/>
+        <KeyBinding Key="B" Modifiers="Ctrl" Command="{Binding ToggleLeftPanelCommand}"/>
+        <KeyBinding Key="J" Modifiers="Ctrl" Command="{Binding ToggleRightPanelCommand}"/>
     </Window.InputBindings>
 
-    <DockPanel>
+    <Border x:Name="RootBorder" Background="{DynamicResource BackdropBg}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="38"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-        <!-- ── Menu bar ─────────────────────────────────────────── -->
-        <Menu DockPanel.Dock="Top"
-              BorderBrush="{DynamicResource MenuBorder}"
-              BorderThickness="0,0,0,1">
+            <!-- ══ Title bar ═══════════════════════════════════════ -->
+            <Border Grid.Row="0"
+                    Background="{DynamicResource TitleBarBg}"
+                    BorderBrush="{DynamicResource TitleBarBorder}"
+                    BorderThickness="0,0,0,1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-            <MenuItem Header="_File">
-                <MenuItem Header="_Connect"
-                          Command="{Binding ConnectCommand}"
-                          IsEnabled="{Binding IsDisconnected}"/>
-                <MenuItem Header="_Disconnect"
-                          Command="{Binding ConnectCommand}"
-                          IsEnabled="{Binding IsConnected}"/>
-                <MenuItem Header="_Forget Saved Credentials"
-                          Command="{Binding ForgetCredentialsCommand}"/>
-                <Separator/>
-                <MenuItem Header="_Screenshot"
-                          Command="{Binding ScreenshotCommand}"
-                          InputGestureText="F12"/>
-                <Separator/>
-                <MenuItem Header="E_xit"
-                          Click="MnuExit_Click"
-                          InputGestureText="Alt+F4"/>
-            </MenuItem>
+                    <!-- Identity + menus -->
+                    <StackPanel Grid.Column="0"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                shell:WindowChrome.IsHitTestVisibleInChrome="True">
 
-            <MenuItem Header="_Streams">
-                <MenuItem Header="Restart _Top Screen"
-                          Command="{Binding RestartTopCommand}"
-                          InputGestureText="F6"/>
-                <MenuItem Header="Restart _Bottom Screen"
-                          Command="{Binding RestartBottomCommand}"
-                          InputGestureText="F7"/>
-                <MenuItem Header="Restart _All"
-                          Command="{Binding RestartAllCommand}"
-                          InputGestureText="F5"/>
-                <Separator/>
-                <MenuItem Header="_Quality">
-                    <MenuItem Header="Low (1 Mbps per screen)"
-                              Command="{Binding SetQualityCommand}"
-                              CommandParameter="Low"
-                              IsChecked="{Binding IsQualityLow, Mode=OneWay}"/>
-                    <MenuItem Header="Medium (2 Mbps per screen)"
-                              Command="{Binding SetQualityCommand}"
-                              CommandParameter="Medium"
-                              IsChecked="{Binding IsQualityMedium, Mode=OneWay}"/>
-                    <MenuItem Header="High (4 Mbps per screen)"
-                              Command="{Binding SetQualityCommand}"
-                              CommandParameter="High"
-                              IsChecked="{Binding IsQualityHigh, Mode=OneWay}"/>
-                </MenuItem>
-                <Separator/>
-                <MenuItem Header="Record Top to MP4"
-                          Command="{Binding Top.ToggleRecordingCommand}"
-                          IsEnabled="{Binding IsConnected}"/>
-                <MenuItem Header="Record Bottom to MP4"
-                          Command="{Binding Bottom.ToggleRecordingCommand}"
-                          IsEnabled="{Binding IsConnectedDualScreen}"/>
-                <MenuItem Header="Record Combined (Screens + Audio)"
-                          Command="{Binding ToggleCombinedRecordingCommand}"/>
-                <Separator/>
-                <MenuItem Header="Save Instant Replay"
-                          Command="{Binding SaveReplayCommand}"
-                          InputGestureText="F9"/>
-                <MenuItem Header="Save Replay as GIF (last 10 s)"
-                          Command="{Binding SaveGifCommand}"
-                          InputGestureText="F10"/>
-                <MenuItem Header="Instant Replay Length">
-                    <MenuItem Header="15 seconds"
-                              Command="{Binding SetReplayLengthCommand}"
-                              CommandParameter="15"
-                              IsChecked="{Binding IsReplay15, Mode=OneWay}"/>
-                    <MenuItem Header="30 seconds"
-                              Command="{Binding SetReplayLengthCommand}"
-                              CommandParameter="30"
-                              IsChecked="{Binding IsReplay30, Mode=OneWay}"/>
-                    <MenuItem Header="60 seconds"
-                              Command="{Binding SetReplayLengthCommand}"
-                              CommandParameter="60"
-                              IsChecked="{Binding IsReplay60, Mode=OneWay}"/>
-                    <MenuItem Header="120 seconds"
-                              Command="{Binding SetReplayLengthCommand}"
-                              CommandParameter="120"
-                              IsChecked="{Binding IsReplay120, Mode=OneWay}"/>
-                </MenuItem>
-            </MenuItem>
+                        <Ellipse Width="8" Height="8"
+                                 Fill="{Binding StatusDotBrush}"
+                                 VerticalAlignment="Center"
+                                 Margin="14,0,9,0"
+                                 ToolTip="{Binding ConnectionLabel}"/>
 
-            <MenuItem Header="_Console">
-                <MenuItem Header="_Shutdown Console"
-                          Command="{Binding ShutdownCommand}"/>
-                <MenuItem Header="_Reboot Console"
-                          Command="{Binding RebootCommand}"/>
-            </MenuItem>
+                        <TextBlock Text="RGDSCapture"
+                                   Foreground="{DynamicResource TitleBarFg}"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,16,0"/>
 
-            <MenuItem Header="_View">
-                <MenuItem Header="_Layout" IsEnabled="{Binding IsDualScreenDevice}">
-                    <MenuItem Header="_Vertical Stack"
-                              Command="{Binding SetLayoutCommand}"
-                              CommandParameter="VerticalStack"
-                              IsChecked="{Binding IsLayoutVertical, Mode=OneWay}"/>
-                    <MenuItem Header="_Side by Side"
-                              Command="{Binding SetLayoutCommand}"
-                              CommandParameter="SideBySide"
-                              IsChecked="{Binding IsLayoutSideBySide, Mode=OneWay}"/>
-                    <MenuItem Header="Top _Only"
-                              Command="{Binding SetLayoutCommand}"
-                              CommandParameter="TopOnly"
-                              IsChecked="{Binding IsLayoutTopOnly, Mode=OneWay}"/>
-                    <MenuItem Header="_Bottom Only"
-                              Command="{Binding SetLayoutCommand}"
-                              CommandParameter="BottomOnly"
-                              IsChecked="{Binding IsLayoutBottomOnly, Mode=OneWay}"/>
-                    <MenuItem Header="_Hybrid (one large, one small)"
-                              Command="{Binding SetLayoutCommand}"
-                              CommandParameter="Hybrid"
-                              IsChecked="{Binding IsLayoutHybrid, Mode=OneWay}"/>
-                </MenuItem>
-                <MenuItem Header="S_wap Screens"
-                          Command="{Binding ToggleSwapCommand}"
-                          IsEnabled="{Binding IsDualScreenDevice}"
-                          IsChecked="{Binding IsSwapped, Mode=OneWay}"/>
-                <MenuItem Header="Screen _Gap" IsEnabled="{Binding IsDualScreenDevice}">
-                    <MenuItem Header="None"
-                              Command="{Binding SetScreenGapCommand}" CommandParameter="0"
-                              IsChecked="{Binding IsGapNone, Mode=OneWay}"/>
-                    <MenuItem Header="Small"
-                              Command="{Binding SetScreenGapCommand}" CommandParameter="4"
-                              IsChecked="{Binding IsGapSmall, Mode=OneWay}"/>
-                    <MenuItem Header="Normal"
-                              Command="{Binding SetScreenGapCommand}" CommandParameter="8"
-                              IsChecked="{Binding IsGapNormal, Mode=OneWay}"/>
-                    <MenuItem Header="Wide"
-                              Command="{Binding SetScreenGapCommand}" CommandParameter="16"
-                              IsChecked="{Binding IsGapWide, Mode=OneWay}"/>
-                </MenuItem>
-                <MenuItem Header="_Rotation">
-                    <MenuItem Header="Normal (0°)"
-                              Command="{Binding SetRotationCommand}" CommandParameter="0"
-                              IsChecked="{Binding IsRotation0, Mode=OneWay}"/>
-                    <MenuItem Header="90° clockwise"
-                              Command="{Binding SetRotationCommand}" CommandParameter="90"
-                              IsChecked="{Binding IsRotation90, Mode=OneWay}"/>
-                    <MenuItem Header="180°"
-                              Command="{Binding SetRotationCommand}" CommandParameter="180"
-                              IsChecked="{Binding IsRotation180, Mode=OneWay}"/>
-                    <MenuItem Header="90° counter-clockwise"
-                              Command="{Binding SetRotationCommand}" CommandParameter="270"
-                              IsChecked="{Binding IsRotation270, Mode=OneWay}"/>
-                </MenuItem>
-                <MenuItem Header="Video _Filter">
-                    <MenuItem Header="Sharp (pixel-perfect)"
-                              Command="{Binding SetScalingCommand}" CommandParameter="Sharp"
-                              IsChecked="{Binding IsScalingSharp, Mode=OneWay}"/>
-                    <MenuItem Header="Smooth"
-                              Command="{Binding SetScalingCommand}" CommandParameter="Smooth"
-                              IsChecked="{Binding IsScalingSmooth, Mode=OneWay}"/>
-                </MenuItem>
-                <Separator/>
-                <MenuItem Header="_Theme">
-                    <MenuItem Header="_Dark"
-                              Command="{Binding SetThemeCommand}"
-                              CommandParameter="Dark"
-                              IsChecked="{Binding IsThemeDark, Mode=OneWay}"/>
-                    <MenuItem Header="_Light"
-                              Command="{Binding SetThemeCommand}"
-                              CommandParameter="Light"
-                              IsChecked="{Binding IsThemeLight, Mode=OneWay}"/>
-                </MenuItem>
-                <Separator/>
-                <MenuItem Header="Show Stream _Stats"
-                          Command="{Binding ToggleStatsCommand}"
-                          IsChecked="{Binding IsStatsVisible, Mode=OneWay}"/>
-                <MenuItem Header="Toggle Event _Log"
-                          Command="{Binding Log.ToggleCommand}"
-                          InputGestureText="F8"/>
-            </MenuItem>
+                        <Menu VerticalAlignment="Stretch">
 
-        </Menu>
+                            <MenuItem Header="_File">
+                                <MenuItem Header="_Connect"
+                                          Command="{Binding ConnectCommand}"
+                                          IsEnabled="{Binding IsDisconnected}"/>
+                                <MenuItem Header="_Disconnect"
+                                          Command="{Binding ConnectCommand}"
+                                          IsEnabled="{Binding IsConnected}"/>
+                                <MenuItem Header="_Forget Saved Credentials"
+                                          Command="{Binding ForgetCredentialsCommand}"/>
+                                <Separator/>
+                                <MenuItem Header="_Screenshot"
+                                          Command="{Binding ScreenshotCommand}"
+                                          InputGestureText="F12"/>
+                                <Separator/>
+                                <MenuItem Header="E_xit"
+                                          Click="MnuExit_Click"
+                                          InputGestureText="Alt+F4"/>
+                            </MenuItem>
 
-        <!-- ── Toolbars ─────────────────────────────────────────── -->
-        <controls:ConnectionBar DockPanel.Dock="Top"/>
-        <controls:StreamControlBar DockPanel.Dock="Top"/>
-        <controls:AudioTimerBar DockPanel.Dock="Top"/>
+                            <MenuItem Header="_Streams">
+                                <MenuItem Header="Restart _Top Screen"
+                                          Command="{Binding RestartTopCommand}"
+                                          InputGestureText="F6"/>
+                                <MenuItem Header="Restart _Bottom Screen"
+                                          Command="{Binding RestartBottomCommand}"
+                                          InputGestureText="F7"/>
+                                <MenuItem Header="Restart _All"
+                                          Command="{Binding RestartAllCommand}"
+                                          InputGestureText="F5"/>
+                                <Separator/>
+                                <MenuItem Header="_Quality">
+                                    <MenuItem Header="Low (1 Mbps per screen)"
+                                              Command="{Binding SetQualityCommand}"
+                                              CommandParameter="Low"
+                                              IsChecked="{Binding IsQualityLow, Mode=OneWay}"/>
+                                    <MenuItem Header="Medium (2 Mbps per screen)"
+                                              Command="{Binding SetQualityCommand}"
+                                              CommandParameter="Medium"
+                                              IsChecked="{Binding IsQualityMedium, Mode=OneWay}"/>
+                                    <MenuItem Header="High (4 Mbps per screen)"
+                                              Command="{Binding SetQualityCommand}"
+                                              CommandParameter="High"
+                                              IsChecked="{Binding IsQualityHigh, Mode=OneWay}"/>
+                                </MenuItem>
+                                <Separator/>
+                                <MenuItem Header="Record Top to MP4"
+                                          Command="{Binding Top.ToggleRecordingCommand}"
+                                          IsEnabled="{Binding IsConnected}"/>
+                                <MenuItem Header="Record Bottom to MP4"
+                                          Command="{Binding Bottom.ToggleRecordingCommand}"
+                                          IsEnabled="{Binding IsConnectedDualScreen}"/>
+                                <MenuItem Header="Record Combined (Screens + Audio)"
+                                          Command="{Binding ToggleCombinedRecordingCommand}"/>
+                                <Separator/>
+                                <MenuItem Header="Save Instant Replay"
+                                          Command="{Binding SaveReplayCommand}"
+                                          InputGestureText="F9"/>
+                                <MenuItem Header="Save Replay as GIF (last 10 s)"
+                                          Command="{Binding SaveGifCommand}"
+                                          InputGestureText="F10"/>
+                                <MenuItem Header="Instant Replay Length">
+                                    <MenuItem Header="15 seconds"
+                                              Command="{Binding SetReplayLengthCommand}"
+                                              CommandParameter="15"
+                                              IsChecked="{Binding IsReplay15, Mode=OneWay}"/>
+                                    <MenuItem Header="30 seconds"
+                                              Command="{Binding SetReplayLengthCommand}"
+                                              CommandParameter="30"
+                                              IsChecked="{Binding IsReplay30, Mode=OneWay}"/>
+                                    <MenuItem Header="60 seconds"
+                                              Command="{Binding SetReplayLengthCommand}"
+                                              CommandParameter="60"
+                                              IsChecked="{Binding IsReplay60, Mode=OneWay}"/>
+                                    <MenuItem Header="120 seconds"
+                                              Command="{Binding SetReplayLengthCommand}"
+                                              CommandParameter="120"
+                                              IsChecked="{Binding IsReplay120, Mode=OneWay}"/>
+                                </MenuItem>
+                            </MenuItem>
 
-        <!-- ── Status bar ───────────────────────────────────────── -->
-        <Border DockPanel.Dock="Bottom"
-                Background="{DynamicResource StatusBarBg}"
-                BorderBrush="{DynamicResource StatusBarBorder}"
-                BorderThickness="0,1,0,0"
-                Padding="14,5">
-            <DockPanel LastChildFill="False">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Ellipse Width="8" Height="8"
-                             Fill="{Binding StatusDotBrush}"
-                             VerticalAlignment="Center"
-                             Margin="0,0,8,0"/>
-                    <TextBlock Text="{Binding StatusMessage}" FontSize="12">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Foreground"
-                                        Value="{DynamicResource StatusFg}"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding StatusIsError}" Value="True">
-                                        <Setter Property="Foreground"
-                                                Value="{DynamicResource StatusErrorFg}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </StackPanel>
+                            <MenuItem Header="_Console">
+                                <MenuItem Header="_Shutdown Console"
+                                          Command="{Binding ShutdownCommand}"/>
+                                <MenuItem Header="_Reboot Console"
+                                          Command="{Binding RebootCommand}"/>
+                            </MenuItem>
 
-                <TextBlock DockPanel.Dock="Right"
-                           Foreground="{DynamicResource TextDisabled}"
-                           FontSize="11"
-                           VerticalAlignment="Center"
-                           Text="F2/F3 Fullscreen  ·  F5–F7 Restart  ·  F8 Log  ·  F9 Replay  ·  F10 GIF  ·  F12 Screenshot  ·  Space Timer"/>
-            </DockPanel>
-        </Border>
+                            <MenuItem Header="_View">
+                                <MenuItem Header="_Layout" IsEnabled="{Binding IsDualScreenDevice}">
+                                    <MenuItem Header="_Vertical Stack"
+                                              Command="{Binding SetLayoutCommand}"
+                                              CommandParameter="VerticalStack"
+                                              IsChecked="{Binding IsLayoutVertical, Mode=OneWay}"/>
+                                    <MenuItem Header="_Side by Side"
+                                              Command="{Binding SetLayoutCommand}"
+                                              CommandParameter="SideBySide"
+                                              IsChecked="{Binding IsLayoutSideBySide, Mode=OneWay}"/>
+                                    <MenuItem Header="Top _Only"
+                                              Command="{Binding SetLayoutCommand}"
+                                              CommandParameter="TopOnly"
+                                              IsChecked="{Binding IsLayoutTopOnly, Mode=OneWay}"/>
+                                    <MenuItem Header="_Bottom Only"
+                                              Command="{Binding SetLayoutCommand}"
+                                              CommandParameter="BottomOnly"
+                                              IsChecked="{Binding IsLayoutBottomOnly, Mode=OneWay}"/>
+                                    <MenuItem Header="_Hybrid (one large, one small)"
+                                              Command="{Binding SetLayoutCommand}"
+                                              CommandParameter="Hybrid"
+                                              IsChecked="{Binding IsLayoutHybrid, Mode=OneWay}"/>
+                                </MenuItem>
+                                <MenuItem Header="S_wap Screens"
+                                          Command="{Binding ToggleSwapCommand}"
+                                          IsEnabled="{Binding IsDualScreenDevice}"
+                                          IsChecked="{Binding IsSwapped, Mode=OneWay}"/>
+                                <MenuItem Header="Screen _Gap" IsEnabled="{Binding IsDualScreenDevice}">
+                                    <MenuItem Header="None"
+                                              Command="{Binding SetScreenGapCommand}" CommandParameter="0"
+                                              IsChecked="{Binding IsGapNone, Mode=OneWay}"/>
+                                    <MenuItem Header="Small"
+                                              Command="{Binding SetScreenGapCommand}" CommandParameter="4"
+                                              IsChecked="{Binding IsGapSmall, Mode=OneWay}"/>
+                                    <MenuItem Header="Normal"
+                                              Command="{Binding SetScreenGapCommand}" CommandParameter="8"
+                                              IsChecked="{Binding IsGapNormal, Mode=OneWay}"/>
+                                    <MenuItem Header="Wide"
+                                              Command="{Binding SetScreenGapCommand}" CommandParameter="16"
+                                              IsChecked="{Binding IsGapWide, Mode=OneWay}"/>
+                                </MenuItem>
+                                <MenuItem Header="_Rotation">
+                                    <MenuItem Header="Normal (0°)"
+                                              Command="{Binding SetRotationCommand}" CommandParameter="0"
+                                              IsChecked="{Binding IsRotation0, Mode=OneWay}"/>
+                                    <MenuItem Header="90° clockwise"
+                                              Command="{Binding SetRotationCommand}" CommandParameter="90"
+                                              IsChecked="{Binding IsRotation90, Mode=OneWay}"/>
+                                    <MenuItem Header="180°"
+                                              Command="{Binding SetRotationCommand}" CommandParameter="180"
+                                              IsChecked="{Binding IsRotation180, Mode=OneWay}"/>
+                                    <MenuItem Header="90° counter-clockwise"
+                                              Command="{Binding SetRotationCommand}" CommandParameter="270"
+                                              IsChecked="{Binding IsRotation270, Mode=OneWay}"/>
+                                </MenuItem>
+                                <MenuItem Header="Video _Filter">
+                                    <MenuItem Header="Sharp (pixel-perfect)"
+                                              Command="{Binding SetScalingCommand}" CommandParameter="Sharp"
+                                              IsChecked="{Binding IsScalingSharp, Mode=OneWay}"/>
+                                    <MenuItem Header="Smooth"
+                                              Command="{Binding SetScalingCommand}" CommandParameter="Smooth"
+                                              IsChecked="{Binding IsScalingSmooth, Mode=OneWay}"/>
+                                </MenuItem>
+                                <Separator/>
+                                <MenuItem Header="_Theme">
+                                    <MenuItem Header="_Dark"
+                                              Command="{Binding SetThemeCommand}"
+                                              CommandParameter="Dark"
+                                              IsChecked="{Binding IsThemeDark, Mode=OneWay}"/>
+                                    <MenuItem Header="_Light"
+                                              Command="{Binding SetThemeCommand}"
+                                              CommandParameter="Light"
+                                              IsChecked="{Binding IsThemeLight, Mode=OneWay}"/>
+                                </MenuItem>
+                                <Separator/>
+                                <MenuItem Header="Show _Device Panel"
+                                          Command="{Binding ToggleLeftPanelCommand}"
+                                          IsChecked="{Binding IsLeftPanelOpen, Mode=OneWay}"
+                                          InputGestureText="Ctrl+B"/>
+                                <MenuItem Header="Show _Capture Panel"
+                                          Command="{Binding ToggleRightPanelCommand}"
+                                          IsChecked="{Binding IsRightPanelOpen, Mode=OneWay}"
+                                          InputGestureText="Ctrl+J"/>
+                                <Separator/>
+                                <MenuItem Header="Show Stream _Stats"
+                                          Command="{Binding ToggleStatsCommand}"
+                                          IsChecked="{Binding IsStatsVisible, Mode=OneWay}"/>
+                                <MenuItem Header="Toggle Event _Log"
+                                          Command="{Binding Log.ToggleCommand}"
+                                          InputGestureText="F8"/>
+                            </MenuItem>
 
-        <!-- ── Video area + log drawer overlay ─────────────────── -->
-        <Grid ClipToBounds="True">
-            <Grid x:Name="VideoGrid" Background="{DynamicResource VideoAreaBg}">
-                <Grid.RowDefinitions>
-                    <RowDefinition x:Name="VideoRow0" Height="*"/>
-                    <RowDefinition x:Name="VideoRow1" Height="*"/>
-                </Grid.RowDefinitions>
+                        </Menu>
+                    </StackPanel>
+
+                    <!-- Device summary — inert so the whole strip stays draggable -->
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding DeviceSummary}"
+                               Foreground="{DynamicResource TextTertiary}"
+                               FontSize="11"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               IsHitTestVisible="False"
+                               TextTrimming="CharacterEllipsis"
+                               Margin="24,0"/>
+
+                    <!-- Panel toggles + caption buttons -->
+                    <StackPanel Grid.Column="2"
+                                Orientation="Horizontal"
+                                shell:WindowChrome.IsHitTestVisibleInChrome="True">
+
+                        <Button Style="{StaticResource CaptionButton}"
+                                Command="{Binding ToggleLeftPanelCommand}"
+                                AutomationProperties.Name="Toggle device panel"
+                                ToolTip="Show / hide the device panel  (Ctrl+B)">
+                            <Grid Width="15" Height="12">
+                                <Rectangle Stroke="{Binding Foreground,
+                                                    RelativeSource={RelativeSource AncestorType=Button}}"
+                                           StrokeThickness="1.2" RadiusX="2" RadiusY="2"/>
+                                <Rectangle Width="4.5"
+                                           HorizontalAlignment="Left"
+                                           Margin="1.2"
+                                           Fill="{Binding Foreground,
+                                                  RelativeSource={RelativeSource AncestorType=Button}}"/>
+                            </Grid>
+                        </Button>
+
+                        <Button Style="{StaticResource CaptionButton}"
+                                Command="{Binding ToggleRightPanelCommand}"
+                                Margin="0,0,6,0"
+                                AutomationProperties.Name="Toggle capture panel"
+                                ToolTip="Show / hide the capture panel  (Ctrl+J)">
+                            <Grid Width="15" Height="12">
+                                <Rectangle Stroke="{Binding Foreground,
+                                                    RelativeSource={RelativeSource AncestorType=Button}}"
+                                           StrokeThickness="1.2" RadiusX="2" RadiusY="2"/>
+                                <Rectangle Width="4.5"
+                                           HorizontalAlignment="Right"
+                                           Margin="1.2"
+                                           Fill="{Binding Foreground,
+                                                  RelativeSource={RelativeSource AncestorType=Button}}"/>
+                            </Grid>
+                        </Button>
+
+                        <Button x:Name="BtnMinimize"
+                                Style="{StaticResource CaptionButton}"
+                                Click="BtnMinimize_Click"
+                                AutomationProperties.Name="Minimize">
+                            <Path Data="M 0 0 H 10"
+                                  Stroke="{Binding Foreground,
+                                           RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.2"/>
+                        </Button>
+
+                        <Button x:Name="BtnMaximize"
+                                Style="{StaticResource CaptionButton}"
+                                Click="BtnMaximize_Click"
+                                AutomationProperties.Name="Maximize or restore">
+                            <Path x:Name="MaximizeGlyph"
+                                  Data="M 0.5 0.5 H 9.5 V 9.5 H 0.5 Z"
+                                  Stroke="{Binding Foreground,
+                                           RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.2"/>
+                        </Button>
+
+                        <Button x:Name="BtnClose"
+                                Style="{StaticResource CaptionCloseButton}"
+                                Click="BtnClose_Click"
+                                AutomationProperties.Name="Close">
+                            <Path Data="M 0 0 L 10 10 M 10 0 L 0 10"
+                                  Stroke="{Binding Foreground,
+                                           RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.2"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ══ Body: left column · video · right column ════════ -->
+            <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition x:Name="VideoCol0" Width="*"/>
-                    <ColumnDefinition x:Name="VideoCol1" Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <controls:ScreenView x:Name="TopView" DataContext="{Binding Top}"/>
-                <controls:ScreenView x:Name="BottomView" DataContext="{Binding Bottom}"/>
+                <!--
+                    Each column is a fixed-width panel inside a clipping host
+                    whose Width animates to 0 when collapsed; the Auto grid
+                    column then takes no space. The inner control keeps its
+                    full width so its contents never reflow mid-animation.
+                -->
+                <Border x:Name="LeftPanelHost"
+                        Grid.Column="0"
+                        Width="268"
+                        ClipToBounds="True"
+                        BorderThickness="0,0,1,0">
+                    <Border.Style>
+                        <Style TargetType="Border" BasedOn="{StaticResource SidebarSurface}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsLeftPanelOpen}" Value="False">
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetProperty="Width"
+                                                                 To="0" Duration="0:0:0.18">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseIn"/>
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                    <DataTrigger.ExitActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetProperty="Width"
+                                                                 To="268" Duration="0:0:0.18">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseOut"/>
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.ExitActions>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <controls:DevicePanel Width="268" HorizontalAlignment="Left"/>
+                </Border>
+
+                <!-- Video stage + log drawer overlay -->
+                <Grid Grid.Column="1" ClipToBounds="True">
+                    <Grid x:Name="VideoGrid"
+                          Background="{DynamicResource VideoAreaBg}"
+                          Margin="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition x:Name="VideoRow0" Height="*"/>
+                            <RowDefinition x:Name="VideoRow1" Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition x:Name="VideoCol0" Width="*"/>
+                            <ColumnDefinition x:Name="VideoCol1" Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <controls:ScreenView x:Name="TopView" DataContext="{Binding Top}"/>
+                        <controls:ScreenView x:Name="BottomView" DataContext="{Binding Bottom}"/>
+                    </Grid>
+
+                    <controls:LogDrawer/>
+                </Grid>
+
+                <Border x:Name="RightPanelHost"
+                        Grid.Column="2"
+                        Width="268"
+                        ClipToBounds="True"
+                        BorderThickness="1,0,0,0">
+                    <Border.Style>
+                        <Style TargetType="Border" BasedOn="{StaticResource SidebarSurface}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsRightPanelOpen}" Value="False">
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetProperty="Width"
+                                                                 To="0" Duration="0:0:0.18">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseIn"/>
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                    <DataTrigger.ExitActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetProperty="Width"
+                                                                 To="268" Duration="0:0:0.18">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseOut"/>
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.ExitActions>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <controls:CapturePanel Width="268" HorizontalAlignment="Right"/>
+                </Border>
             </Grid>
 
-            <controls:LogDrawer/>
-        </Grid>
+            <!-- ══ Status strip ════════════════════════════════════ -->
+            <Border Grid.Row="2"
+                    Background="{DynamicResource StatusBarBg}"
+                    BorderBrush="{DynamicResource StatusBarBorder}"
+                    BorderThickness="0,1,0,0"
+                    Padding="14,6">
+                <DockPanel LastChildFill="False">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Ellipse Width="7" Height="7"
+                                 Fill="{Binding StatusDotBrush}"
+                                 VerticalAlignment="Center"
+                                 Margin="0,0,9,0"/>
+                        <TextBlock Text="{Binding StatusMessage}" FontSize="12">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground"
+                                            Value="{DynamicResource StatusFg}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding StatusIsError}" Value="True">
+                                            <Setter Property="Foreground"
+                                                    Value="{DynamicResource StatusErrorFg}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
 
-    </DockPanel>
+                    <TextBlock DockPanel.Dock="Right"
+                               Foreground="{DynamicResource TextTertiary}"
+                               FontSize="11"
+                               VerticalAlignment="Center"
+                               Text="F2/F3 Fullscreen · F5–F7 Restart · F8 Log · F9 Replay · F10 GIF · F12 Shot · Space Timer"/>
+                </DockPanel>
+            </Border>
+
+        </Grid>
+    </Border>
 </Window>

@@ -1,0 +1,306 @@
+<UserControl x:Class="RGDSCapture.Views.Controls.DevicePanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Left column. DataContext: MainViewModel.
+        Everything here is "how the session is set up" — which device,
+        how the streams are encoded, how the picture is arranged.
+        The capture/performance controls live in CapturePanel.
+    -->
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled"
+                  Padding="12,12,12,12">
+        <StackPanel>
+
+            <!-- ══ Connection ══════════════════════════════════════ -->
+            <Border Style="{StaticResource SidebarCard}">
+                <StackPanel>
+                    <TextBlock Text="CONNECTION" Style="{StaticResource SectionHeader}"/>
+
+                    <TextBlock Text="Device" Style="{StaticResource FieldLabel}"/>
+                    <ComboBox IsEnabled="{Binding IsDisconnected}"
+                              SelectedValuePath="Tag"
+                              SelectedValue="{Binding DeviceType}"
+                              Margin="0,0,0,10"
+                              AutomationProperties.Name="Device type"
+                              ToolTip="Which Anbernic device this is">
+                        <ComboBoxItem Content="RG DS (dual-screen)" Tag="RgDualScreen"/>
+                        <ComboBoxItem Content="RG353V (single-screen)" Tag="Rg353V"/>
+                    </ComboBox>
+
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="72"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Address" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Text="{Binding DeviceIp, UpdateSourceTrigger=PropertyChanged}"
+                                     IsEnabled="{Binding IsDisconnected}"
+                                     AutomationProperties.Name="Device IP Address"
+                                     ToolTip="IP address of your device"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Port" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Text="{Binding SshPortText, UpdateSourceTrigger=PropertyChanged}"
+                                     IsEnabled="{Binding IsDisconnected}"
+                                     AutomationProperties.Name="SSH Port"
+                                     ToolTip="SSH port (usually 22)"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Button Style="{StaticResource AccentButton}"
+                            Content="{Binding ConnectButtonText}"
+                            Command="{Binding ConnectCommand}"
+                            HorizontalAlignment="Stretch"
+                            AutomationProperties.Name="Connect to device"
+                            ToolTip="SSH into the device and start streams"/>
+
+                    <Border Style="{StaticResource CardDivider}"/>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse Width="7" Height="7"
+                                 Fill="{Binding StatusDotBrush}"
+                                 VerticalAlignment="Center"
+                                 Margin="0,0,8,0"/>
+                        <TextBlock Text="{Binding ConnectionLabel}"
+                                   Style="{StaticResource ValueText}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ══ Streams ═════════════════════════════════════════ -->
+            <Border Style="{StaticResource SidebarCard}">
+                <StackPanel>
+                    <TextBlock Text="STREAMS" Style="{StaticResource SectionHeader}"/>
+
+                    <TextBlock Text="Restart" Style="{StaticResource FieldLabel}"/>
+                    <UniformGrid Rows="1" Columns="3" Margin="0,0,0,12">
+                        <Button Content="↺ Top"
+                                Command="{Binding RestartTopCommand}"
+                                Margin="0,0,4,0"
+                                FontSize="12" Padding="4,7"
+                                AutomationProperties.Name="Restart top stream"
+                                ToolTip="Restart top screen stream  (F6)"/>
+                        <Button Content="↺ Bot"
+                                Command="{Binding RestartBottomCommand}"
+                                Margin="2,0,2,0"
+                                FontSize="12" Padding="4,7"
+                                AutomationProperties.Name="Restart bottom stream"
+                                ToolTip="Restart bottom screen stream  (F7)"/>
+                        <Button Content="↺ All"
+                                Command="{Binding RestartAllCommand}"
+                                Margin="4,0,0,0"
+                                FontSize="12" Padding="4,7"
+                                AutomationProperties.Name="Restart all streams"
+                                ToolTip="Restart all streams  (F5)"/>
+                    </UniformGrid>
+
+                    <TextBlock Text="Quality" Style="{StaticResource FieldLabel}"/>
+                    <Border Style="{StaticResource SegmentTrack}">
+                        <UniformGrid Rows="1" Columns="3">
+                            <RadioButton Style="{StaticResource SegmentRadio}"
+                                         GroupName="Quality"
+                                         Content="Low"
+                                         IsChecked="{Binding IsQualityLow, Mode=OneWay}"
+                                         Command="{Binding SetQualityCommand}"
+                                         CommandParameter="Low"
+                                         ToolTip="1 Mbps per screen — congested WiFi"/>
+                            <RadioButton Style="{StaticResource SegmentRadio}"
+                                         GroupName="Quality"
+                                         Content="Medium"
+                                         IsChecked="{Binding IsQualityMedium, Mode=OneWay}"
+                                         Command="{Binding SetQualityCommand}"
+                                         CommandParameter="Medium"
+                                         ToolTip="2 Mbps per screen — default"/>
+                            <RadioButton Style="{StaticResource SegmentRadio}"
+                                         GroupName="Quality"
+                                         Content="High"
+                                         IsChecked="{Binding IsQualityHigh, Mode=OneWay}"
+                                         Command="{Binding SetQualityCommand}"
+                                         CommandParameter="High"
+                                         ToolTip="4 Mbps per screen — strong network"/>
+                        </UniformGrid>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- ══ Display ═════════════════════════════════════════ -->
+            <Border Style="{StaticResource SidebarCard}">
+                <StackPanel>
+                    <TextBlock Text="DISPLAY" Style="{StaticResource SectionHeader}"/>
+
+                    <!-- Layout: five modes, so two rows rather than a strip -->
+                    <TextBlock Text="Layout" Style="{StaticResource FieldLabel}"
+                               IsEnabled="{Binding IsDualScreenDevice}"/>
+                    <Border Style="{StaticResource SegmentTrack}"
+                            IsEnabled="{Binding IsDualScreenDevice}"
+                            Margin="0,0,0,12">
+                        <UniformGrid Rows="2" Columns="3">
+                            <RadioButton Style="{StaticResource SegmentRadio}"
+                                         GroupName="Layout"
+                                         Content="Stack"
+                                         IsChecked="{Binding IsLayoutVertical, Mode=OneWay}"
+                                         Command="{Binding SetLayoutCommand}"
+                                         CommandParameter="VerticalStack"
+                                         ToolTip="Vertical stack — top over bottom"/>
+                            <RadioButton Style="{StaticResource SegmentRadio}"
+                                         GroupName="Layout"
+                                         Content="Side"
+                                         IsChecked="{Binding IsLayoutSideBySide, Mode=OneWay}"
+                                         Command="{Binding SetLayoutCommand}"
+                                         CommandParameter="SideBySide"
+                                         ToolTip="Side by side"/>
+                            <RadioButton Style="{StaticResource SegmentRadio}"
+                                         GroupName="Layout"
+                                         Content="Hybrid"
+                                         IsChecked="{Binding IsLayoutHybrid, Mode=OneWay}"
+                                         Command="{Binding SetLayoutCommand}"
+                                         CommandParameter="Hybrid"
+                                         ToolTip="melonDS-style — one large, one small"/>
+                            <RadioButton Style="{StaticResource SegmentRadio}"
+                                         GroupName="Layout"
+                                         Content="Top"
+                                         IsChecked="{Binding IsLayoutTopOnly, Mode=OneWay}"
+                                         Command="{Binding SetLayoutCommand}"
+                                         CommandParameter="TopOnly"
+                                         ToolTip="Top screen only"/>
+                            <RadioButton Style="{StaticResource SegmentRadio}"
+                                         GroupName="Layout"
+                                         Content="Bottom"
+                                         IsChecked="{Binding IsLayoutBottomOnly, Mode=OneWay}"
+                                         Command="{Binding SetLayoutCommand}"
+                                         CommandParameter="BottomOnly"
+                                         ToolTip="Bottom screen only"/>
+                            <ToggleButton Style="{StaticResource ToggleChip}"
+                                          Content="Swap"
+                                          Margin="1"
+                                          IsChecked="{Binding IsSwapped, Mode=OneWay}"
+                                          Command="{Binding ToggleSwapCommand}"
+                                          ToolTip="Swap which screen takes the primary position"/>
+                        </UniformGrid>
+                    </Border>
+
+                    <TextBlock Text="Rotation" Style="{StaticResource FieldLabel}"/>
+                    <Border Style="{StaticResource SegmentTrack}" Margin="0,0,0,12">
+                        <UniformGrid Rows="1" Columns="4">
+                            <RadioButton Style="{StaticResource SegmentRadio}"
+                                         GroupName="Rotation" Content="0°"
+                                         IsChecked="{Binding IsRotation0, Mode=OneWay}"
+                                         Command="{Binding SetRotationCommand}"
+                                         CommandParameter="0"/>
+                            <RadioButton Style="{StaticResource SegmentRadio}"
+                                         GroupName="Rotation" Content="90°"
+                                         IsChecked="{Binding IsRotation90, Mode=OneWay}"
+                                         Command="{Binding SetRotationCommand}"
+                                         CommandParameter="90"
+                                         ToolTip="90° clockwise"/>
+                            <RadioButton Style="{StaticResource SegmentRadio}"
+                                         GroupName="Rotation" Content="180°"
+                                         IsChecked="{Binding IsRotation180, Mode=OneWay}"
+                                         Command="{Binding SetRotationCommand}"
+                                         CommandParameter="180"/>
+                            <RadioButton Style="{StaticResource SegmentRadio}"
+                                         GroupName="Rotation" Content="270°"
+                                         IsChecked="{Binding IsRotation270, Mode=OneWay}"
+                                         Command="{Binding SetRotationCommand}"
+                                         CommandParameter="270"
+                                         ToolTip="90° counter-clockwise"/>
+                        </UniformGrid>
+                    </Border>
+
+                    <TextBlock Text="Screen gap" Style="{StaticResource FieldLabel}"
+                               IsEnabled="{Binding IsDualScreenDevice}"/>
+                    <Border Style="{StaticResource SegmentTrack}"
+                            IsEnabled="{Binding IsDualScreenDevice}"
+                            Margin="0,0,0,12">
+                        <UniformGrid Rows="1" Columns="4">
+                            <RadioButton Style="{StaticResource SegmentRadio}"
+                                         GroupName="Gap" Content="None"
+                                         IsChecked="{Binding IsGapNone, Mode=OneWay}"
+                                         Command="{Binding SetScreenGapCommand}"
+                                         CommandParameter="0"/>
+                            <RadioButton Style="{StaticResource SegmentRadio}"
+                                         GroupName="Gap" Content="S"
+                                         IsChecked="{Binding IsGapSmall, Mode=OneWay}"
+                                         Command="{Binding SetScreenGapCommand}"
+                                         CommandParameter="4"/>
+                            <RadioButton Style="{StaticResource SegmentRadio}"
+                                         GroupName="Gap" Content="M"
+                                         IsChecked="{Binding IsGapNormal, Mode=OneWay}"
+                                         Command="{Binding SetScreenGapCommand}"
+                                         CommandParameter="8"/>
+                            <RadioButton Style="{StaticResource SegmentRadio}"
+                                         GroupName="Gap" Content="L"
+                                         IsChecked="{Binding IsGapWide, Mode=OneWay}"
+                                         Command="{Binding SetScreenGapCommand}"
+                                         CommandParameter="16"/>
+                        </UniformGrid>
+                    </Border>
+
+                    <TextBlock Text="Scaling" Style="{StaticResource FieldLabel}"/>
+                    <Border Style="{StaticResource SegmentTrack}" Margin="0,0,0,12">
+                        <UniformGrid Rows="1" Columns="2">
+                            <RadioButton Style="{StaticResource SegmentRadio}"
+                                         GroupName="Scaling" Content="Sharp"
+                                         IsChecked="{Binding IsScalingSharp, Mode=OneWay}"
+                                         Command="{Binding SetScalingCommand}"
+                                         CommandParameter="Sharp"
+                                         ToolTip="Pixel-perfect nearest-neighbour"/>
+                            <RadioButton Style="{StaticResource SegmentRadio}"
+                                         GroupName="Scaling" Content="Smooth"
+                                         IsChecked="{Binding IsScalingSmooth, Mode=OneWay}"
+                                         Command="{Binding SetScalingCommand}"
+                                         CommandParameter="Smooth"
+                                         ToolTip="Filtered smooth scaling"/>
+                        </UniformGrid>
+                    </Border>
+
+                    <UniformGrid Rows="1" Columns="2">
+                        <ToggleButton Style="{StaticResource ToggleChip}"
+                                      Content="Stats"
+                                      Margin="0,0,4,0"
+                                      IsChecked="{Binding IsStatsVisible, Mode=OneWay}"
+                                      Command="{Binding ToggleStatsCommand}"
+                                      ToolTip="Show the per-screen bitrate / packet-loss overlay"/>
+                        <ToggleButton Style="{StaticResource ToggleChip}"
+                                      Content="Log"
+                                      Margin="4,0,0,0"
+                                      IsChecked="{Binding Log.IsOpen, Mode=OneWay}"
+                                      Command="{Binding Log.ToggleCommand}"
+                                      ToolTip="Show / hide the event log  (F8)"/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+
+            <!-- ══ Console power ═══════════════════════════════════ -->
+            <Border Style="{StaticResource SidebarCard}">
+                <StackPanel>
+                    <TextBlock Text="CONSOLE" Style="{StaticResource SectionHeader}"/>
+                    <UniformGrid Rows="1" Columns="2">
+                        <Button Content="Shutdown"
+                                Style="{StaticResource DangerButton}"
+                                Command="{Binding ShutdownCommand}"
+                                Margin="0,0,4,0"
+                                FontSize="12" Padding="4,7"
+                                AutomationProperties.Name="Shutdown console"
+                                ToolTip="Send shutdown command to the console"/>
+                        <Button Content="Reboot"
+                                Style="{StaticResource DangerButton}"
+                                Command="{Binding RebootCommand}"
+                                Margin="4,0,0,0"
+                                FontSize="12" Padding="4,7"
+                                AutomationProperties.Name="Reboot console"
+                                ToolTip="Send reboot command to the console"/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,8 +1,12 @@
+using System;
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Interop;
+using System.Windows.Media;
 using RGDSCapture.Core;
 using RGDSCapture.ViewModels;
 
@@ -10,8 +14,9 @@ namespace RGDSCapture.Views
 {
     /// <summary>
     /// Thin shell: wires the MainViewModel to view-only concerns
-    /// (dialogs, layout grid spans, fullscreen window, Space shortcut,
-    /// shutdown sequencing). All behavior lives in the view-models.
+    /// (window chrome, dialogs, layout grid spans, fullscreen window,
+    /// Space shortcut, shutdown sequencing). All behavior lives in the
+    /// view-models.
     /// </summary>
     public partial class MainWindow : Window
     {
@@ -19,6 +24,13 @@ namespace RGDSCapture.Views
         private FullScreenWindow? _fullscreen;
         private bool _shutdownStarted;
         private bool _shutdownComplete;
+
+        // Caption glyphs: a single square when restorable, two offset
+        // squares when already maximized.
+        private static readonly Geometry MaximizeGeometry =
+            Geometry.Parse("M 0.5 0.5 H 9.5 V 9.5 H 0.5 Z");
+        private static readonly Geometry RestoreGeometry =
+            Geometry.Parse("M 2.5 0.5 H 9.5 V 7.5 M 0.5 2.5 H 7.5 V 9.5 H 0.5 Z");
 
         public MainWindow(MainViewModel vm)
         {
@@ -35,7 +47,117 @@ namespace RGDSCapture.Views
 
             PreviewKeyDown += OnPreviewKeyDown;
             Closing += OnClosingAsync;
-            Loaded += (_, _) => ApplyLayout();
+            SourceInitialized += OnSourceInitialized;
+            StateChanged += (_, _) => UpdateMaximizeGlyph();
+            Loaded += (_, _) =>
+            {
+                ApplyLayout();
+                ApplyPanelState();
+                UpdateMaximizeGlyph();
+            };
+        }
+
+        // ── Window chrome ─────────────────────────────────────────
+        // A WindowStyle=None window maximizes to the full monitor
+        // rectangle by default, covering the taskbar. Clamping
+        // WM_GETMINMAXINFO to the monitor's work area fixes that, and
+        // does it per-monitor so it stays correct on mixed-DPI setups.
+        private void OnSourceInitialized(object? sender, EventArgs e)
+        {
+            var handle = new WindowInteropHelper(this).Handle;
+            HwndSource.FromHwnd(handle)?.AddHook(WindowProc);
+        }
+
+        private static IntPtr WindowProc(
+            IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            const int WM_GETMINMAXINFO = 0x0024;
+            if (msg == WM_GETMINMAXINFO)
+            {
+                ClampToWorkArea(hwnd, lParam);
+                handled = true;
+            }
+            return IntPtr.Zero;
+        }
+
+        private static void ClampToWorkArea(IntPtr hwnd, IntPtr lParam)
+        {
+            const int MONITOR_DEFAULTTONEAREST = 0x00000002;
+
+            IntPtr monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+            if (monitor == IntPtr.Zero) return;
+
+            var info = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
+            if (!GetMonitorInfo(monitor, ref info)) return;
+
+            var mmi = Marshal.PtrToStructure<MINMAXINFO>(lParam);
+
+            // Work area, expressed relative to the monitor's own origin.
+            mmi.ptMaxPosition.X = info.rcWork.Left - info.rcMonitor.Left;
+            mmi.ptMaxPosition.Y = info.rcWork.Top - info.rcMonitor.Top;
+            mmi.ptMaxSize.X = info.rcWork.Right - info.rcWork.Left;
+            mmi.ptMaxSize.Y = info.rcWork.Bottom - info.rcWork.Top;
+
+            Marshal.StructureToPtr(mmi, lParam, true);
+        }
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr MonitorFromWindow(IntPtr hwnd, int flags);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct POINT { public int X; public int Y; }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT { public int Left, Top, Right, Bottom; }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MONITORINFO
+        {
+            public int cbSize;
+            public RECT rcMonitor;
+            public RECT rcWork;
+            public int dwFlags;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MINMAXINFO
+        {
+            public POINT ptReserved;
+            public POINT ptMaxSize;
+            public POINT ptMaxPosition;
+            public POINT ptMinTrackSize;
+            public POINT ptMaxTrackSize;
+        }
+
+        private void UpdateMaximizeGlyph()
+        {
+            bool maximized = WindowState == WindowState.Maximized;
+            MaximizeGlyph.Data = maximized ? RestoreGeometry : MaximizeGeometry;
+            BtnMaximize.ToolTip = maximized ? "Restore Down" : "Maximize";
+        }
+
+        private void BtnMinimize_Click(object sender, RoutedEventArgs e)
+            => WindowState = WindowState.Minimized;
+
+        private void BtnMaximize_Click(object sender, RoutedEventArgs e)
+            => WindowState = WindowState == WindowState.Maximized
+                ? WindowState.Normal
+                : WindowState.Maximized;
+
+        private void BtnClose_Click(object sender, RoutedEventArgs e) => Close();
+
+        // ── Sidebar columns ───────────────────────────────────────
+        // The open state is animated by XAML triggers, which only fire on
+        // a *change*. A panel that starts collapsed therefore needs its
+        // width zeroed once up front.
+        private void ApplyPanelState()
+        {
+            if (!_vm.IsLeftPanelOpen) LeftPanelHost.Width = 0;
+            if (!_vm.IsRightPanelOpen) RightPanelHost.Width = 0;
         }
 
         // ── Credential dialog ─────────────────────────────────────
