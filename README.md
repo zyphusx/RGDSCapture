@@ -270,6 +270,32 @@ Or launch `bin\Release\net10.0-windows\RGDSCapture.exe` directly.
 
 ---
 
+### Building the Installer (optional)
+
+Only needed if you want to produce `RGDSCaptureSetup.exe` yourself. Requires
+[Inno Setup 6](https://jrsoftware.org/isdl.php) (`winget install JRSoftware.InnoSetup`).
+
+**1. Publish the app** — the installer packages this folder, not `bin\Release`:
+```bash
+dotnet publish -c Release -r win-x64 --self-contained false -o bin\publish
+```
+
+**2. Compile the installer**
+```bash
+"%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" installer\RGDSCaptureSetup.iss
+```
+
+Inno Setup installs per-user by default, so `ISCC.exe` lands under
+`%LOCALAPPDATA%\Programs\` rather than `Program Files`. The result is written to
+`installer\Output\RGDSCaptureSetup.exe`, which is git-ignored.
+
+To override the version without editing the script:
+```bash
+ISCC.exe installer\RGDSCaptureSetup.iss /DMyAppVersion=3.1.0
+```
+
+---
+
 ### Building with VS Code
 
 **1. Install extensions** (`Ctrl+Shift+X`):

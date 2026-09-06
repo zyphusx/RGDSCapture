@@ -20,8 +20,9 @@ publish/
 # Scratch console projects used for one-off device testing (never a real part of the app)
 _harness/
 
-#setup creator file
-RGDSCaptureSetup.iss
+# The Inno Setup script itself is SOURCE, not a build artifact — it is
+# tracked so a fresh clone can rebuild the installer. Only its output
+# (Output/, below) is ignored.
 
 #block any generated, unpolished exes from getting pushed. 
 
