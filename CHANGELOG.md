@@ -13,9 +13,63 @@ number with the date, and start a fresh empty **[Unreleased]** section above it.
 ## [Unreleased]
 
 ### Added
+- **15 built-in themes** with a visual picker (View → Theme Picker…, or
+  **Ctrl+T**). Twelve dark — Midnight, **Gengar**, Nocturne, Matrix, Ember,
+  Crimson, Cyberpunk, Ocean, Forest, Amber, Sakura, Mono — and three light:
+  Daylight, Parchment, Mint. A theme tints every surface, not just the accent,
+  so the whole app takes on its colour. Presets are also listed under
+  View → Theme, and apply instantly with no restart.
+- **Custom accent colour.** The picker's RGB sliders (or a typed `#RRGGBB`)
+  regenerate the entire palette around any colour you choose, on top of
+  whichever preset is active. "Use Preset Accent" drops back to the
+  preset's own colour.
+- The left panel gains a theme button showing the current theme and accent.
+
+### Changed
+- **Themes are now generated rather than hand-written.** A theme is defined by
+  three seeds — light/dark ramp, accent, and how strongly the accent hue tints
+  the greys — and `PaletteBuilder` derives all 101 brushes from them. Adding a
+  theme is one line in `ThemeCatalog` instead of a 200-line resource
+  dictionary, and it is what makes an arbitrary user-picked accent possible.
+  `Themes/Light.xaml` is gone (now generated); `Themes/Dark.xaml` remains only
+  as the designer/startup fallback and as the documented key contract.
+- Settings: `Theme` now stores a preset id and a new `CustomAccent` holds the
+  accent override. Older files containing `"Dark"`/`"Light"` are mapped
+  forward automatically, so existing settings keep working.
+- **Redesigned interface — two-column layout.** The menu bar plus three
+  stacked toolbars (~180 px of chrome above the picture) are gone. Controls
+  now live in two collapsible columns either side of the video: a **device**
+  column on the left (connection, streams, display, console power) and a
+  **capture** column on the right (recording, instant replay, audio, run
+  timer). Video is the hero and fills everything between them.
+  - Collapse either column with **Ctrl+B** / **Ctrl+J**, the title-bar
+    buttons, or View → Show Device/Capture Panel. The open/closed state is
+    remembered between sessions.
+  - The menu bar moves into a slim custom title bar that also shows the
+    connection dot and the current device and address. Every menu item and
+    every existing keyboard shortcut is unchanged.
+  - Radio-style segmented controls replace the nested submenus for quality,
+    layout, rotation, screen gap, scaling and replay length — the current
+    value is now visible without opening a menu.
+- **Darker, higher-contrast theme.** New surface ramp (`#0E0F12` →
+  `#16181D` → `#1E2127`), a distinct `#4C8DFF` accent in place of the stock
+  Windows blue, and semantic live/record colors. The light theme was rebuilt
+  key-for-key to match.
+- The event log drawer now overlays only the video stage, so opening it no
+  longer resizes the picture.
+- Video panels get rounded corners, glass status chips, and a fullscreen
+  button that appears on hover instead of sitting permanently over the frame.
+
+### Fixed
+- Stream health badges no longer render a doubled status dot (the badge text
+  already carries its own `●`/`○` glyph).
+- Replaced button glyphs that fell back to empty boxes on Windows because
+  they resolved to Segoe UI Emoji rather than the UI font.
+
+### Added
 - **RG353V device support** — connect to a single-screen Anbernic RG353V
   (stock firmware) in addition to the RG DS. Pick the device type in the
-  toolbar before connecting. Stock RG353V firmware has no GStreamer, so
+  Connection panel before connecting. Stock RG353V firmware has no GStreamer, so
   video is captured via ffmpeg's `fbdev` input and encoded with software
   x264 instead of the DS's GStreamer/MPP pipeline. Dual-screen-only features
   (Combined Recording, Instant Replay, GIF export, alternate layouts) are

@@ -8,6 +8,7 @@
         Background="Black"
         ShowInTaskbar="False"
         Topmost="True"
+        UseLayoutRounding="True"
         FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif">
 
     <Window.InputBindings>
@@ -16,7 +17,7 @@
         <KeyBinding Key="F7" Command="{Binding Main.RestartBottomCommand}"/>
     </Window.InputBindings>
 
-    <Grid Background="Black">
+    <Grid x:Name="Root" Background="Black">
 
         <Image Source="{Binding Screen.Bitmap}"
                Stretch="Uniform"
@@ -28,54 +29,42 @@
             </Image.LayoutTransform>
         </Image>
 
-        <!-- Screen label, top-left -->
-        <Border Background="#AA000000"
-                BorderBrush="#55FFFFFF"
-                BorderThickness="1"
-                CornerRadius="6"
-                Padding="12,8"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Top"
-                Margin="16,16,0,0">
-            <StackPanel Orientation="Horizontal">
-                <Ellipse Width="8" Height="8"
-                         Fill="{Binding Screen.BadgeBrush}"
-                         VerticalAlignment="Center"
-                         Margin="0,0,7,0"/>
-                <TextBlock Text="{Binding Screen.DisplayName}"
-                           Foreground="White"
-                           FontSize="14"
-                           FontWeight="SemiBold"/>
-            </StackPanel>
-        </Border>
-
-        <!-- Close button, top-right -->
-        <Button Content="✕"
-                Style="{StaticResource OverlayButton}"
-                Width="40" Height="40"
-                FontSize="18"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Top"
-                Margin="0,16,16,0"
-                Click="BtnClose_Click"
-                AutomationProperties.Name="Close fullscreen"/>
-
-        <!-- Hint, fades out after 3 s -->
-        <TextBlock Text="ESC or double-click to exit   |   F5 / F6 / F7 restart streams"
-                   Foreground="#BBC8C8C8"
-                   FontSize="12"
-                   TextAlignment="Center"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Bottom"
-                   Margin="0,0,0,32">
-            <TextBlock.Triggers>
+        <!--
+            Chrome fades out three seconds after the window opens and comes
+            back on mouse-over, so a still picture is never boxed in by it.
+        -->
+        <Grid x:Name="Chrome">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsMouseOver, ElementName=Root}" Value="True">
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         To="1" Duration="0:0:0.15"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                            <DataTrigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         To="0" BeginTime="0:0:1.2"
+                                                         Duration="0:0:0.5"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.ExitActions>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+            <Grid.Triggers>
                 <EventTrigger RoutedEvent="Loaded">
                     <BeginStoryboard>
                         <Storyboard>
                             <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                             To="0"
-                                             BeginTime="0:0:3"
-                                             Duration="0:0:0.6">
+                                             To="0" BeginTime="0:0:3" Duration="0:0:0.6">
                                 <DoubleAnimation.EasingFunction>
                                     <CubicEase EasingMode="EaseIn"/>
                                 </DoubleAnimation.EasingFunction>
@@ -83,8 +72,64 @@
                         </Storyboard>
                     </BeginStoryboard>
                 </EventTrigger>
-            </TextBlock.Triggers>
-        </TextBlock>
+            </Grid.Triggers>
+
+            <!-- Screen identity + health, top-left -->
+            <Border Background="{DynamicResource ScreenGlassBg}"
+                    BorderBrush="{DynamicResource ScreenGlassBorder}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="14,9"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    Margin="20">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding Screen.BadgeText}"
+                               Foreground="{Binding Screen.BadgeBrush}"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+                    <Border Width="1" Height="14"
+                            Background="{DynamicResource ScreenGlassBorder}"
+                            Margin="12,0"/>
+                    <TextBlock Text="{Binding Screen.DisplayName}"
+                               Foreground="White"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding Screen.FpsText}"
+                               Foreground="#C8FFFFFF"
+                               FontSize="12"
+                               VerticalAlignment="Center"
+                               Margin="10,0,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Close, top-right -->
+            <Button Content="✕"
+                    Style="{StaticResource OverlayButton}"
+                    Width="38" Height="38"
+                    FontSize="16"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Margin="20"
+                    Click="BtnClose_Click"
+                    AutomationProperties.Name="Close fullscreen"/>
+
+            <!-- Hint, bottom-centre -->
+            <Border Background="{DynamicResource ScreenGlassBg}"
+                    BorderBrush="{DynamicResource ScreenGlassBorder}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="14,7"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"
+                    Margin="0,0,0,32">
+                <TextBlock Text="ESC or double-click to exit   ·   F5 / F6 / F7 restart streams"
+                           Foreground="#C8FFFFFF"
+                           FontSize="12"/>
+            </Border>
+        </Grid>
 
     </Grid>
 </Window>

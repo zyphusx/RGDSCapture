@@ -76,7 +76,11 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 
 ### App
 - Optional "remember credentials" — the SSH password is encrypted with Windows DPAPI, so connecting is one click
-- Dark and Light themes, persisted between sessions
+- **15 built-in themes** — 12 dark (Midnight, Gengar, Nocturne, Matrix, Ember, Crimson,
+  Cyberpunk, Ocean, Forest, Amber, Sakura, Mono) and 3 light (Daylight, Parchment, Mint),
+  each tinting the whole app rather than just the accent. Persisted between sessions.
+- **Custom accent colour** — pick any RGB value in the theme picker (Ctrl+T) and the
+  entire palette is regenerated around it
 - Event log panel with timestamped entries
 - Keyboard shortcuts (see below)
 
@@ -96,6 +100,9 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 | F10   | Save last 10 s as GIF        |
 | F12   | Screenshot both screens      |
 | Space | Start / pause speedrun timer |
+| Ctrl+B | Show / hide the device panel |
+| Ctrl+J | Show / hide the capture panel |
+| Ctrl+T | Open the theme picker        |
 
 ---
 
@@ -148,7 +155,7 @@ See [Building from Source](#building-from-source) below.
 ## First Launch
 
 1. Launch RGDSCapture
-2. Enter your RG DS **IP address** in the top bar
+2. Enter your RG DS **IP address** in the **Connection** card of the left-hand panel
    - Find this in your device's Wi-Fi settings, or check your router's connected devices list
 3. Leave Port as `22` unless your firmware uses a different SSH port
 4. Click **Connect**
@@ -169,8 +176,8 @@ See [Building from Source](#building-from-source) below.
 1. Connect a **3.5mm stereo cable** from the RG DS headphone jack to your PC's **Line-In port**
    - Line-In is typically the **blue** port on desktop PCs
    - If your PC only has a headset combo jack, use a **USB audio adapter** with a Line-In input
-2. In the RGDSCapture toolbar, open the **🔊 Line-In** dropdown and select your Line-In device
-3. Open the **Out** dropdown and choose your speakers or headphones
+2. In the **Audio** card of the right-hand panel, open the **Input (Line-In)** dropdown and select your Line-In device
+3. Open the **Output** dropdown and choose your speakers or headphones
 4. Click **▶ Audio**
 5. Adjust the volume slider — the L/R VU meters confirm audio is flowing
 
