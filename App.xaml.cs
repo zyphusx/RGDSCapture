@@ -29,6 +29,11 @@ namespace RGDSCapture
             var settings = settingsService.Load();
             ThemeService.ApplyFrom(settings);
 
+            // Publish the shared scale transform before any window resolves
+            // its LayoutTransform, then set the saved factor.
+            UiScaleService.Install();
+            UiScaleService.ApplyFrom(settings);
+
             _vm = new MainViewModel(settingsService);
 
             DispatcherUnhandledException += (_, args) =>

@@ -7,7 +7,9 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Shell;
 using RGDSCapture.Core;
+using RGDSCapture.Services;
 using RGDSCapture.ViewModels;
 
 namespace RGDSCapture.Views
@@ -32,11 +34,30 @@ namespace RGDSCapture.Views
         private static readonly Geometry RestoreGeometry =
             Geometry.Parse("M 2.5 0.5 H 9.5 V 7.5 M 0.5 2.5 H 7.5 V 9.5 H 0.5 Z");
 
+        // The UI-scale transform stops at RootBorder. The window's own
+        // minimum size and the WindowChrome caption band are in unscaled
+        // window coordinates, so they are recomputed from these baselines
+        // whenever the factor changes — otherwise the draggable caption
+        // strip drifts away from the title bar it is meant to cover.
+        private readonly double _baseMinWidth;
+        private readonly double _baseMinHeight;
+        private readonly double _baseCaptionHeight;
+
         public MainWindow(MainViewModel vm)
         {
             InitializeComponent();
             _vm = vm;
             DataContext = vm;
+
+            _baseMinWidth = MinWidth;
+            _baseMinHeight = MinHeight;
+            _baseCaptionHeight = WindowChrome.GetWindowChrome(this)?.CaptionHeight ?? 0;
+
+            // Raising the minimum also grows a too-small window, so switching
+            // to a larger factor makes room for itself.
+            OnUiScaleChanged(UiScaleService.Current);
+            UiScaleService.Changed += OnUiScaleChanged;
+            Closed += (_, _) => UiScaleService.Changed -= OnUiScaleChanged;
 
             vm.PromptCredentials = ShowCredentialDialog;
             vm.Confirm = (message, title) =>
@@ -57,6 +78,28 @@ namespace RGDSCapture.Views
                 UpdateMaximizeGlyph();
             };
         }
+
+        // ── UI scale ──────────────────────────────────────────────
+        private void OnUiScaleChanged(double scale)
+        {
+            var workArea = ScreenMetrics.WorkArea(this);
+            MinWidth = FitOnScreen(_baseMinWidth * scale, workArea.Width);
+            MinHeight = FitOnScreen(_baseMinHeight * scale, workArea.Height);
+
+            // The caption strip is the title bar's drag / snap region, so it
+            // has to grow with the title bar row inside the scaled tree.
+            var chrome = WindowChrome.GetWindowChrome(this);
+            if (chrome != null) chrome.CaptionHeight = _baseCaptionHeight * scale;
+        }
+
+        /// <summary>
+        /// Caps a scaled minimum to the monitor: 175% of the 620px floor is
+        /// taller than a 1080p work area, and a window whose minimum exceeds
+        /// the screen cannot be positioned sensibly at all. Content gets
+        /// tighter past that point rather than the window becoming unusable.
+        /// </summary>
+        private static double FitOnScreen(double desired, double available)
+            => Math.Min(desired, available * 0.95);
 
         // ── Window chrome ─────────────────────────────────────────
         // A WindowStyle=None window maximizes to the full monitor
@@ -83,13 +126,7 @@ namespace RGDSCapture.Views
 
         private static void ClampToWorkArea(IntPtr hwnd, IntPtr lParam)
         {
-            const int MONITOR_DEFAULTTONEAREST = 0x00000002;
-
-            IntPtr monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-            if (monitor == IntPtr.Zero) return;
-
-            var info = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
-            if (!GetMonitorInfo(monitor, ref info)) return;
+            if (!ScreenMetrics.TryGetMonitorInfo(hwnd, out var info)) return;
 
             var mmi = Marshal.PtrToStructure<MINMAXINFO>(lParam);
 
@@ -102,27 +139,8 @@ namespace RGDSCapture.Views
             Marshal.StructureToPtr(mmi, lParam, true);
         }
 
-        [DllImport("user32.dll")]
-        private static extern IntPtr MonitorFromWindow(IntPtr hwnd, int flags);
-
-        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
-
         [StructLayout(LayoutKind.Sequential)]
         private struct POINT { public int X; public int Y; }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct RECT { public int Left, Top, Right, Bottom; }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct MONITORINFO
-        {
-            public int cbSize;
-            public RECT rcMonitor;
-            public RECT rcWork;
-            public int dwFlags;
-        }
 
         [StructLayout(LayoutKind.Sequential)]
         private struct MINMAXINFO

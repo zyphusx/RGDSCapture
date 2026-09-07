@@ -76,11 +76,13 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 
 ### App
 - Optional "remember credentials" — the SSH password is encrypted with Windows DPAPI, so connecting is one click
-- **23 built-in themes**, each tinting the whole app rather than just the accent,
+- **50 built-in themes**, each tinting the whole app rather than just the accent,
   and persisted between sessions:
   - **Dark** — Midnight, Amethyst, Nocturne, Phosphor, Ember, Crimson, Neon,
-    Ocean, Forest, Amber, Sakura, Mono
-  - **Light** — Daylight, Parchment, Mint
+    Ocean, Forest, Amber, Sakura, Mono, Scarlet, Rust, Saffron, Citrus, Moss,
+    Lagoon, Skyline, Cobalt, Violet, Orchid, Wine, Slate, Sepia
+  - **Light** — Daylight, Parchment, Mint, Poppy, Rose, Clay, Honey, Olive,
+    Fern, Seafoam, Sky, Indigo, Lavender, Mauve, Blossom, Porcelain, Linen
   - **Pride** — Rainbow, Progress, Trans, Bisexual, Pansexual, Lesbian,
     Non-binary, Asexual. These run their flag's colours around the app's
     outlines, selections and glow
@@ -88,6 +90,9 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
   button and the selected segment
 - **Custom accent colour** — pick any RGB value in the theme picker (Ctrl+T) and the
   entire palette is regenerated around it
+- **UI scaling** — zoom the interface from 80% to 175% (View → UI Scale), on top of
+  whatever Windows display scaling is already set. The video keeps the space the
+  controls do not take, at full resolution
 - Event log panel with timestamped entries
 - Keyboard shortcuts (see below)
 
@@ -110,6 +115,9 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 | Ctrl+B | Show / hide the device panel |
 | Ctrl+J | Show / hide the capture panel |
 | Ctrl+T | Open the theme picker        |
+| Ctrl+Plus | Scale the interface up    |
+| Ctrl+Minus | Scale the interface down |
+| Ctrl+0 | Reset the interface to 100%  |
 
 ---
 
@@ -145,7 +153,7 @@ If .NET 10 is not already installed, Windows will prompt you to install it befor
 ### Option B — Portable ZIP
 
 1. Go to the [Releases](https://github.com/zyphusx/RGDSCapture/releases) page
-2. Download **`RGDSCapture-v3.1.0-portable.zip`**
+2. Download **`RGDSCapture-v3.2.0-portable.zip`**
 3. Extract to any folder (e.g. `C:\RGDSCapture\`)
 4. Launch `RGDSCapture.exe`
 
@@ -291,7 +299,7 @@ Inno Setup installs per-user by default, so `ISCC.exe` lands under
 
 To override the version without editing the script:
 ```bash
-ISCC.exe installer\RGDSCaptureSetup.iss /DMyAppVersion=3.1.0
+ISCC.exe installer\RGDSCaptureSetup.iss /DMyAppVersion=3.2.0
 ```
 
 ---

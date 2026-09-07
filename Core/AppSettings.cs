@@ -33,6 +33,13 @@ namespace RGDSCapture.Core
         /// <summary>Smooth (Fant) video scaling instead of pixel-perfect nearest-neighbor.</summary>
         public bool SmoothScaling { get; set; }
 
+        /// <summary>
+        /// App-level UI zoom (1.0 = 100%), layered on top of the Windows DPI
+        /// setting. See <see cref="Services.UiScaleService"/> for the
+        /// selectable steps; anything out of range is clamped when applied.
+        /// </summary>
+        public double UiScale { get; set; } = 1.0;
+
         public string DeviceIp { get; set; } = "192.168.1.100";
         public int SshPort { get; set; } = 22;
         public string SshUsername { get; set; } = "root";

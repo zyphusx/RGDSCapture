@@ -45,9 +45,27 @@
         <KeyBinding Key="B" Modifiers="Ctrl" Command="{Binding ToggleLeftPanelCommand}"/>
         <KeyBinding Key="J" Modifiers="Ctrl" Command="{Binding ToggleRightPanelCommand}"/>
         <KeyBinding Key="T" Modifiers="Ctrl" Command="{Binding OpenThemePickerCommand}"/>
+
+        <!-- Zoom: both the main and numpad +/- keys, as browsers do. -->
+        <KeyBinding Key="OemPlus" Modifiers="Ctrl"
+                    Command="{Binding StepUiScaleCommand}" CommandParameter="1"/>
+        <KeyBinding Key="Add" Modifiers="Ctrl"
+                    Command="{Binding StepUiScaleCommand}" CommandParameter="1"/>
+        <KeyBinding Key="OemMinus" Modifiers="Ctrl"
+                    Command="{Binding StepUiScaleCommand}" CommandParameter="-1"/>
+        <KeyBinding Key="Subtract" Modifiers="Ctrl"
+                    Command="{Binding StepUiScaleCommand}" CommandParameter="-1"/>
+        <KeyBinding Key="D0" Modifiers="Ctrl" Command="{Binding ResetUiScaleCommand}"/>
+        <KeyBinding Key="NumPad0" Modifiers="Ctrl" Command="{Binding ResetUiScaleCommand}"/>
     </Window.InputBindings>
 
-    <Border x:Name="RootBorder" Background="{DynamicResource BackdropBg}">
+    <!-- LayoutTransform, not RenderTransform: the UI has to re-flow at the
+         new size, not just be drawn bigger. UiScaleService owns the shared
+         transform; the caption height and minimum size follow in code-behind,
+         since window chrome sits outside this scaled tree. -->
+    <Border x:Name="RootBorder"
+            Background="{DynamicResource BackdropBg}"
+            LayoutTransform="{DynamicResource UiScaleTransform}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="38"/>
@@ -237,6 +255,19 @@
                                     <MenuItem Header="Smooth"
                                               Command="{Binding SetScalingCommand}" CommandParameter="Smooth"
                                               IsChecked="{Binding IsScalingSmooth, Mode=OneWay}"/>
+                                </MenuItem>
+                                <MenuItem Header="_UI Scale"
+                                          ItemsSource="{Binding UiScales}"
+                                          ToolTip="Zoom the interface — Ctrl+Plus / Ctrl+Minus, Ctrl+0 to reset">
+                                    <MenuItem.ItemContainerStyle>
+                                        <Style TargetType="MenuItem"
+                                               BasedOn="{StaticResource {x:Type MenuItem}}">
+                                            <Setter Property="Header" Value="{Binding Name}"/>
+                                            <Setter Property="Command" Value="{Binding ApplyCommand}"/>
+                                            <Setter Property="IsChecked"
+                                                    Value="{Binding IsActive, Mode=OneWay}"/>
+                                        </Style>
+                                    </MenuItem.ItemContainerStyle>
                                 </MenuItem>
                                 <Separator/>
                                 <MenuItem Header="_Theme"

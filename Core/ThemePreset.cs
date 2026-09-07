@@ -66,10 +66,47 @@ namespace RGDSCapture.Core
             new ThemePreset("sakura",    "Sakura",    true,  "#F472B6", 0.44, 330),
             new ThemePreset("mono",      "Mono",      true,  "#D4D4D8", 0.00),
 
+            // Accents here sit around 60-75% lightness so they still read as
+            // an accent against a dark surface. Where two themes share a
+            // neighbourhood on the colour wheel they differ sharply in tint
+            // strength instead — Rust is a near-neutral warm grey next to
+            // Ember's fully orange surfaces.
+            new ThemePreset("scarlet",   "Scarlet",   true,  "#EF4444", 0.42, 2),
+            new ThemePreset("rust",      "Rust",      true,  "#F97316", 0.20, 22),
+            new ThemePreset("saffron",   "Saffron",   true,  "#FDE047", 0.30, 51),
+            new ThemePreset("citrus",    "Citrus",    true,  "#A3E635", 0.34, 82),
+            new ThemePreset("moss",      "Moss",      true,  "#86EFAC", 0.26, 108),
+            new ThemePreset("lagoon",    "Lagoon",    true,  "#2DD4BF", 0.36, 174),
+            new ThemePreset("skyline",   "Skyline",   true,  "#38BDF8", 0.34, 199),
+            new ThemePreset("cobalt",    "Cobalt",    true,  "#60A5FA", 0.44, 213),
+            new ThemePreset("violet",    "Violet",    true,  "#A78BFA", 0.46, 258),
+            new ThemePreset("orchid",    "Orchid",    true,  "#E879F9", 0.50, 300),
+            new ThemePreset("wine",      "Wine",      true,  "#FDA4AF", 0.54, 345),
+            new ThemePreset("slate",     "Slate",     true,  "#94A3B8", 0.12, 215),
+            new ThemePreset("sepia",     "Sepia",     true,  "#D6BFA0", 0.16, 38),
+
             // ── Light ─────────────────────────────────────────────────
+            // The mirror of the dark ramp: accents drop to roughly 35-45%
+            // lightness so white label text on an accent-filled button keeps
+            // its contrast, and tint strengths stay lower because a colour
+            // cast reads much more strongly on near-white surfaces.
             new ThemePreset("daylight",  "Daylight",  false, "#2563EB", 0.18, 222, ThemeGroups.Light),
             new ThemePreset("parchment", "Parchment", false, "#B45309", 0.34, 36,  ThemeGroups.Light),
             new ThemePreset("mint",      "Mint",      false, "#0D9488", 0.26, 172, ThemeGroups.Light),
+            new ThemePreset("poppy",     "Poppy",     false, "#DC2626", 0.16, 0,   ThemeGroups.Light),
+            new ThemePreset("rose",      "Rose",      false, "#E11D48", 0.20, 346, ThemeGroups.Light),
+            new ThemePreset("clay",      "Clay",      false, "#C2410C", 0.26, 20,  ThemeGroups.Light),
+            new ThemePreset("honey",     "Honey",     false, "#CA8A04", 0.24, 45,  ThemeGroups.Light),
+            new ThemePreset("olive",     "Olive",     false, "#4D7C0F", 0.22, 84,  ThemeGroups.Light),
+            new ThemePreset("fern",      "Fern",      false, "#15803D", 0.20, 142, ThemeGroups.Light),
+            new ThemePreset("seafoam",   "Seafoam",   false, "#0F766E", 0.24, 175, ThemeGroups.Light),
+            new ThemePreset("sky",       "Sky",       false, "#0284C7", 0.22, 200, ThemeGroups.Light),
+            new ThemePreset("indigo",    "Indigo",    false, "#4338CA", 0.24, 245, ThemeGroups.Light),
+            new ThemePreset("lavender",  "Lavender",  false, "#7C3AED", 0.28, 262, ThemeGroups.Light),
+            new ThemePreset("mauve",     "Mauve",     false, "#A21CAF", 0.30, 295, ThemeGroups.Light),
+            new ThemePreset("blossom",   "Blossom",   false, "#DB2777", 0.26, 330, ThemeGroups.Light),
+            new ThemePreset("porcelain", "Porcelain", false, "#475569", 0.06, 215, ThemeGroups.Light),
+            new ThemePreset("linen",     "Linen",     false, "#78716C", 0.10, 35,  ThemeGroups.Light),
 
             // ── Pride ─────────────────────────────────────────────────
             // Each accent is taken from its flag, lifted in lightness where

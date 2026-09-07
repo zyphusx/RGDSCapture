@@ -74,6 +74,14 @@
                 </EventTrigger>
             </Grid.Triggers>
 
+            <!--
+                UI scale is applied to each overlay rather than to the Chrome
+                grid: the grid is stretch-filled, so scaling it would grow it
+                past the screen and carry the edge-anchored overlays off with
+                it. The video itself is deliberately left unscaled — it should
+                always fill the display.
+            -->
+
             <!-- Screen identity + health, top-left -->
             <Border Background="{DynamicResource ScreenGlassBg}"
                     BorderBrush="{DynamicResource ScreenGlassBorder}"
@@ -82,7 +90,8 @@
                     Padding="14,9"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Top"
-                    Margin="20">
+                    Margin="20"
+                    LayoutTransform="{DynamicResource UiScaleTransform}">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="{Binding Screen.BadgeText}"
                                Foreground="{Binding Screen.BadgeBrush}"
@@ -114,6 +123,7 @@
                     VerticalAlignment="Top"
                     Margin="20"
                     Click="BtnClose_Click"
+                    LayoutTransform="{DynamicResource UiScaleTransform}"
                     AutomationProperties.Name="Close fullscreen"/>
 
             <!-- Hint, bottom-centre -->
@@ -124,7 +134,8 @@
                     Padding="14,7"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Bottom"
-                    Margin="0,0,0,32">
+                    Margin="0,0,0,32"
+                    LayoutTransform="{DynamicResource UiScaleTransform}">
                 <TextBlock Text="ESC or double-click to exit   ·   F5 / F6 / F7 restart streams"
                            Foreground="#C8FFFFFF"
                            FontSize="12"/>

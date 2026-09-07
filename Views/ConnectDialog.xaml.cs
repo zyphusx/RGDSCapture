@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using RGDSCapture.Services;
 
 namespace RGDSCapture.Views
 {
@@ -12,6 +13,7 @@ namespace RGDSCapture.Views
         public ConnectDialog(string defaultUsername, bool defaultRemember = false)
         {
             InitializeComponent();
+            UiScaleService.TrackDialogSize(this);
             TxtUsername.Text = defaultUsername;
             ChkRemember.IsChecked = defaultRemember;
             Loaded += (_, _) => TxtPassword.Focus();

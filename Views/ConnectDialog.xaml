@@ -22,11 +22,16 @@
             BorderBrush="{DynamicResource BorderStrong}"
             BorderThickness="1"
             CornerRadius="10"
-            Margin="12">
+            Margin="12"
+            LayoutTransform="{DynamicResource UiScaleTransform}">
         <Border.Effect>
             <DropShadowEffect BlurRadius="28" ShadowDepth="4" Opacity="0.45" Color="#000000"/>
         </Border.Effect>
 
+        <!-- Scrolls if a large UI scale (or a short screen) makes the card
+             taller than the work area MaxHeight allows. -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="24">
 
             <Border x:Name="DragHandle" Background="Transparent" Margin="0,0,0,20">
@@ -67,5 +72,6 @@
             </StackPanel>
 
         </StackPanel>
+        </ScrollViewer>
     </Border>
 </Window>

@@ -26,6 +26,11 @@ namespace RGDSCapture.Views
             _vm = vm;
             DataContext = vm;
 
+            // Fixed width, so it has to be widened by hand for the scaled
+            // content, and capped in height so a large factor cannot push
+            // the buttons off-screen; modeless, so it follows later changes.
+            UiScaleService.TrackDialogSize(this);
+
             LoadAccent(ThemeService.EffectiveAccent);
 
             // Picking a preset changes the accent out from under the sliders,

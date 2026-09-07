@@ -10,10 +10,10 @@
 ; Output lands in installer\Output\RGDSCaptureSetup.exe
 ;
 ; Override the version at compile time without editing this file:
-;   ISCC installer\RGDSCaptureSetup.iss /DMyAppVersion=3.1.0
+;   ISCC installer\RGDSCaptureSetup.iss /DMyAppVersion=3.2.0
 
 #ifndef MyAppVersion
-  #define MyAppVersion "3.1.0"
+  #define MyAppVersion "3.2.0"
 #endif
 
 #define MyAppName "RGDSCapture"

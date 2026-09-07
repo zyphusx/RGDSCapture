@@ -16,6 +16,33 @@ Nothing yet.
 
 ---
 
+## [3.2.0] - 2026-09-07
+
+### Added
+- **UI scaling** — zoom the whole interface independently of the Windows
+  display setting, from 80% to 175%. Pick a size under **View → UI Scale**,
+  or use **Ctrl+Plus** / **Ctrl+Minus** to step through the sizes and
+  **Ctrl+0** to go back to 100%. The choice is remembered between sessions.
+  - The video is deliberately left out of the zoom. It already stretches to
+    fit whatever room it is given, so scaling changes how much space the
+    controls take and hands the rest to the picture, at full resolution.
+  - The dialogs and the fullscreen overlays scale too.
+- **27 more themes**, bringing the picker to 50. The Light section grew the
+  most — from three entries to seventeen — since it was much the thinner of
+  the two:
+  - **Dark** — Scarlet, Rust, Saffron, Citrus, Moss, Lagoon, Skyline, Cobalt,
+    Violet, Orchid, Wine, Slate, Sepia
+  - **Light** — Poppy, Rose, Clay, Honey, Olive, Fern, Seafoam, Sky, Indigo,
+    Lavender, Mauve, Blossom, Porcelain, Linen
+
+### Fixed
+- The theme picker could grow taller than the screen and put its buttons out
+  of reach. It is now capped to the display it is on and scrolls instead.
+  The cap is measured per-monitor, so a window on a second screen of a
+  different size is no longer sized against the primary one.
+
+---
+
 ## [3.1.0] - 2026-09-06
 
 ### Added

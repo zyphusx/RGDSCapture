@@ -226,6 +226,10 @@ namespace RGDSCapture.ViewModels
         public bool IsScalingSharp => !Settings.SmoothScaling;
         public bool IsScalingSmooth => Settings.SmoothScaling;
 
+        // ── UI scale ──────────────────────────────────────────────────
+        /// <summary>Every selectable zoom factor, for the View menu.</summary>
+        public IReadOnlyList<UiScaleChoice> UiScales { get; }
+
         // ── Theme ─────────────────────────────────────────────────────
         /// <summary>Every built-in preset, for the picker and the View menu.</summary>
         public IReadOnlyList<ThemeChoice> Themes { get; }
@@ -285,6 +289,31 @@ namespace RGDSCapture.ViewModels
         {
             if (string.IsNullOrWhiteSpace(id)) return;
             ApplyTheme(ThemeCatalog.Resolve(id), null);
+        }
+
+        /// <summary>
+        /// Applies a UI zoom factor and persists it. Every scaled element
+        /// shares one transform, so the windows re-lay-out in place.
+        /// </summary>
+        public void ApplyUiScale(double scale)
+        {
+            double previous = UiScaleService.Current;
+            UiScaleService.Apply(scale);
+            if (UiScaleService.IsCurrent(previous)) return;
+
+            Settings.UiScale = UiScaleService.Current;
+            _settingsService.Save();
+
+            foreach (var choice in UiScales) choice.RaiseIsActive();
+
+            AppendLog($"[UI] Scale {UiScaleService.Format(UiScaleService.Current)}");
+        }
+
+        /// <summary>Zoom shortcut entry point: +1 steps up, -1 steps down.</summary>
+        private void StepUiScale(object? parameter)
+        {
+            if (!int.TryParse(parameter?.ToString(), out int direction)) return;
+            ApplyUiScale(UiScaleService.Step(direction));
         }
 
         // ── Combined recording / instant replay ──────────────────────
@@ -398,6 +427,8 @@ namespace RGDSCapture.ViewModels
         public RelayCommand SetScreenGapCommand { get; }
         public RelayCommand SetRotationCommand { get; }
         public RelayCommand SetScalingCommand { get; }
+        public RelayCommand StepUiScaleCommand { get; }
+        public RelayCommand ResetUiScaleCommand { get; }
         public AsyncRelayCommand SaveGifCommand { get; }
 
         // ─────────────────────────────────────────────────────────────
@@ -418,6 +449,12 @@ namespace RGDSCapture.ViewModels
                     p,
                     preset => ThemeService.Current.Id == preset.Id,
                     new RelayCommand(() => ApplyTheme(p, null))))
+                .ToList();
+
+            UiScales = UiScaleService.Steps
+                .Select(scale => new UiScaleChoice(
+                    scale,
+                    new RelayCommand(() => ApplyUiScale(scale))))
                 .ToList();
 
             Top = new ScreenViewModel(ScreenId.Top, 5000, AppendLog);
@@ -510,6 +547,9 @@ namespace RGDSCapture.ViewModels
             SetScreenGapCommand = new RelayCommand(SetScreenGap);
             SetRotationCommand = new RelayCommand(SetRotation);
             SetScalingCommand = new RelayCommand(SetScaling);
+            StepUiScaleCommand = new RelayCommand(StepUiScale);
+            ResetUiScaleCommand = new RelayCommand(
+                () => ApplyUiScale(UiScaleService.DefaultScale));
             SaveGifCommand = new AsyncRelayCommand(SaveGifClipAsync, () => IsConnected && !IsSingleScreenDevice);
 
             PropertyChanged += (_, e) =>

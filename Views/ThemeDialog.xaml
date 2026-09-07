@@ -30,9 +30,9 @@
             <StackPanel Orientation="Horizontal"/>
         </ItemsPanelTemplate>
 
-        <!-- One shelf per group. Horizontal, so twenty-three themes cannot
-             push the dialog taller than the screen; the wheel is remapped to
-             scroll sideways in code-behind. -->
+        <!-- One shelf per group. Horizontal, so a catalog of fifty themes
+             cannot push the dialog taller than the screen; the wheel is
+             remapped to scroll sideways in code-behind. -->
         <Style x:Key="TileShelf" TargetType="ScrollViewer">
             <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
             <Setter Property="VerticalScrollBarVisibility" Value="Disabled"/>
@@ -159,11 +159,18 @@
             BorderBrush="{DynamicResource BorderStrong}"
             BorderThickness="1"
             CornerRadius="10"
-            Margin="12">
+            Margin="12"
+            LayoutTransform="{DynamicResource UiScaleTransform}">
         <Border.Effect>
             <DropShadowEffect BlurRadius="28" ShadowDepth="4" Opacity="0.45" Color="#000000"/>
         </Border.Effect>
 
+        <!-- The card is fixed-layout and auto-heights to its content, which
+             at the larger UI scales is taller than the desktop. The window's
+             MaxHeight is pinned to the work area (see code-behind), so this
+             scroller is what keeps Apply / Done reachable. -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="22">
 
             <!-- Header doubles as the drag handle -->
@@ -301,5 +308,6 @@
             </StackPanel>
 
         </StackPanel>
+        </ScrollViewer>
     </Border>
 </Window>
