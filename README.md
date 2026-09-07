@@ -31,6 +31,41 @@ Audio Out  ──── 3.5mm Cable  ────► Line-In → Speakers
 
 </div>
 
+---
+
+## Screenshots
+
+<div align="center">
+
+<img src="docs/screenshots/main-dark.png" alt="RGDSCapture main window in the Midnight theme" width="820">
+
+*The main window — device, streams and display on the left; recording, audio and the speedrun timer on the right.*
+
+<br>
+
+<img src="docs/screenshots/main-light.png" alt="RGDSCapture main window in the Daylight theme" width="820">
+
+*The same window in Daylight. A theme retints the entire app, not just the accent.*
+
+<br>
+
+<img src="docs/screenshots/theme-picker.png" alt="The theme picker, showing preset tiles and the custom accent sliders" width="430">
+
+*The theme picker (**Ctrl+T**) — 50 presets across Dark, Light and Pride, plus any custom RGB accent you like.*
+
+<br>
+
+<img src="docs/screenshots/ui-scale-menu.png" alt="The View menu with the UI Scale submenu open" width="820">
+
+*UI scaling from 80% to 175%, on top of whatever Windows display scaling is already set.*
+
+</div>
+
+> The screen panels read **no signal** in these shots because no RG DS was
+> connected when they were taken.
+
+---
+
 ## Features
 
 ### Video
