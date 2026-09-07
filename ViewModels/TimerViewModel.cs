@@ -1,4 +1,3 @@
-using System;
 using System.Diagnostics;
 using System.Windows.Threading;
 
@@ -13,6 +12,11 @@ namespace RGDSCapture.ViewModels
         private readonly Stopwatch _watch = new();
         private readonly DispatcherTimer _displayTimer;
         private readonly Action<string, bool> _log;
+
+        // Time banked by previous runs. Pausing folds the stopwatch into this
+        // and resets it, so elapsed time is always offset + current run —
+        // which keeps Stopwatch's monotonic tick count as the source of truth
+        // instead of accumulating rounding error across pauses.
         private TimeSpan _offset = TimeSpan.Zero;
 
         private string _display = "00:00.000";

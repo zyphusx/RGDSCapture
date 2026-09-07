@@ -1,4 +1,3 @@
-using System;
 using System.Windows.Media;
 using RGDSCapture.Core;
 using RGDSCapture.Services;

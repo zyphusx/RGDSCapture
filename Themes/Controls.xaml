@@ -1,6 +1,5 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- ════════════════════════════════════════════════════════════
          RGDSCapture — shared control styles.
@@ -17,9 +16,6 @@
          internal ToggleButton and an implicit style would leak into
          it. Segment/chip styles below are keyed instead.
     ════════════════════════════════════════════════════════════════ -->
-
-    <!-- Shared caption-glyph geometries (title bar buttons) -->
-    <sys:Double x:Key="CaptionGlyphSize">10</sys:Double>
 
     <!-- ══════════════════════════════════════════════════════════
          BUTTONS
@@ -808,6 +804,9 @@
         <Setter Property="Padding" Value="0"/>
     </Style>
 
+    <!-- Nothing references this key by name: WPF looks it up itself for every
+         separator inside a MenuItem. It only looks unused — deleting it drops
+         every menu separator back to the default Windows styling. -->
     <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" TargetType="Separator">
         <Setter Property="Template">
             <Setter.Value>
@@ -1156,15 +1155,6 @@
         <Setter Property="Height" Value="1"/>
         <Setter Property="Background" Value="{DynamicResource BorderSubtle}"/>
         <Setter Property="Margin" Value="0,10"/>
-    </Style>
-
-    <!-- Vertical rule between toolbar items (kept for dialogs) -->
-    <Style x:Key="ToolbarSeparator" TargetType="Border">
-        <Setter Property="Width" Value="1"/>
-        <Setter Property="Height" Value="20"/>
-        <Setter Property="Background" Value="{DynamicResource SeparatorBg}"/>
-        <Setter Property="Margin" Value="8,0"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
 </ResourceDictionary>

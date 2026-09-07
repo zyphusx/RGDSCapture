@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using NAudio.Wave;
 using RGDSCapture.Core;
 
@@ -58,6 +54,12 @@ namespace RGDSCapture.Services
         }
     }
 
+    /// <summary>
+    /// One in-progress combined recording: both screens stacked into a single
+    /// MP4 alongside the Line-In audio. Owns the ffmpeg process and the pipes
+    /// feeding it, and reports an unexpected death through <see cref="Failed"/>
+    /// rather than throwing on whichever thread happened to notice.
+    /// </summary>
     public sealed class CombinedRecordingSession : IDisposable
     {
         private const string VideoInputArgs =

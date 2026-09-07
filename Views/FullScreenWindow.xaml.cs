@@ -11,6 +11,10 @@ namespace RGDSCapture.Views
     /// </summary>
     public partial class FullScreenWindow : Window
     {
+        /// <summary>
+        /// Binding context for this window: the one screen being shown, plus
+        /// the main view-model the overlay's restart shortcuts act on.
+        /// </summary>
         public sealed record FullscreenContext(MainViewModel Main, ScreenViewModel Screen);
 
         public FullScreenWindow(MainViewModel main, ScreenViewModel screen)

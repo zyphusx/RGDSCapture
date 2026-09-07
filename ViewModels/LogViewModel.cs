@@ -1,9 +1,9 @@
-using System;
 using System.Collections.ObjectModel;
 using System.Windows;
 
 namespace RGDSCapture.ViewModels
 {
+    /// <summary>One line in the event log. Immutable once appended.</summary>
     public sealed class LogEntry
     {
         public string Timestamp { get; init; } = string.Empty;

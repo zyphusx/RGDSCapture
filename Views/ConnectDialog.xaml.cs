@@ -4,6 +4,12 @@ using RGDSCapture.Services;
 
 namespace RGDSCapture.Views
 {
+    /// <summary>
+    /// SSH credential prompt. Returns what the user typed via
+    /// <see cref="Username"/> / <see cref="Password"/> / <see cref="Remember"/>
+    /// once <c>ShowDialog</c> reports true; the password is never stored here,
+    /// only handed straight back to the caller.
+    /// </summary>
     public partial class ConnectDialog : Window
     {
         public string Username { get; private set; } = string.Empty;

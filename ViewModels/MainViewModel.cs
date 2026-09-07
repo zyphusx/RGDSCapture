@@ -1,11 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Threading;
 using RGDSCapture.Core;
@@ -1208,13 +1202,14 @@ namespace RGDSCapture.ViewModels
             }
         }
 
-
         // ─────────────────────────────────────────────────────────────
         // SHUTDOWN
         // ─────────────────────────────────────────────────────────────
-        /// <summary>True if it is safe to close without confirmation.</summary>
-        public bool CanCloseSilently => !IsConnected;
-
+        /// <summary>
+        /// Stops everything and closes the SSH link. The window asks for
+        /// confirmation first (it checks <see cref="IsConnected"/> itself);
+        /// by the time this runs, the user has already agreed to exit.
+        /// </summary>
         public async Task ShutdownAsync()
         {
             CancelAutoReconnect();

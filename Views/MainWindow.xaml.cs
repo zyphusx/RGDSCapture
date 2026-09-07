@@ -1,4 +1,3 @@
-using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -142,6 +141,10 @@ namespace RGDSCapture.Views
         [StructLayout(LayoutKind.Sequential)]
         private struct POINT { public int X; public int Y; }
 
+        // Only ptMaxSize and ptMaxPosition are read, but every field has to
+        // be declared: this is marshalled directly over the native struct, so
+        // the layout must match Win32's exactly. Deleting the "unused" ones
+        // would silently shift the two that matter.
         [StructLayout(LayoutKind.Sequential)]
         private struct MINMAXINFO
         {
