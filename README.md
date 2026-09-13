@@ -190,7 +190,7 @@ If .NET 10 is not already installed, Windows will prompt you to install it befor
 ### Option B — Portable ZIP
 
 1. Go to the [Releases](https://github.com/zyphusx/RGDSCapture/releases) page
-2. Download **`RGDSCapture-v3.2.0-portable.zip`**
+2. Download **`RGDSCapture-v3.3.0-portable.zip`**
 3. Extract to any folder (e.g. `C:\RGDSCapture\`)
 4. Launch `RGDSCapture.exe`
 
@@ -336,7 +336,7 @@ Inno Setup installs per-user by default, so `ISCC.exe` lands under
 
 To override the version without editing the script:
 ```bash
-ISCC.exe installer\RGDSCaptureSetup.iss /DMyAppVersion=3.2.0
+ISCC.exe installer\RGDSCaptureSetup.iss /DMyAppVersion=3.3.0
 ```
 
 ---

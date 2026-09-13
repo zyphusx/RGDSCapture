@@ -12,6 +12,12 @@ number with the date, and start a fresh empty **[Unreleased]** section above it.
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [3.3.0] - 2026-09-13
+
 ### Changed
 - **New app icon.** The placeholder wordmark is gone, replaced by the RG DS
   silhouette — two stacked screens in the app's accent blue with a record dot
