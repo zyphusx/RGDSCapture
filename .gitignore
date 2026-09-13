@@ -17,6 +17,10 @@ publish/
 # Temporary files
 *.tmp
 
+# Python bytecode from tools/
+__pycache__/
+*.pyc
+
 # Scratch console projects used for one-off device testing (never a real part of the app)
 _harness/
 

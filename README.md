@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/icon.png" alt="RGDSCapture" width="128">
+
 # RGDSCapture
 
 **A software capture card for the Anbernic RG Dual Screen**
@@ -355,6 +357,24 @@ dotnet run
 ```
 
 Or press **F5** to launch with the debugger (VS Code will offer to create a launch config automatically if one doesn't exist).
+
+---
+
+### Regenerating the App Icon (optional)
+
+`Resources/icon.ico` is generated, not hand-drawn, so it can be rebuilt from
+source on any machine — Windows, Linux, or macOS — with nothing but Python and
+Pillow installed:
+
+```bash
+pip install Pillow
+python tools/generate_icon.py
+```
+
+That rewrites `Resources/icon.ico` (16–256 px) and the `docs/icon.png` preview.
+Edit the constants at the top of `tools/generate_icon.py` to retune the palette
+or the layout; the colours are taken from `Themes/Dark.xaml` so the icon tracks
+the app's own accent.
 
 ---
 
